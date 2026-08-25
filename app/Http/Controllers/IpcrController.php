@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FunctionCategory;
 use App\Enums\IpcrMode;
 use App\Enums\IpcrStatus;
 use App\Exceptions\IpcrRoutingException;
@@ -168,6 +169,25 @@ class IpcrController extends Controller
             return back()->with('error', $missing === 1
                 ? 'One function still has no actual accomplishment. Fill it in, or switch to "Targets only".'
                 : "{$missing} functions still have no actual accomplishment. Fill them in, or switch to \"Targets only\".");
+        }
+
+        // The weights must add up before anyone is asked to assess this. The
+        // rating maths would cope with any total, but the CSC form does not,
+        // and this is the last moment the owner can still fix it.
+        $badTotals = $ipcr->load('items')->categoriesWithBadWeightTotals();
+
+        if ($badTotals !== []) {
+            $parts = [];
+
+            foreach ($badTotals as $category => $total) {
+                $label = FunctionCategory::from($category)->label();
+                $parts[] = "{$label} totals " . rtrim(rtrim(number_format($total, 2, '.', ''), '0'), '.') . '%';
+            }
+
+            return back()->with(
+                'error',
+                'Weights must total 100% in each category. ' . implode('; ', $parts) . '.'
+            );
         }
 
         try {

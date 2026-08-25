@@ -2,30 +2,47 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
+/**
+ * Public registration is closed on purpose.
+ *
+ * Accounts are created by HR or an administrator from the Employees screen, so
+ * that every login is tied to an employee record with a division, section and
+ * position already set. A self-registered account would have none of that and
+ * could not take part in an IPCR at all.
+ */
 class RegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_registration_screen_can_be_rendered(): void
+    public function test_the_registration_screen_is_gone(): void
     {
-        $response = $this->get('/register');
-
-        $response->assertStatus(200);
+        $this->get('/register')->assertNotFound();
     }
 
-    public function test_new_users_can_register(): void
+    public function test_nobody_can_register_themselves(): void
     {
-        $response = $this->post('/register', [
+        $this->post('/register', [
             'name' => 'Test User',
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
-        ]);
+        ])->assertNotFound();
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertGuest();
+        $this->assertSame(0, User::where('email', 'test@example.com')->count());
+    }
+
+    /**
+     * The welcome page guards its sign-up link with Route::has('register').
+     * If the route name ever comes back, that link reappears silently.
+     */
+    public function test_the_register_route_name_is_not_registered(): void
+    {
+        $this->assertFalse(Route::has('register'));
     }
 }

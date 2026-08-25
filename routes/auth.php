@@ -7,16 +7,18 @@ use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
+/*
+ * Public registration is deliberately absent.
+ *
+ * Accounts are created by HR or an administrator from the Employees screen,
+ * so that every login is tied to an employee record that already has a
+ * division, section and position. A self-registered account would have none
+ * of those and could not take part in an IPCR.
+ */
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
-        ->name('register');
-
-    Route::post('register', [RegisteredUserController::class, 'store']);
-
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 

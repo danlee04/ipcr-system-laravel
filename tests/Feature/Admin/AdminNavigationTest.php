@@ -23,6 +23,20 @@ class AdminNavigationTest extends TestCase
         $response->assertSee('Administration');
         $response->assertSee('Divisions');
         $response->assertSee('Job Titles');
+        $response->assertSee('Employees');
+    }
+
+    public function test_an_hr_user_sees_the_administration_group(): void
+    {
+        $this->seed(RoleSeeder::class);
+        $user = User::factory()->create();
+        $user->assignRole('hr');
+
+        $response = $this->actingAs($user)->get('/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('Administration');
+        $response->assertSee('Employees');
     }
 
     public function test_a_non_admin_sees_no_administration_group(): void

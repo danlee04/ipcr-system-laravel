@@ -17,25 +17,7 @@
     </x-slot>
 
     <x-page-container class="space-y-6">
-        @if (session('status'))
-            <div class="rounded-md bg-emerald-50 p-4 text-sm text-emerald-800 ring-1 ring-emerald-500/20">
-                {{ session('status') }}
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="rounded-md bg-red-50 p-4 text-sm text-red-800 ring-1 ring-red-500/20">
-                {{ session('error') }}
-            </div>
-        @endif
-
-        @if ($errors->any())
-            <div class="rounded-md bg-red-50 p-4 text-sm text-red-800 ring-1 ring-red-500/20">
-                @foreach ($errors->all() as $error)
-                    <p>{{ $error }}</p>
-                @endforeach
-            </div>
-        @endif
+        <x-admin.flash />
 
         @if ($employees->isEmpty())
             <div class="rounded-md bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-500/20">

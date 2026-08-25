@@ -61,4 +61,35 @@ class IpcrPolicy
         return $this->owns($user, $ipcr)
             && $ipcr->status === IpcrStatus::Draft;
     }
+
+    /**
+     * Enter the Q/E/T marks and complete the assessment.
+     *
+     * The assessor only, and only while the IPCR is waiting on them. Once it
+     * has moved to Assessed the marks are the final approver's to act on, not
+     * the assessor's to keep changing.
+     */
+    public function assess(User $user, Ipcr $ipcr): bool
+    {
+        return $user->employee?->id === $ipcr->assessor_employee_id
+            && $ipcr->status === IpcrStatus::Submitted;
+    }
+
+    /** Give the final rating. The final approver only, once assessment is done. */
+    public function finalize(User $user, Ipcr $ipcr): bool
+    {
+        return $user->employee?->id === $ipcr->final_approver_employee_id
+            && $ipcr->status === IpcrStatus::Assessed;
+    }
+
+    /**
+     * Send it back to the owner for revision.
+     *
+     * Whoever the IPCR is currently sitting with may return it, which is why
+     * this is not simply assess() or finalize().
+     */
+    public function returnForRevision(User $user, Ipcr $ipcr): bool
+    {
+        return $this->assess($user, $ipcr) || $this->finalize($user, $ipcr);
+    }
 }

@@ -24,6 +24,7 @@ class AdminAccessTest extends TestCase
         return [
             'divisions' => ['admin.divisions.index'],
             'job titles' => ['admin.job-titles.index'],
+            'employees' => ['admin.employees.index'],
         ];
     }
 
@@ -57,6 +58,21 @@ class AdminAccessTest extends TestCase
     public function test_an_admin_gets_through(string $routeName): void
     {
         $this->actingAs($this->admin())->get(route($routeName))->assertOk();
+    }
+
+    /**
+     * HR does the same setup work as an administrator, so the group admits
+     * both roles. Asserted per route so a future route cannot quietly lock
+     * HR out of a screen they are expected to run.
+     */
+    #[DataProvider('adminRoutes')]
+    public function test_an_hr_user_gets_through(string $routeName): void
+    {
+        $this->seed(RoleSeeder::class);
+        $user = User::factory()->create();
+        $user->assignRole('hr');
+
+        $this->actingAs($user)->get(route($routeName))->assertOk();
     }
 
     /**

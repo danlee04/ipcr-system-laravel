@@ -65,7 +65,37 @@
             {{-- Items --}}
             <div class="bg-white shadow-sm sm:rounded-lg ring-1 ring-gray-950/5">
                 <div class="border-b border-gray-200 px-6 py-4">
-                    <h3 class="text-sm font-semibold text-gray-900">Functions &amp; Outputs</h3>
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <h3 class="text-sm font-semibold text-gray-900">Functions &amp; Outputs</h3>
+
+                        {{-- The running total per category. Submission requires
+                             each one to reach 100%, so the owner needs to see
+                             where they stand while they are still building. --}}
+                        @php
+                            $weightTotals = $ipcr->weightTotalsByCategory();
+                            $badTotals = $ipcr->categoriesWithBadWeightTotals();
+                        @endphp
+
+                        @if ($weightTotals !== [])
+                            <div class="flex flex-wrap items-center gap-2">
+                                @foreach ($weightTotals as $category => $total)
+                                    @php $short = rtrim(rtrim(number_format($total, 2, '.', ''), '0'), '.'); @endphp
+                                    <span
+                                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-data text-xs ring-1 ring-inset {{ isset($badTotals[$category]) ? 'bg-amber-50 text-amber-800 ring-amber-500/30' : 'bg-emerald-50 text-emerald-800 ring-emerald-500/30' }}">
+                                        <span
+                                            class="font-sans font-medium">{{ \App\Enums\FunctionCategory::from($category)->label() }}</span>
+                                        {{ $short }} of 100%
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+
+                    @if ($badTotals !== [] && $ipcr->isEditableByOwner())
+                        <p class="mt-2 text-xs text-amber-800">
+                            Each category must total 100% before this IPCR can be submitted.
+                        </p>
+                    @endif
                 </div>
 
                 @if ($ipcr->items->isEmpty())
@@ -235,6 +265,10 @@
                     </button>
                 </form>
             @endif
+
+            {{-- Approver controls. Renders only for whoever the IPCR is
+                 currently sitting with; IpcrPolicy decides, not the view. --}}
+            <x-ipcr.approver-panel :ipcr="$ipcr" />
 
             {{-- Approval history --}}
             @if ($ipcr->approvals->isNotEmpty())

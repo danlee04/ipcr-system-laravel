@@ -2,6 +2,7 @@
     'href' => '#',
     'active' => false,
     'icon' => null,
+    'badge' => null,
 ])
 
 {{--
@@ -31,6 +32,15 @@
     <span class="shrink-0 [&>svg]:h-5 [&>svg]:w-5" aria-hidden="true">{{ $icon }}</span>
 
     <span class="truncate" :class="collapsed ? 'lg:hidden' : ''">{{ $slot }}</span>
+
+    {{-- A count. Stays visible when collapsed, moved onto the icon, because a
+         number waiting on you is the one thing worth seeing without a label. --}}
+    @isset($badge)
+        <span
+            class="ms-auto inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-seal px-1.5 py-0.5 font-data text-[0.625rem] font-semibold text-nav-900"
+            :class="collapsed ? 'lg:absolute lg:end-1 lg:top-1 lg:ms-0' : ''"
+        >{{ $badge }}</span>
+    @endisset
 
     {{-- Tooltip - shown only when collapsed on desktop, where no label is
          visible any more. --}}

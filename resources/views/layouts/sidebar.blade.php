@@ -2,6 +2,13 @@
     $user = Auth::user();
     $employee = $user?->employee;
     $displayName = $employee?->full_name ?: $user?->name;
+
+    // Waiting on this user across both approval stages. Zero for anyone who
+    // is not an assessor or final approver, which is most people.
+    $pendingApprovals = $employee
+        ? \App\Models\Ipcr::query()->awaitingAssessmentBy($employee)->count()
+            + \App\Models\Ipcr::query()->awaitingFinalRatingBy($employee)->count()
+        : 0;
     $initials = collect(preg_split('/\s+/', trim((string) $displayName)))
         ->filter()
         ->take(2)
@@ -76,9 +83,23 @@
             My IPCRs
         </x-sidebar-link>
 
-        @if ($user?->hasRole('admin'))
-            {{-- Administration. Hidden entirely from non-admins: the routes
-                 return 403 anyway, but there is no reason to advertise them. --}}
+        @if ($pendingApprovals > 0)
+            <x-sidebar-link :href="route('approvals.inbox')" :active="request()->routeIs('approvals.*')">
+                <x-slot:icon>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.5 9 17l10.5-10.5" />
+                    </svg>
+                </x-slot:icon>
+                For My Approval
+                <x-slot:badge>{{ $pendingApprovals }}</x-slot:badge>
+            </x-sidebar-link>
+        @endif
+
+        @if ($user?->hasAnyRole(['admin', 'hr']))
+            {{-- Administration. Hidden entirely from everyone else: the routes
+                 return 403 anyway, but there is no reason to advertise them.
+                 HR is included because HR does the same setup work as an
+                 administrator - see the admin route group in routes/web.php. --}}
             <p class="px-3 pb-1 pt-5 font-data text-[0.625rem] uppercase tracking-[0.18em] text-nav-300"
                 :class="collapsed ? 'lg:hidden' : ''">
                 Administration
@@ -104,6 +125,17 @@
                     </svg>
                 </x-slot:icon>
                 Job Titles
+            </x-sidebar-link>
+
+            <x-sidebar-link :href="route('admin.employees.index')"
+                :active="request()->routeIs('admin.employees.*')">
+                <x-slot:icon>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 11a3.25 3.25 0 1 0 0-6.5A3.25 3.25 0 0 0 9 11Zm7.5.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM3 19.5a6 6 0 0 1 12 0M16 14a5 5 0 0 1 5 5.5" />
+                    </svg>
+                </x-slot:icon>
+                Employees
             </x-sidebar-link>
         @endif
     </nav>

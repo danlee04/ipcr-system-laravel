@@ -21,7 +21,7 @@ return new class extends Migration
             $table->foreignId('employee_id')->constrained()->cascadeOnDelete();
             $table->foreignId('designation_id')->constrained()->restrictOnDelete();
             $table->date('start_date')->nullable();
-            $table->date('end_date')->nullable();               // null = kasalukuyan pa
+            $table->date('end_date')->nullable();               // null = still current
             $table->string('order_reference')->nullable();      // Office Order / Special Order no.
             $table->boolean('is_active')->default(true);
             $table->timestamps();

@@ -34,7 +34,7 @@ return new class extends Migration
             $table->string('category', 20);                      // strategic|core|support|common
             $table->text('title');                               // the output / objective
             $table->text('success_indicator')->nullable();       // target + measure
-            $table->decimal('default_weight', 5, 2)->nullable(); // mungkahing timbang, %
+            $table->decimal('default_weight', 5, 2)->nullable(); // suggested weight, %
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 

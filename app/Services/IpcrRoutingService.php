@@ -13,8 +13,8 @@ use App\Support\ApprovalChain;
  * Based on the agreed flow:
  *   Employee      -> Section Head (assessment)  -> Division Head (final)
  *   Section Head  -> Division Head (assessment)  -> Chief of Hospital (final)
- *   Division Head -> Chief of Hospital (assessment AT final - parehong tao,
- *                     but still two steps in the status flow)
+ *   Division Head -> Chief of Hospital (assessment AND final - the same
+ *                     person, but still two steps in the status flow)
  *   Chief of Hospital -> NO automatic routing. Handled manually by Admin/HR.
  *
  * The order of the checks below MATTERS: test for Chief of Hospital first,
