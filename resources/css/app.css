@@ -1,0 +1,51 @@
+@import 'tailwindcss';
+
+@plugin '@tailwindcss/forms';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+        'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Data face - employee numbers, ratings, group labels. Ang texture ng
+       isang personnel record, hindi pang-body copy. */
+    --font-data: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* App shell. Navy ground para sa sidebar - opisyal at kalmado, at
+       malinaw ang hiwalay sa puting working canvas. */
+    --color-nav-900: #0d2233;
+    --color-nav-800: #16344b;
+    --color-nav-700: #1e4360;
+    --color-nav-300: #8faac2;
+    --color-nav-100: #c7d8e6;
+
+    /* Flag yellow. Ginagamit LAMANG bilang manipis na rail sa aktibong
+       item at sa focus ring - hindi kailanman bilang malaking surface. */
+    --color-seal: #e8b923;
+
+    /* Bond paper, hindi cream. */
+    --color-paper: #f6f7f5;
+}
+
+/* Kailangan ng Alpine: itago ang mga elementong may x-show bago mag-boot,
+   para walang kislap ng laman sa unang load. */
+[x-cloak] {
+    display: none !important;
+}
+
+/* Iginagalang ang setting ng user. Ang shell ay may ilang transition -
+   dapat mawala silang lahat kapag ayaw ng user ng galaw. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
