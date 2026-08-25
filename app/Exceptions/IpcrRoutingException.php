@@ -6,61 +6,61 @@ use App\Models\Employee;
 use RuntimeException;
 
 /**
- * Itinatapon kapag hindi ma-resolve ng IpcrRoutingService ang approval chain
- * ng isang empleyado - hal. walang naka-assign na Section Head, o walang
- * naka-configure na Chief of Hospital sa buong system.
+ * Thrown when IpcrRoutingService cannot resolve an employee's approval chain -
+ * for example, no Section Head is assigned, or no Chief of Hospital is
+ * configured anywhere in the system.
  *
- * Sadyang hindi ito silent-null: mas mabuting harangan ang pag-submit ng
- * IPCR kaysa tuluyan itong tumakbo nang walang assessor.
+ * These deliberately are not silent nulls: it is better to block the
+ * submission than to let an IPCR travel with no assessor.
  */
 class IpcrRoutingException extends RuntimeException
 {
     public static function noSectionAssigned(Employee $employee): self
     {
         return new self(
-            "Walang naka-assign na Section si {$employee->full_name}. " .
-                'Kontakin ang HR/Admin para i-set ang section niya bago siya makapag-submit ng IPCR.'
+            "{$employee->full_name} has no Section assigned. " .
+                'Ask HR/Admin to set their section before they can submit an IPCR.'
         );
     }
 
     public static function noSectionHead(string $sectionName): self
     {
         return new self(
-            "Walang naka-assign na Section Head sa '{$sectionName}'. " .
-                'Kontakin ang HR/Admin para i-assign muna ang Section Head bago tumanggap ng IPCR submissions.'
+            "No Section Head is assigned to '{$sectionName}'. " .
+                'Ask HR/Admin to assign one before this section can accept IPCR submissions.'
         );
     }
 
     public static function noDivisionAssigned(Employee $employee): self
     {
         return new self(
-            "Walang naka-assign na Division si {$employee->full_name}. " .
-                'Kontakin ang HR/Admin para i-set ang division niya.'
+            "{$employee->full_name} has no Division assigned. " .
+                'Ask HR/Admin to set their division.'
         );
     }
 
     public static function noDivisionHead(string $divisionName): self
     {
         return new self(
-            "Walang naka-assign na Division Head sa '{$divisionName}'. " .
-                'Kontakin ang HR/Admin para i-assign muna ang Division Head.'
+            "No Division Head is assigned to '{$divisionName}'. " .
+                'Ask HR/Admin to assign one.'
         );
     }
 
     public static function noChiefOfHospitalConfigured(): self
     {
         return new self(
-            'Walang naka-mark na Chief of Hospital sa system (employees.is_chief_of_hospital). ' .
-                'Kontakin ang Admin para i-set ito bago tumanggap ng IPCR submissions mula sa mga Division Head.'
+            'No employee is marked as Chief of Hospital (employees.is_chief_of_hospital). ' .
+                'Ask Admin to set this before accepting IPCR submissions from Division Heads.'
         );
     }
 
     public static function chiefOfHospitalRequiresManualRouting(): self
     {
         return new self(
-            'Ang IPCR ng Chief of Hospital ay wala pang automatic na approval chain sa system na ito. ' .
-                'I-proseso ito nang manual sa pamamagitan ng Admin/HR interface, hindi sa pamamagitan ng ' .
-                'karaniwang pag-submit ng IPCR.'
+            'The Chief of Hospital IPCR has no automatic approval chain in this system. ' .
+                'Process it manually through the Admin/HR interface rather than through the ' .
+                'usual IPCR submission.'
         );
     }
 }

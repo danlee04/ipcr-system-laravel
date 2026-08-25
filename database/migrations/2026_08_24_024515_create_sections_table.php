@@ -5,8 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Sections (nasa ilalim ng isang Division).
- * Ang section_head_employee_id ay idadagdag sa hiwalay na migration.
+ * Sections - each one sits under a Division.
+ * section_head_employee_id is added in a separate migration.
  */
 return new class extends Migration
 {
@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('division_id')
                 ->constrained()
                 ->cascadeOnUpdate()
-                ->restrictOnDelete();                        // bawal burahin ang division na may sections
+                ->restrictOnDelete();                        // a division with sections cannot be deleted
             $table->string('name');                            // "Statistics Unit"
             $table->string('code', 20)->nullable()->unique();  // "STAT"
             $table->boolean('is_active')->default(true);

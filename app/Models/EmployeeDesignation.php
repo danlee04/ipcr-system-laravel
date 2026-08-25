@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Naka-model ang pivot para may sarili itong CRUD screen sa HR
- * (pag-assign at pagtatapos ng OIC designations, may Office Order reference).
+ * The pivot is modelled so HR can have a dedicated CRUD screen for it
+ * (assigning and ending OIC designations, with an Office Order reference).
  */
 class EmployeeDesignation extends Model
 {

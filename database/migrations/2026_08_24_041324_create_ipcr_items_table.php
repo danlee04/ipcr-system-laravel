@@ -5,16 +5,16 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Ang mga linya ng IPCR - katumbas ng bawat row sa official CSC form.
+ * The IPCR line items - one per row on the official CSC form.
  *
- * Manu-mano ang pag-add nito ng empleyado. Ang `job_function_id` ay
- * opsyonal na link pabalik sa catalog (para malaman kung saan galing),
- * pero pwede ring blangko kung sariling type ng empleyado ang laman.
+ * The employee adds these by hand. `job_function_id` is an optional link
+ * back to the catalog so you can tell where an item came from, but it may be
+ * left blank when the employee typed the entry themselves.
  *
- * Rating scale kada dimension (1-5):
+ * Rating scale per dimension (1-5):
  *   5 Outstanding | 4 Very Satisfactory | 3 Satisfactory | 2 Unsatisfactory | 1 Poor
- * Nullable sila dahil may output na hindi applicable ang isang dimension
- * (hal. walang Timeliness) - hindi 'yun dapat isama sa average.
+ * They are nullable because some outputs have a dimension that does not
+ * apply (no Timeliness, say) - those must not be counted in the average.
  */
 return new class extends Migration
 {
@@ -30,7 +30,7 @@ return new class extends Migration
             $table->string('category', 20);                  // strategic|core|support|common
             $table->text('output');                          // Output / MFO / PAP
             $table->text('success_indicator')->nullable();   // Target + Measure
-            $table->decimal('weight', 5, 2)->nullable();     // timbang sa loob ng kategorya, %
+            $table->decimal('weight', 5, 2)->nullable();     // weight within the category, %
 
             $table->text('actual_accomplishment')->nullable();
 

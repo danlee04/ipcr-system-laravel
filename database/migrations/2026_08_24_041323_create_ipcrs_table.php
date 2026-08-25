@@ -5,16 +5,16 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Ang IPCR header. Isang record kada empleyado kada period.
+ * The IPCR header. One record per employee per period.
  *
  * Status flow:
  *   draft -> submitted -> assessed -> approved
  *              |             |
- *              +-- returned -+   (pabalik sa empleyado para i-revise)
+ *              +-- returned -+   (back to the employee for revision)
  *
- * Mapping sa flow na hiningi mo:
- *   submitted = "For Assessment"   (nasa inbox ng assessor)
- *   assessed  = "For Final Rating" (nasa inbox ng final approver)
+ * How that maps to the agreed flow:
+ *   submitted = "For Assessment"   (in the assessor's inbox)
+ *   assessed  = "For Final Rating" (in the final approver's inbox)
  */
 return new class extends Migration
 {
@@ -24,14 +24,14 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('ipcr_period_id')->constrained()->restrictOnDelete();
-            $table->foreignId('employee_id')->constrained()->cascadeOnDelete(); // ang ratee
+            $table->foreignId('employee_id')->constrained()->cascadeOnDelete(); // the ratee
 
-            // Snapshot sa panahon ng pag-submit. Kahit mapalitan ang position/office
-            // ng empleyado bukas, mananatiling tama ang printout ng lumang IPCR.
+            // Snapshot taken at submission time. Even if the employee changes
+            // position or office tomorrow, the old IPCR still prints correctly.
             $table->string('position_title')->nullable();
             $table->string('office_name')->nullable();
 
-            // Approval chain. Naka-resolve sa submit time, pero pwedeng i-override ng HR/Admin.
+            // Approval chain. Resolved at submit time, but HR/Admin can override it.
             $table->foreignId('assessor_employee_id')->nullable()
                 ->constrained('employees')->nullOnDelete();
             $table->foreignId('final_approver_employee_id')->nullable()
@@ -39,13 +39,13 @@ return new class extends Migration
 
             $table->string('status', 20)->default('draft');  // draft|submitted|assessed|approved|returned
 
-            // Timbang kada kategorya (%). Dapat 100 ang kabuuan.
+            // Weight per category (%). These must total 100.
             $table->decimal('strategic_weight', 5, 2)->default(30);
             $table->decimal('core_weight', 5, 2)->default(50);
             $table->decimal('support_weight', 5, 2)->default(20);
             $table->decimal('common_weight', 5, 2)->default(0);
 
-            // Kinukwenta ng system mula sa ipcr_items. Huwag i-edit nang manual.
+            // Computed by the system from ipcr_items. Never edit by hand.
             $table->decimal('strategic_rating', 4, 3)->nullable();
             $table->decimal('core_rating', 4, 3)->nullable();
             $table->decimal('support_rating', 4, 3)->nullable();
@@ -59,7 +59,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            // Isang IPCR lang kada empleyado kada period.
+            // One IPCR per employee per period.
             $table->unique(['employee_id', 'ipcr_period_id']);
             $table->index(['status', 'assessor_employee_id']);
             $table->index(['status', 'final_approver_employee_id']);

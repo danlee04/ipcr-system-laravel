@@ -5,19 +5,19 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Master catalog ng mga function na pwedeng piliin kapag gumagawa ng IPCR.
+ * Master catalog of the functions that can be picked when building an IPCR.
  *
- * Tandaan: `job_functions` ang pangalan, HINDI `functions` -- reserved word
- * ang `function` sa PHP kaya hindi pwedeng gawing `class Function` ang model.
+ * Note the name is `job_functions`, NOT `functions` -- `function` is a
+ * reserved word in PHP, so the model could not be called `class Function`.
  *
- * Saan nakakabit:
- *   core      -> position_id     (galing sa plantilla position)
- *   strategic -> designation_id  (galing sa designation/OIC role)
- *   support   -> designation_id  (galing sa designation/OIC role)
- *   common    -> parehong null   (open pool, lahat pwedeng pumili)
+ * What each category attaches to:
+ *   core      -> position_id     (from the plantilla position)
+ *   strategic -> designation_id  (from the designation / OIC role)
+ *   support   -> designation_id  (from the designation / OIC role)
+ *   common    -> both null       (open pool, anyone may pick from it)
  *
- * Ang catalog na ito ay PANUKALA lang - manual pa rin ang pag-add ng
- * empleyado ng mga item papunta sa aktwal niyang IPCR. Walang auto-populate.
+ * This catalog is only a SET OF SUGGESTIONS - the employee still adds items
+ * to their actual IPCR by hand. Nothing is auto-populated.
  */
 return new class extends Migration
 {
@@ -32,7 +32,7 @@ return new class extends Migration
                 ->constrained()->cascadeOnDelete();
 
             $table->string('category', 20);                      // strategic|core|support|common
-            $table->text('title');                               // ang output / objective
+            $table->text('title');                               // the output / objective
             $table->text('success_indicator')->nullable();       // target + measure
             $table->decimal('default_weight', 5, 2)->nullable(); // mungkahing timbang, %
             $table->boolean('is_active')->default(true);

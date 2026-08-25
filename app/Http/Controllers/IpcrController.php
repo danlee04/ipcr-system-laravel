@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\IpcrMode;
 use App\Enums\IpcrStatus;
 use App\Exceptions\IpcrRoutingException;
 use App\Models\Ipcr;
@@ -10,6 +11,7 @@ use App\Services\FunctionCatalogService;
 use App\Services\IpcrRoutingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class IpcrController extends Controller
@@ -19,7 +21,15 @@ class IpcrController extends Controller
         private readonly IpcrRoutingService $routing,
     ) {}
 
-    /** List of the current user's own IPCRs. */
+    /**
+     * List of the current user's own IPCRs.
+     *
+     * A new IPCR is also started from here, so the page needs to know the
+     * same two things create() knows: is a period open, and does the employee
+     * already have an IPCR for it. Without that the modal would open, the user
+     * would choose, and only then would they hit a failure - worse than not
+     * being offered the option at all.
+     */
     public function index(Request $request): View
     {
         $employee = $request->user()->employee;
@@ -27,7 +37,22 @@ class IpcrController extends Controller
 
         $ipcrs = $employee->ipcrs()->with('period')->latest('id')->paginate(10);
 
-        return view('ipcrs.index', compact('ipcrs'));
+        $period = IpcrPeriod::open()->latest('start_date')->first();
+
+        $existingForPeriod = $period === null
+            ? null
+            : $employee->ipcrs()->where('ipcr_period_id', $period->id)->first();
+
+        $canCreate = $period !== null && $existingForPeriod === null;
+        $catalog = $canCreate ? $this->functionCatalog->availableFor($employee) : null;
+
+        return view('ipcrs.index', compact(
+            'ipcrs',
+            'period',
+            'existingForPeriod',
+            'canCreate',
+            'catalog',
+        ));
     }
 
     /** Show the form to start a new IPCR for the current open rating period. */
@@ -60,6 +85,16 @@ class IpcrController extends Controller
         $employee = $request->user()->employee;
         abort_unless($employee, 403, 'No employee record is linked to your account.');
 
+        // The modal on the list is what picks the mode. The create page no
+        // longer asks, so this is optional: with nothing given we use Targets
+        // only, the safer default because it demands no accomplishment before
+        // the IPCR can be submitted.
+        $validated = $request->validate([
+            'mode' => ['nullable', Rule::enum(IpcrMode::class)],
+        ]);
+
+        $mode = $validated['mode'] ?? IpcrMode::TargetsOnly->value;
+
         $period = IpcrPeriod::open()->latest('start_date')->first();
         abort_unless($period, 404, 'No open rating period found.');
 
@@ -69,11 +104,32 @@ class IpcrController extends Controller
                 'position_title' => $employee->position?->title,
                 'office_name'    => $employee->section?->name ?? $employee->division?->name,
                 'status'         => IpcrStatus::Draft,
+                'mode'           => $mode,
             ]
         );
 
         return redirect()->route('ipcrs.show', $ipcr)
             ->with('status', 'Draft IPCR created. Add your functions below.');
+    }
+
+    /**
+     * Scrap a draft the owner no longer wants.
+     *
+     * The policy allows drafts only. The IPCR's items go with it through the
+     * cascade, which is right - they exist only inside this draft. No
+     * ipcr_approvals are destroyed: a draft has never been passed to anyone,
+     * so no action can have been recorded against it.
+     */
+    public function destroy(Request $request, Ipcr $ipcr): RedirectResponse
+    {
+        $this->authorize('delete', $ipcr);
+
+        $periodName = $ipcr->period->name;
+
+        $ipcr->delete();
+
+        return redirect()->route('ipcrs.index')
+            ->with('status', "Deleted your draft IPCR for {$periodName}.");
     }
 
     /** The main working screen: view items, add/edit them, and submit. */
@@ -102,6 +158,16 @@ class IpcrController extends Controller
 
         if ($ipcr->items()->doesntExist()) {
             return back()->with('error', 'Add at least one function before submitting.');
+        }
+
+        // Checked before routing: if the owner chose "with accomplishments",
+        // that choice means nothing while an item is still blank.
+        $missing = $ipcr->itemsMissingAccomplishment();
+
+        if ($missing > 0) {
+            return back()->with('error', $missing === 1
+                ? 'One function still has no actual accomplishment. Fill it in, or switch to "Targets only".'
+                : "{$missing} functions still have no actual accomplishment. Fill them in, or switch to \"Targets only\".");
         }
 
         try {

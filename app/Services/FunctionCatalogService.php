@@ -9,19 +9,18 @@ use App\Support\EmployeeFunctionCatalog;
 use Illuminate\Support\Collection;
 
 /**
- * Sinasagot ng service na ito ang tanong: "Anong mga functions ang
- * PWEDENG piliin ng empleyadong ito kapag gumagawa siya ng IPCR?"
+ * This service answers one question: "Which functions MAY this employee
+ * pick from when building an IPCR?"
  *
- * Mahalagang tandaan: PANUKALA lang ang listahang ibinabalik dito.
- * Hindi ito otomatikong idinaragdag sa IPCR - ang employee/HR pa rin
- * ang mano-manong pipili at magdadagdag ng gustong item bilang
- * ipcr_items row.
+ * Worth remembering: what comes back is only a set of SUGGESTIONS. Nothing
+ * here is added to the IPCR automatically - the employee or HR still picks
+ * each item by hand and adds it as an ipcr_items row.
  *
- * Saan galing ang bawat kategorya:
- *   core      -> ang IISANG plantilla position ng empleyado
- *   strategic -> lahat ng KASALUKUYANG ACTIVE designations niya
- *   support   -> lahat ng KASALUKUYANG ACTIVE designations niya
- *   common    -> ang open pool, bukas sa lahat
+ * Where each category comes from:
+ *   core      -> the employee's SINGLE plantilla position
+ *   strategic -> all of their CURRENTLY ACTIVE designations
+ *   support   -> all of their CURRENTLY ACTIVE designations
+ *   common    -> the open pool, available to everyone
  */
 class FunctionCatalogService
 {
@@ -35,7 +34,7 @@ class FunctionCatalogService
         );
     }
 
-    /** Mula sa iisang plantilla position ng empleyado. */
+    /** From the employee's single plantilla position. */
     private function coreFunctions(Employee $employee): Collection
     {
         if ($employee->position_id === null) {
@@ -51,10 +50,9 @@ class FunctionCatalogService
     }
 
     /**
-     * Mula sa LAHAT ng kasalukuyang active designations ng empleyado.
-     * Dito ang aggregation na ginagawa para kay Mary Jane - kapag may
-     * OIC-Budget AT OIC-HRMO siyang parehong active, pareho silang
-     * lalabas dito.
+     * From ALL of the employee's currently active designations.
+     * This is where they are aggregated: someone holding both OIC-Budget and
+     * OIC-HRMO at the same time sees the functions from both.
      */
     private function designationFunctions(Employee $employee, FunctionCategory $category): Collection
     {
@@ -72,7 +70,7 @@ class FunctionCatalogService
             ->get();
     }
 
-    /** Ang open pool - walang kabit na position o designation, bukas sa lahat. */
+    /** The open pool - tied to no position or designation, available to all. */
     private function commonFunctions(): Collection
     {
         return JobFunction::query()

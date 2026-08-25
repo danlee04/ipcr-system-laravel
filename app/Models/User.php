@@ -10,13 +10,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * Get the attributes that should be cast.
@@ -32,9 +33,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Ang HR record ng naka-login na user. Dito dumadaan ang halos lahat
-     * ng IPCR logic - kapag null ito, walang employee record na naka-link
-     * sa account at hindi siya makakagawa ng IPCR.
+     * The signed-in user's HR record. Nearly all IPCR logic goes through it -
+     * when this is null, no employee record is linked to the account and the
+     * user cannot create an IPCR.
      */
     public function employee(): HasOne
     {

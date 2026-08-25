@@ -11,34 +11,34 @@
     --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
         'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
-    /* Data face - employee numbers, ratings, group labels. Ang texture ng
-       isang personnel record, hindi pang-body copy. */
+    /* Data face - employee numbers, ratings, group labels. The texture of a
+       personnel record, not something for body copy. */
     --font-data: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-    /* App shell. Navy ground para sa sidebar - opisyal at kalmado, at
-       malinaw ang hiwalay sa puting working canvas. */
+    /* App shell. A navy ground for the sidebar - official and calm, and
+       clearly separated from the white working canvas. */
     --color-nav-900: #0d2233;
     --color-nav-800: #16344b;
     --color-nav-700: #1e4360;
     --color-nav-300: #8faac2;
     --color-nav-100: #c7d8e6;
 
-    /* Flag yellow. Ginagamit LAMANG bilang manipis na rail sa aktibong
-       item at sa focus ring - hindi kailanman bilang malaking surface. */
+    /* Flag yellow. Used ONLY as a thin rail on the active item and for the
+       focus ring - never as a large surface. */
     --color-seal: #e8b923;
 
-    /* Bond paper, hindi cream. */
+    /* Bond paper, not cream. */
     --color-paper: #f6f7f5;
 }
 
-/* Kailangan ng Alpine: itago ang mga elementong may x-show bago mag-boot,
-   para walang kislap ng laman sa unang load. */
+/* Needed by Alpine: hide x-show elements before it boots, so nothing flashes
+   into view on first load. */
 [x-cloak] {
     display: none !important;
 }
 
-/* Iginagalang ang setting ng user. Ang shell ay may ilang transition -
-   dapat mawala silang lahat kapag ayaw ng user ng galaw. */
+/* Respect the user's setting. The shell has a few transitions - all of them
+   must go when the user has asked for reduced motion. */
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

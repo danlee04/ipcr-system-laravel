@@ -5,8 +5,7 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <x-page-container class="space-y-6">
 
             @if (session('status'))
                 <div class="rounded-md bg-emerald-50 p-4 text-sm text-emerald-800 ring-1 ring-emerald-500/20">
@@ -20,12 +19,24 @@
                 </div>
             @endif
 
-            <div class="flex items-center justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-3">
                 <p class="text-sm text-gray-600">{{ $ipcrs->total() }} total record(s)</p>
-                <a href="{{ route('ipcrs.create') }}"
-                    class="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700">
-                    + New IPCR
-                </a>
+
+                @if ($canCreate)
+                    <button type="button" x-data
+                        x-on:click="$dispatch('open-modal', 'new-ipcr')"
+                        class="inline-flex items-center rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2">
+                        + New IPCR
+                    </button>
+                @elseif ($existingForPeriod)
+                    <p class="text-sm text-gray-600">
+                        You already have an IPCR for {{ $period->name }}.
+                        <a href="{{ route('ipcrs.show', $existingForPeriod) }}"
+                            class="font-medium text-nav-900 underline hover:no-underline">Open it</a>
+                    </p>
+                @else
+                    <p class="text-sm text-gray-600">No open rating period right now. Contact HR/Admin.</p>
+                @endif
             </div>
 
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg ring-1 ring-gray-950/5">
@@ -52,8 +63,20 @@
                                     {{ $ipcr->final_adjectival_rating ?? '—' }}
                                 </td>
                                 <td class="px-6 py-4 text-right text-sm">
-                                    <a href="{{ route('ipcrs.show', $ipcr) }}"
-                                        class="font-medium text-gray-900 hover:underline">View</a>
+                                    <div class="flex items-center justify-end gap-3">
+                                        <a href="{{ route('ipcrs.show', $ipcr) }}"
+                                            class="font-medium text-gray-900 hover:underline">View</a>
+
+                                        @can('delete', $ipcr)
+                                            <form method="POST" action="{{ route('ipcrs.destroy', $ipcr) }}"
+                                                onsubmit="return confirm('Delete your draft IPCR for {{ $ipcr->period->name }}? This cannot be undone.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit"
+                                                    class="font-medium text-red-600 hover:underline">Delete</button>
+                                            </form>
+                                        @endcan
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -68,6 +91,50 @@
             </div>
 
             {{ $ipcrs->links() }}
-        </div>
-    </div>
+
+            @if ($canCreate)
+                {{-- The employee chooses here, before reaching any form. --}}
+                <x-modal name="new-ipcr" focusable max-width="xl">
+                    <form method="POST" action="{{ route('ipcrs.store') }}" class="p-6 space-y-5">
+                        @csrf
+
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-900">Start a new IPCR</h2>
+                            <p class="mt-1 text-sm text-gray-600">
+                                {{ $period->name }} &middot;
+                                {{ $period->start_date->format('M d, Y') }} –
+                                {{ $period->end_date->format('M d, Y') }}
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-4 gap-2">
+                            @foreach (['Core' => $catalog->core, 'Strategic' => $catalog->strategic, 'Support' => $catalog->support, 'Common' => $catalog->common] as $label => $functions)
+                                <div class="rounded-md bg-gray-50 p-2 text-center">
+                                    <p class="text-lg font-semibold text-gray-900">{{ $functions->count() }}</p>
+                                    <p class="text-xs text-gray-500">{{ $label }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <p class="text-xs text-gray-500">
+                            Catalog functions available to you. You pick the specific ones on the next screen —
+                            nothing is added automatically.
+                        </p>
+
+                        <x-ipcr-mode-choice />
+
+                        <div class="flex justify-end gap-3 pt-2">
+                            <button type="button" x-on:click="$dispatch('close-modal', 'new-ipcr')"
+                                class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 transition-colors hover:bg-gray-50">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2">
+                                Create Draft IPCR
+                            </button>
+                        </div>
+                    </form>
+                </x-modal>
+            @endif
+</x-page-container>
 </x-app-layout>

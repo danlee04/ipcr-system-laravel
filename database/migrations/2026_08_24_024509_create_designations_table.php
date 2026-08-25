@@ -6,8 +6,8 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Designations / OIC roles (e.g. "OIC - Budget Officer", "OIC - HRMO").
- * Ito ang pinanggagalingan ng SUPPORT at STRATEGIC functions.
- * Isang empleyado ay pwedeng may maraming ACTIVE designations nang sabay-sabay.
+ * This is where SUPPORT and STRATEGIC functions come from.
+ * One employee may hold several ACTIVE designations at the same time.
  */
 return new class extends Migration
 {

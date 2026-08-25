@@ -4,11 +4,14 @@ namespace App\Models;
 
 use App\Enums\FunctionCategory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class IpcrItem extends Model
 {
+    use HasFactory;
+
     protected $table = 'ipcr_items';
 
     protected $fillable = [
@@ -41,8 +44,8 @@ class IpcrItem extends Model
     }
 
     /**
-     * Kusang kinukwenta ang average tuwing sine-save.
-     * Hindi na kailangang tandaan ng controller na i-update ito.
+     * The average is recomputed automatically on every save, so no controller
+     * has to remember to update it.
      */
     protected static function booted(): void
     {
@@ -52,9 +55,9 @@ class IpcrItem extends Model
     }
 
     /**
-     * (Q + E + T) / bilang ng may laman.
-     * Hindi isinasama ang null - may mga output na walang Timeliness dimension,
-     * at mali kung ituturing nating zero ang mga 'yun.
+     * (Q + E + T) divided by however many are filled in.
+     * Nulls are excluded - some outputs have no Timeliness dimension, and
+     * treating those as zero would be wrong.
      */
     public function computeAverage(): ?float
     {
@@ -73,7 +76,7 @@ class IpcrItem extends Model
         return $this->belongsTo(Ipcr::class);
     }
 
-    /** Opsyonal na link pabalik sa catalog - null kung sariling type ng empleyado. */
+    /** Optional link back to the catalog - null for an employee's own entry. */
     public function jobFunction(): BelongsTo
     {
         return $this->belongsTo(JobFunction::class);

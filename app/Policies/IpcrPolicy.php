@@ -2,28 +2,29 @@
 
 namespace App\Policies;
 
+use App\Enums\IpcrStatus;
 use App\Models\Ipcr;
 use App\Models\User;
 
 /**
- * Sino ang pwedeng tumingin at mag-edit ng isang IPCR.
+ * Who may view and edit an IPCR.
  *
- * Tandaan ang pagkakaiba:
- *   view   - may-ari, assessor, at final approver. Kailangan nilang
- *            makita ang IPCR pagkatapos i-submit para maaksyunan.
- *   update - MAY-ARI LANG. Ang pagpasok ng Q/E/T ratings ng assessor
- *            ay hiwalay na daan (sariling controller at policy method),
- *            hindi sa pamamagitan ng update na ito.
+ * Note the difference:
+ *   view   - owner, assessor, and final approver. They all need to see the
+ *            IPCR after submission in order to act on it.
+ *   update - OWNER ONLY. Entering Q/E/T ratings is a separate path
+ *            (its own controller and policy method), not something that
+ *            goes through this update ability.
  */
 class IpcrPolicy
 {
-    /** Ang IPCR ba ay pag-aari ng user na ito? */
+    /** Does this user own the IPCR? */
     private function owns(User $user, Ipcr $ipcr): bool
     {
         return $ipcr->employee?->user_id === $user->id;
     }
 
-    /** Isa ba siya sa dalawang approver na naka-stamp sa IPCR? */
+    /** Are they one of the two approvers stamped on the IPCR? */
     private function isApprover(User $user, Ipcr $ipcr): bool
     {
         $employeeId = $user->employee?->id;
@@ -44,5 +45,20 @@ class IpcrPolicy
     public function update(User $user, Ipcr $ipcr): bool
     {
         return $this->owns($user, $ipcr);
+    }
+
+    /**
+     * Drafts only, and owners only.
+     *
+     * isEditableByOwner() is deliberately not used here: it also covers
+     * Returned, and a returned IPCR already has an approval row recorded.
+     * ipcrs has no soft delete and ipcr_approvals cascades on delete, so
+     * deleting would permanently destroy that audit trail. Only a draft is
+     * safe - it has never been passed to anyone.
+     */
+    public function delete(User $user, Ipcr $ipcr): bool
+    {
+        return $this->owns($user, $ipcr)
+            && $ipcr->status === IpcrStatus::Draft;
     }
 }

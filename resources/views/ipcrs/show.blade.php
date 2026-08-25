@@ -8,8 +8,7 @@
         </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <x-page-container class="space-y-6">
 
             @if (session('status'))
                 <div class="rounded-md bg-emerald-50 p-4 text-sm text-emerald-800 ring-1 ring-emerald-500/20">
@@ -95,7 +94,7 @@
                                         @if ($item->success_indicator)
                                             <p class="mt-1 text-xs text-gray-500">{{ $item->success_indicator }}</p>
                                         @endif
-                                        @if ($item->actual_accomplishment)
+                                        @if ($ipcr->showsAccomplishment() && $item->actual_accomplishment)
                                             <p class="mt-1 text-xs text-gray-700">
                                                 <span class="font-medium">Accomplishment:</span>
                                                 {{ $item->actual_accomplishment }}
@@ -121,8 +120,10 @@
                                                         name="weight" value="{{ $item->weight }}"
                                                         placeholder="Weight %"
                                                         class="w-full rounded-md border-gray-300 text-sm">
-                                                    <textarea name="actual_accomplishment" rows="2" class="w-full rounded-md border-gray-300 text-sm"
-                                                        placeholder="Actual accomplishment">{{ $item->actual_accomplishment }}</textarea>
+                                                    @if ($ipcr->showsAccomplishment())
+                                                        <textarea name="actual_accomplishment" rows="2" class="w-full rounded-md border-gray-300 text-sm"
+                                                            placeholder="Actual accomplishment">{{ $item->actual_accomplishment }}</textarea>
+                                                    @endif
                                                     <button type="submit"
                                                         class="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-700">Save</button>
                                                 </form>
@@ -154,7 +155,7 @@
                             <div>
                                 <p class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
                                     {{ ucfirst($key) }} — from catalog</p>
-                                <div class="space-y-2">
+                                <div class="grid gap-2 lg:grid-cols-2 2xl:grid-cols-3">
                                     @foreach ($items as $jobFunction)
                                         <form method="POST" action="{{ route('ipcrs.items.store', $ipcr) }}"
                                             class="flex items-center justify-between gap-4 rounded-md border border-gray-200 px-3 py-2">
@@ -182,23 +183,45 @@
                     <div>
                         <p class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Custom function (not
                             from catalog)</p>
-                        <form method="POST" action="{{ route('ipcrs.items.store', $ipcr) }}" class="space-y-3">
+                        {{-- Laid out as a grid rather than a stack: full-width
+                             single-column inputs look stretched on a wide screen,
+                             and the short fields do not need the whole span. --}}
+                        <form method="POST" action="{{ route('ipcrs.items.store', $ipcr) }}"
+                            class="grid gap-3 sm:grid-cols-6">
                             @csrf
-                            <select name="category" class="w-full rounded-md border-gray-300 text-sm" required>
-                                <option value="">Select category…</option>
-                                @foreach (\App\Enums\FunctionCategory::cases() as $case)
-                                    <option value="{{ $case->value }}">{{ $case->label() }}</option>
-                                @endforeach
-                            </select>
-                            <textarea name="output" rows="2" class="w-full rounded-md border-gray-300 text-sm"
-                                placeholder="Output / objective" required></textarea>
-                            <textarea name="success_indicator" rows="2" class="w-full rounded-md border-gray-300 text-sm"
-                                placeholder="Success indicator"></textarea>
-                            <input type="number" step="0.01" min="0" max="100" name="weight"
-                                placeholder="Weight %" class="w-full rounded-md border-gray-300 text-sm">
-                            <button type="submit"
-                                class="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700">Add
-                                Custom Function</button>
+
+                            <label class="sm:col-span-4">
+                                <span class="mb-1 block text-xs font-medium text-gray-600">Category</span>
+                                <select name="category" class="w-full rounded-md border-gray-300 text-sm" required>
+                                    <option value="">Select category…</option>
+                                    @foreach (\App\Enums\FunctionCategory::cases() as $case)
+                                        <option value="{{ $case->value }}">{{ $case->label() }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+
+                            <label class="sm:col-span-2">
+                                <span class="mb-1 block text-xs font-medium text-gray-600">Weight %</span>
+                                <input type="number" step="0.01" min="0" max="100" name="weight"
+                                    class="w-full rounded-md border-gray-300 text-sm">
+                            </label>
+
+                            <label class="sm:col-span-3">
+                                <span class="mb-1 block text-xs font-medium text-gray-600">Output / objective</span>
+                                <textarea name="output" rows="3" class="w-full rounded-md border-gray-300 text-sm" required></textarea>
+                            </label>
+
+                            <label class="sm:col-span-3">
+                                <span class="mb-1 block text-xs font-medium text-gray-600">Success indicator</span>
+                                <textarea name="success_indicator" rows="3" class="w-full rounded-md border-gray-300 text-sm"></textarea>
+                            </label>
+
+                            <div class="sm:col-span-6">
+                                <button type="submit"
+                                    class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2">
+                                    Add Custom Function
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -232,6 +255,5 @@
                 </div>
             @endif
 
-        </div>
-    </div>
+</x-page-container>
 </x-app-layout>

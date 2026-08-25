@@ -14,6 +14,8 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Order matters: DemoSeeder assigns the admin role, which must exist first.
+        $this->call(RoleSeeder::class);
         $this->call(DemoSeeder::class);
     }
 }

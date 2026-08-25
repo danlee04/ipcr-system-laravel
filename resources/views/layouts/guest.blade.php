@@ -16,7 +16,7 @@
     </head>
     <body class="font-sans text-slate-800 antialiased">
         <div class="flex min-h-screen flex-col items-center justify-center bg-paper px-4 py-10">
-            {{-- Parehong brand mark ng sidebar, para iisang app ang dating. --}}
+            {{-- The same brand mark as the sidebar, so it reads as one app. --}}
             <a href="/" class="flex items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-nav-700 focus-visible:ring-offset-2">
                 <span class="grid h-11 w-11 place-items-center rounded-xl bg-nav-900">
                     <svg class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

@@ -5,13 +5,13 @@
 ])
 
 {{--
-    Isang linya sa sidebar.
+    One row in the sidebar.
 
-    Ang `collapsed` na state ay galing sa `appShell` na naka-x-data sa <body>.
-    Pansinin: ipinapahayag lang natin siya sa pamamagitan ng `lg:` variants.
-    Sa maliit na screen ay drawer ang sidebar at LAGING may label - kahit
-    naka-collapse ang desktop view. Kung gagamit tayo ng x-show dito,
-    mawawala ang mga label sa cellphone, na mali.
+    The `collapsed` state comes from `appShell`, the x-data on <body>. Note that
+    it is only ever expressed through `lg:` variants. On small screens the
+    sidebar is a drawer and ALWAYS shows labels, even when the desktop view is
+    collapsed. Using x-show here would hide the labels on a phone, which is
+    wrong.
 --}}
 <a
     href="{{ $href }}"
@@ -22,7 +22,7 @@
             ? 'bg-nav-800 font-semibold text-white'
             : 'text-nav-300 hover:bg-nav-800/60 hover:text-white' }}"
 >
-    {{-- Ang seal rail: ito lang ang lugar kung saan lumalabas ang dilaw. --}}
+    {{-- The seal rail: the only place the yellow appears. --}}
     <span
         aria-hidden="true"
         class="absolute start-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-e-full bg-seal {{ $active ? 'opacity-100' : 'opacity-0' }}"
@@ -32,8 +32,8 @@
 
     <span class="truncate" :class="collapsed ? 'lg:hidden' : ''">{{ $slot }}</span>
 
-    {{-- Tooltip - lumalabas lang kapag naka-collapse sa desktop, kung saan
-         wala nang nakikitang label. --}}
+    {{-- Tooltip - shown only when collapsed on desktop, where no label is
+         visible any more. --}}
     <span
         role="tooltip"
         class="pointer-events-none absolute start-full z-50 ms-2 hidden whitespace-nowrap rounded-md bg-nav-800 px-2 py-1 text-xs font-medium text-white shadow-lg ring-1 ring-white/10"

@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use App\Enums\IpcrMode;
 use App\Enums\IpcrStatus;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ipcr extends Model
 {
+    use HasFactory;
+
     protected $table = 'ipcrs';
 
     protected $fillable = [
@@ -20,6 +24,7 @@ class Ipcr extends Model
         'assessor_employee_id',
         'final_approver_employee_id',
         'status',
+        'mode',
         'strategic_weight',
         'core_weight',
         'support_weight',
@@ -39,6 +44,7 @@ class Ipcr extends Model
     {
         return [
             'status'                 => IpcrStatus::class,
+            'mode'                   => IpcrMode::class,
             'strategic_weight'       => 'decimal:2',
             'core_weight'            => 'decimal:2',
             'support_weight'         => 'decimal:2',
@@ -63,19 +69,19 @@ class Ipcr extends Model
         return $this->belongsTo(IpcrPeriod::class, 'ipcr_period_id');
     }
 
-    /** Ang ratee - kung kanino ang IPCR na ito. */
+    /** The ratee - whose IPCR this is. */
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
     }
 
-    /** Unang hakbang ng approval chain. */
+    /** First step of the approval chain. */
     public function assessor(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'assessor_employee_id');
     }
 
-    /** Huling hakbang - siya ang naglalagay ng final rating. */
+    /** Final step - they set the final rating. */
     public function finalApprover(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'final_approver_employee_id');
@@ -86,7 +92,7 @@ class Ipcr extends Model
         return $this->hasMany(IpcrItem::class)->orderBy('sort_order');
     }
 
-    /** Audit trail, pinakabago muna. */
+    /** Audit trail, most recent first. */
     public function approvals(): HasMany
     {
         return $this->hasMany(IpcrApproval::class)->latest('acted_at');
@@ -99,6 +105,30 @@ class Ipcr extends Model
     public function isEditableByOwner(): bool
     {
         return $this->status->isEditableByOwner();
+    }
+
+    /** Does the Actual Accomplishment field appear on this IPCR's items? */
+    public function showsAccomplishment(): bool
+    {
+        return $this->mode->showsAccomplishment();
+    }
+
+    /**
+     * Items that should carry an accomplishment but do not yet.
+     * Always zero when the IPCR is targets_only.
+     */
+    public function itemsMissingAccomplishment(): int
+    {
+        if (! $this->showsAccomplishment()) {
+            return 0;
+        }
+
+        return $this->items()
+            ->where(function ($query): void {
+                $query->whereNull('actual_accomplishment')
+                    ->orWhere('actual_accomplishment', '');
+            })
+            ->count();
     }
 
     public function isAwaitingAssessment(): bool
@@ -117,7 +147,7 @@ class Ipcr extends Model
     }
 
     // ---------------------------------------------------------------
-    // Scopes - ito ang gagamitin ng inbox ng bawat approver
+    // Scopes - these back each approver's inbox
     // ---------------------------------------------------------------
 
     public function scopeAwaitingAssessmentBy(Builder $query, Employee $approver): Builder

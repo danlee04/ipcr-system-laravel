@@ -27,7 +27,7 @@
             Skip to content
         </a>
 
-        {{-- Backdrop ng drawer - sa maliit na screen lang. --}}
+        {{-- Drawer backdrop - small screens only. --}}
         <div
             x-show="drawerOpen"
             x-transition.opacity.duration.200ms
@@ -39,13 +39,13 @@
 
         @include('layouts.sidebar')
 
-        {{-- Content column. Ang padding lang ang gumagalaw kapag nag-collapse
-             ang sidebar - hindi natin ginagalaw ang layout ng mga page mismo. --}}
+        {{-- Content column. Only the padding moves when the sidebar collapses -
+             the pages' own layouts are never touched. --}}
         <div
             class="flex min-h-screen flex-col transition-[padding] duration-200 ease-out"
             :class="collapsed ? 'lg:ps-[4.5rem]' : 'lg:ps-64'"
         >
-            {{-- Topbar - lumalabas lang kung saan nakatago ang sidebar. --}}
+            {{-- Topbar - appears only where the sidebar is hidden. --}}
             <div class="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-slate-200 bg-white/90 px-2 backdrop-blur lg:hidden">
                 <button
                     type="button"
@@ -66,7 +66,9 @@
 
             @isset($header)
                 <header class="border-b border-slate-200 bg-white">
-                    <div class="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                    {{-- Same width and padding as x-page-container, so the page
+                         heading lines up with the content below it. --}}
+                    <div class="mx-auto w-full max-w-[110rem] px-4 py-6 sm:px-6 lg:px-8">
                         {{ $header }}
                     </div>
                 </header>

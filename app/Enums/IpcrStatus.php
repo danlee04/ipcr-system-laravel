@@ -10,7 +10,7 @@ enum IpcrStatus: string
     case Approved  = 'approved';
     case Returned  = 'returned';
 
-    /** Ang salitang nakikita ng user - katumbas ng terminolohiya sa flow. */
+    /** The wording the user sees - matches the terminology used in the flow. */
     public function label(): string
     {
         return match ($this) {
@@ -22,7 +22,7 @@ enum IpcrStatus: string
         };
     }
 
-    /** Tailwind classes para sa status badge. */
+    /** Tailwind classes for the status badge. */
     public function badgeClasses(): string
     {
         return match ($this) {
@@ -34,13 +34,13 @@ enum IpcrStatus: string
         };
     }
 
-    /** Kaya pa bang i-edit ng may-ari ang laman? */
+    /** Can the owner still edit the contents? */
     public function isEditableByOwner(): bool
     {
         return in_array($this, [self::Draft, self::Returned], true);
     }
 
-    /** Tapos na ba ang buong proseso? */
+    /** Is the whole process finished? */
     public function isFinal(): bool
     {
         return $this === self::Approved;

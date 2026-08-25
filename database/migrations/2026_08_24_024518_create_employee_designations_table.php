@@ -5,9 +5,9 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Pivot: isang empleyado, maraming designations (pwedeng sabay-sabay na active).
+ * Pivot: one employee, many designations, several of which may be active at once.
  *
- * Halimbawa si Mary Jane Lao Guico:
+ * Take Mary Jane Lao Guico as an example:
  *   position_id            -> Statistician II        (CORE functions)
  *   employee_designations  -> OIC - Budget Officer   (SUPPORT/STRATEGIC functions)
  *                          -> OIC - HRMO             (SUPPORT/STRATEGIC functions)

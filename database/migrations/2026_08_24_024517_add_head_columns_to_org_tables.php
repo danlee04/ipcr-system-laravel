@@ -5,13 +5,13 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Idinadagdag dito ang head assignments dahil circular ang dependency:
+ * Head assignments are added here because the dependency is circular:
  *   divisions -> employees -> sections -> divisions
  *
- * MAHALAGA: routing/approval lang ang gamit ng mga column na ito.
- * WALA itong epekto sa functions na lalabas sa sariling IPCR ng head.
- * Kung gusto mong may "Section Head duties" sa IPCR niya, gumawa ng
- * hiwalay na designation record para dun (manual, gaya ng napagkasunduan).
+ * IMPORTANT: these columns are used for routing and approval only. They have
+ * no effect on the functions that appear in the head's own IPCR. If you want
+ * "Section Head duties" on their IPCR, create a separate designation record
+ * for it - manually, as agreed.
  */
 return new class extends Migration
 {

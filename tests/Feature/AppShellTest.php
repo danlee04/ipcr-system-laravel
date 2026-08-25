@@ -7,10 +7,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Binabantayan ang app shell. Maliit lang ang mga assertion na ito, pero
- * nahuhuli nila ang pinakakaraniwang sira: nabura ang isang partial,
- * pinalitan ang pangalan ng route, o nag-crash ang sidebar kapag walang
- * naka-link na Employee ang user.
+ * Guards the app shell. These assertions are small, but they catch the most
+ * common breakages: a deleted partial, a renamed route, or the sidebar
+ * crashing when no Employee is linked to the user.
  */
 class AppShellTest extends TestCase
 {
@@ -31,20 +30,20 @@ class AppShellTest extends TestCase
     }
 
     /**
-     * Hindi lahat ng user ay may Employee record - null ang relasyon sa
-     * mga bagong account. Dapat hindi bumagsak ang sidebar; email ang
-     * ipinapakita nito imbes na employee number.
+     * Not every user has an Employee record - the relation is null on new
+     * accounts. The sidebar must not fall over; it shows the email instead of
+     * an employee number.
      */
     public function test_the_sidebar_survives_a_user_with_no_employee_record(): void
     {
-        $user = User::factory()->create(['email' => 'walang.employee@example.test']);
+        $user = User::factory()->create(['email' => 'no.employee@example.test']);
 
         $this->assertNull($user->employee);
 
         $response = $this->actingAs($user)->get('/dashboard');
 
         $response->assertOk();
-        $response->assertSee('walang.employee@example.test');
+        $response->assertSee('no.employee@example.test');
     }
 
     public function test_the_login_page_uses_the_guest_shell(): void

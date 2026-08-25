@@ -4,11 +4,14 @@ namespace App\Models;
 
 use App\Enums\FunctionCategory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Position extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'title',
         'item_number',
@@ -35,7 +38,7 @@ class Position extends Model
         return $this->hasMany(JobFunction::class);
     }
 
-    /** Ang CORE functions na kayang piliin ng may hawak ng position na ito. */
+    /** The CORE functions available to whoever holds this position. */
     public function coreFunctions(): HasMany
     {
         return $this->jobFunctions()

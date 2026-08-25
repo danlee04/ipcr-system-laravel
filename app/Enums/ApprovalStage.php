@@ -15,7 +15,7 @@ enum ApprovalStage: string
         };
     }
 
-    /** Anong status ang aabutin ng IPCR kapag na-approve ang stage na ito. */
+    /** The status the IPCR reaches once this stage is approved. */
     public function resultingStatus(): IpcrStatus
     {
         return match ($this) {
@@ -24,7 +24,7 @@ enum ApprovalStage: string
         };
     }
 
-    /** Anong status ang dapat na kasalukuyan bago pwedeng aksyunan ang stage na ito. */
+    /** The status the IPCR must currently be in before this stage can be acted on. */
     public function requiredStatus(): IpcrStatus
     {
         return match ($this) {

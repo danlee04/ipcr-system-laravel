@@ -5,9 +5,9 @@ namespace App\Support;
 use App\Models\Employee;
 
 /**
- * Simpleng immutable na resulta ng pag-resolve ng approval chain -
- * sino ang assessor, sino ang final approver, para sa isang partikular
- * na IPCR na gagawin/isasa-submit.
+ * The immutable result of resolving an approval chain - who assesses and
+ * who gives the final approval, for one particular IPCR about to be
+ * created or submitted.
  */
 final readonly class ApprovalChain
 {

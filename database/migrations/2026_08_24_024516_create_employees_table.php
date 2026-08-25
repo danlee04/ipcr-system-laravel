@@ -5,13 +5,13 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Employees - ang HR record ng bawat tao.
- * Hiwalay ito sa `users` (login credentials lang ang laman nun).
+ * Employees - the HR record for each person.
+ * Kept separate from `users`, which holds only login credentials.
  *
  * Placement rules:
- *   - Rank & file / Section Head  -> section_id (galing sa section ang division)
- *   - Division Head               -> division_id lang (walang section)
- *   - Chief of Hospital           -> walang section at division, is_chief_of_hospital = true
+ *   - Rank & file / Section Head  -> section_id (the division comes from the section)
+ *   - Division Head               -> division_id only, no section
+ *   - Chief of Hospital           -> no section or division, is_chief_of_hospital = true
  */
 return new class extends Migration
 {
@@ -20,7 +20,7 @@ return new class extends Migration
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
 
-            // Login account. Nullable kasi pwedeng may employee record muna bago bigyan ng account.
+            // Login account. Nullable because an employee record can exist before an account is issued.
             $table->foreignId('user_id')->nullable()->unique()
                 ->constrained()->nullOnDelete();
 
@@ -30,7 +30,7 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('suffix', 20)->nullable();          // Jr., III
 
-            // ISANG plantilla position lang (pinanggagalingan ng CORE functions)
+            // Exactly ONE plantilla position (the source of CORE functions)
             $table->foreignId('position_id')->nullable()
                 ->constrained()->nullOnDelete();
 
@@ -46,7 +46,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
 
             $table->timestamps();
-            $table->softDeletes();   // huwag hard-delete: may naka-kabit na IPCR history
+            $table->softDeletes();   // never hard-delete: IPCR history hangs off this
 
             $table->index(['last_name', 'first_name']);
             $table->index('is_active');

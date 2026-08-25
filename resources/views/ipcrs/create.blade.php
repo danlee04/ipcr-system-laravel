@@ -5,10 +5,9 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8 space-y-6">
+    <x-page-container class="max-w-3xl space-y-6">
 
-            <div class="bg-white shadow-sm sm:rounded-lg ring-1 ring-gray-950/5 p-6 space-y-4">
+            <div class="bg-white shadow-sm sm:rounded-lg ring-1 ring-gray-950/5 p-6 space-y-6">
                 <div>
                     <h3 class="text-lg font-semibold text-gray-900">{{ $period->name }}</h3>
                     <p class="text-sm text-gray-600">
@@ -40,15 +39,22 @@
                     You will pick and add the specific ones on the next screen — nothing is added automatically.
                 </p>
 
-                <form method="POST" action="{{ route('ipcrs.store') }}">
+                <form method="POST" action="{{ route('ipcrs.store') }}" class="space-y-4">
                     @csrf
+
+                    <p class="text-sm text-gray-600">
+                        This creates a <span class="font-medium text-gray-900">Targets only</span> IPCR, and that
+                        cannot be changed afterwards. To record actual accomplishments as well, start it from
+                        <a href="{{ route('ipcrs.index') }}" class="font-medium text-nav-900 underline hover:no-underline">My IPCRs</a>
+                        instead.
+                    </p>
+
                     <button type="submit"
-                        class="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700">
+                        class="inline-flex items-center rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2">
                         Create Draft IPCR
                     </button>
                 </form>
             </div>
 
-        </div>
-    </div>
+</x-page-container>
 </x-app-layout>

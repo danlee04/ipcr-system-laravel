@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Append-only audit trail. Bawat aksyon ay bagong row - kahit ilang beses
- * pang ma-return at ma-resubmit, buo ang kasaysayan.
+ * Append-only audit trail. Every action is a new row, so the history stays
+ * complete no matter how many times the IPCR is returned and resubmitted.
  */
 class IpcrApproval extends Model
 {

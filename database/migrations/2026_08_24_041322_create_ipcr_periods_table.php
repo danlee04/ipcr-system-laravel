@@ -5,8 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Rating periods. Karaniwan sa CSC: dalawang semestre kada taon.
- * Kapag `closed` na ang period, hindi na pwedeng gumawa/mag-edit ng IPCR dito.
+ * Rating periods. The CSC norm is two semesters per year.
+ * Once a period is `closed`, no IPCR in it can be created or edited.
  */
 return new class extends Migration
 {

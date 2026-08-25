@@ -3,17 +3,20 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Karagdagang atas na hawak ng empleyado bukod sa plantilla position niya -
- * hal. "OIC - Budget". Dito nanggagaling ang STRATEGIC at SUPPORT functions
- * na pwedeng piliin, at pwedeng higit sa isa ang hawak nang sabay.
+ * An extra assignment an employee holds beyond their plantilla position -
+ * e.g. "OIC - Budget". This is where the selectable STRATEGIC and SUPPORT
+ * functions come from, and an employee may hold more than one at a time.
  */
 class Designation extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'title',
         'description',

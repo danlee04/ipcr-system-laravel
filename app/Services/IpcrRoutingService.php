@@ -7,28 +7,27 @@ use App\Models\Employee;
 use App\Support\ApprovalChain;
 
 /**
- * Sinasagot ng service na ito ang tanong: "Kung mag-susubmit ng IPCR
- * ang empleyadong ito, sino ang dapat na assessor at sino ang final
- * approver?"
+ * This service answers one question: "If this employee submits an IPCR,
+ * who should assess it and who gives the final approval?"
  *
- * Batay sa flow na tinukoy:
+ * Based on the agreed flow:
  *   Employee      -> Section Head (assessment)  -> Division Head (final)
  *   Section Head  -> Division Head (assessment)  -> Chief of Hospital (final)
  *   Division Head -> Chief of Hospital (assessment AT final - parehong tao,
- *                     dalawang hakbang pa rin sa status flow)
- *   Chief of Hospital -> WALANG automatic routing. Manual sa Admin/HR.
+ *                     but still two steps in the status flow)
+ *   Chief of Hospital -> NO automatic routing. Handled manually by Admin/HR.
  *
- * Ang pagkakasunod ng pagsuri sa ibaba ay MAHALAGA: kailangang tingnan
- * muna kung Chief of Hospital, tapos Division Head, tapos Section Head,
- * BAGO tingnan kung may section lang siya - dahil posibleng may section_id
- * pa rin sa record ng isang Division Head kung galing siya sa promotion.
+ * The order of the checks below MATTERS: test for Chief of Hospital first,
+ * then Division Head, then Section Head, BEFORE falling back to "has a
+ * section" - a promoted Division Head may still carry a section_id on their
+ * record.
  */
 class IpcrRoutingService
 {
     /**
-     * @throws IpcrRoutingException kapag hindi ma-resolve ang chain -
-     *         hal. walang naka-assign na head, o Chief of Hospital ang
-     *         empleyado (manual routing ang kailangan doon).
+     * @throws IpcrRoutingException when the chain cannot be resolved - for
+     *         example no head is assigned, or the employee is the Chief of
+     *         Hospital, which needs manual routing.
      */
     public function resolve(Employee $employee): ApprovalChain
     {
@@ -48,9 +47,9 @@ class IpcrRoutingService
     }
 
     /**
-     * Rank & file (o Section Head na walang hawak na section - edge case):
-     *   assessor      = Section Head ng section niya
-     *   finalApprover = Division Head ng division ng section niya
+     * Rank and file (or a Section Head holding no section - an edge case):
+     *   assessor      = the Section Head of their section
+     *   finalApprover = the Division Head of that section's division
      */
     private function resolveForRankAndFile(Employee $employee): ApprovalChain
     {
@@ -83,7 +82,7 @@ class IpcrRoutingService
 
     /**
      * Section Head:
-     *   assessor      = Division Head ng division ng section na hawak niya
+     *   assessor      = the Division Head of the division their section sits in
      *   finalApprover = Chief of Hospital
      */
     private function resolveForSectionHead(Employee $employee): ApprovalChain
@@ -106,8 +105,8 @@ class IpcrRoutingService
 
     /**
      * Division Head:
-     *   assessor = finalApprover = Chief of Hospital (parehong tao,
-     *   dalawang hakbang pa rin sa status flow - submitted -> assessed -> approved)
+     *   assessor = finalApprover = Chief of Hospital (the same person, but
+     *   still two steps in the status flow: submitted -> assessed -> approved)
      */
     private function resolveForDivisionHead(Employee $employee): ApprovalChain
     {

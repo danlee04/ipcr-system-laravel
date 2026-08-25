@@ -15,14 +15,14 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Panimulang datos para masubukan ang buong IPCR flow sa browser.
+ * Starter data for exercising the whole IPCR flow in the browser.
  *
- * Ang binubuong kompletong chain:
+ * The complete chain it builds:
  *   Juan (rank & file, Nursing Section)
- *     -> assessor:       Maria (Section Head ng Nursing Section)
- *     -> final approver: Ramon (Division Head ng Medical Services)
+ *     -> assessor:       Maria (Section Head of the Nursing Section)
+ *     -> final approver: Ramon (Division Head of Medical Services)
  *
- * Idempotent lahat - ligtas ulit-ulitin ang `php artisan db:seed`.
+ * Everything is idempotent - `php artisan db:seed` is safe to re-run.
  */
 class DemoSeeder extends Seeder
 {
@@ -53,9 +53,9 @@ class DemoSeeder extends Seeder
             ['title' => 'Medical Officer IV', 'salary_grade' => 24, 'is_active' => true],
         );
 
-        // --- Mga tao -------------------------------------------------
+        // --- People --------------------------------------------------
 
-        // Ang test account mo. Hindi ginagalaw ang password kung existing na.
+        // Your test account. An existing password is left untouched.
         $juan = $this->employeeFor(
             email: 'test@example.com',
             name: 'Juan Dela Cruz',
@@ -94,8 +94,8 @@ class DemoSeeder extends Seeder
             ],
         );
 
-        // Dito nabubuo ang approval chain - ang head columns ang binabasa
-        // ng IpcrRoutingService, hindi ang position title.
+        // This is what forms the approval chain - IpcrRoutingService reads the
+        // head columns, not the position title.
         $section->update(['section_head_employee_id' => $maria->id]);
         $division->update(['division_head_employee_id' => $ramon->id]);
 
@@ -115,20 +115,20 @@ class DemoSeeder extends Seeder
         ]);
 
         // --- Job functions -------------------------------------------
-        // Core  -> nakakabit sa PLANTILLA POSITION
-        // Strat/Support -> nakakabit sa DESIGNATION
-        // Common -> walang kabit, bukas sa lahat
+        // Core  -> attached to the PLANTILLA POSITION
+        // Strategic/Support -> attached to the DESIGNATION
+        // Common -> attached to nothing, open to everyone
 
-        $this->jobFunction($nurse->id, null, FunctionCategory::Core, 'Nagbibigay ng direktang pangangalaga sa pasyente', 'Nakapagbigay ng nursing care sa lahat ng naka-assign na pasyente kada shift', 30);
-        $this->jobFunction($nurse->id, null, FunctionCategory::Core, 'Nagtatala ng vital signs at nursing notes', 'Kumpleto at napapanahon ang tala sa loob ng shift', 25);
+        $this->jobFunction($nurse->id, null, FunctionCategory::Core, 'Provides direct patient care', 'Nursing care delivered to every assigned patient each shift', 30);
+        $this->jobFunction($nurse->id, null, FunctionCategory::Core, 'Records vital signs and nursing notes', 'Records complete and up to date within the shift', 25);
 
-        $this->jobFunction(null, $oicBudget->id, FunctionCategory::Strategic, 'Naghahanda ng taunang budget proposal', 'Naisumite ang budget proposal bago ang deadline ng DBM', 20);
-        $this->jobFunction(null, $oicBudget->id, FunctionCategory::Support, 'Nagsusuri ng buwanang financial report', 'Nasuri at naisumite ang report kada ika-5 ng buwan', 15);
+        $this->jobFunction(null, $oicBudget->id, FunctionCategory::Strategic, 'Prepares the annual budget proposal', 'Budget proposal submitted before the DBM deadline', 20);
+        $this->jobFunction(null, $oicBudget->id, FunctionCategory::Support, 'Reviews the monthly financial report', 'Report reviewed and submitted by the 5th of each month', 15);
 
-        $this->jobFunction(null, null, FunctionCategory::Common, 'Dumadalo sa mga pulong at training ng ahensya', 'Hindi bababa sa 80% attendance sa mga itinakdang pulong', 5);
-        $this->jobFunction(null, null, FunctionCategory::Common, 'Sumusunod sa oras ng pagpasok at pag-uwi', 'Walang unauthorized absence o tardiness', 5);
+        $this->jobFunction(null, null, FunctionCategory::Common, 'Attends agency meetings and training', 'At least 80% attendance at scheduled meetings', 5);
+        $this->jobFunction(null, null, FunctionCategory::Common, 'Observes official working hours', 'No unauthorized absence or tardiness', 5);
 
-        // --- Bukas na rating period ----------------------------------
+        // --- Open rating period --------------------------------------
 
         IpcrPeriod::firstOrCreate(
             ['year' => (int) now()->year, 'type' => 'first_semester'],
@@ -140,11 +140,23 @@ class DemoSeeder extends Seeder
                 'status'              => 'open',
             ],
         );
+
+        // --- Administrator -------------------------------------------
+
+        // Deliberately has no Employee record. A system administrator and a
+        // rated employee are different things, and keeping them apart stops
+        // the admin screens from quietly depending on an employee existing.
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@example.com'],
+            ['name' => 'System Administrator', 'password' => Hash::make('password')],
+        );
+
+        $admin->syncRoles(['admin']);
     }
 
     /**
-     * Gumagawa (o hinahanap) ng User at ng kaugnay nitong Employee record.
-     * Kapag existing na ang user, hindi na pinapalitan ang password niya.
+     * Creates (or finds) a User and its matching Employee record.
+     * An existing user keeps their current password.
      */
     private function employeeFor(string $email, string $name, array $attributes): Employee
     {

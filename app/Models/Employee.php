@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Model
 {
+    use HasFactory;
     use SoftDeletes;
 
     protected $fillable = [
@@ -49,7 +51,7 @@ class Employee extends Model
         return $this->belongsTo(User::class);
     }
 
-    /** ISANG plantilla position lang - pinanggagalingan ng CORE functions. */
+    /** Exactly ONE plantilla position - the source of CORE functions. */
     public function position(): BelongsTo
     {
         return $this->belongsTo(Position::class);
@@ -65,7 +67,7 @@ class Employee extends Model
         return $this->belongsTo(Division::class);
     }
 
-    /** Lahat ng designations, kasama ang mga tapos na. */
+    /** Every designation, including ones that have ended. */
     public function designations(): BelongsToMany
     {
         return $this->belongsToMany(Designation::class, 'employee_designations')
@@ -74,21 +76,21 @@ class Employee extends Model
     }
 
     /**
-     * Kasalukuyang hawak na designations - pwedeng higit sa isa nang sabay.
-     * Dito galing ang STRATEGIC at SUPPORT functions na pwedeng piliin.
+     * Designations currently held - there may be more than one at a time.
+     * These are the source of the selectable STRATEGIC and SUPPORT functions.
      */
     public function activeDesignations(): BelongsToMany
     {
         return $this->designations()->wherePivot('is_active', true);
     }
 
-    /** Kung siya ang naka-assign na Section Head, ito ang section na hawak niya. */
+    /** If they are the assigned Section Head, this is the section they lead. */
     public function headedSection(): HasOne
     {
         return $this->hasOne(Section::class, 'section_head_employee_id');
     }
 
-    /** Kung siya ang naka-assign na Division Head, ito ang division na hawak niya. */
+    /** If they are the assigned Division Head, this is the division they lead. */
     public function headedDivision(): HasOne
     {
         return $this->hasOne(Division::class, 'division_head_employee_id');
@@ -114,8 +116,8 @@ class Employee extends Model
     }
 
     /**
-     * Ang totoong division ng empleyado.
-     * Kung may section siya, galing sa section. Kung wala, yung direktang division_id.
+     * The employee's effective division.
+     * Taken from their section when they have one, otherwise from division_id.
      */
     protected function effectiveDivision(): Attribute
     {
@@ -123,7 +125,7 @@ class Employee extends Model
     }
 
     // ---------------------------------------------------------------
-    // Role checks (organizational, hindi Spatie roles)
+    // Role checks (organizational, not Spatie roles)
     // ---------------------------------------------------------------
 
     public function isSectionHead(): bool

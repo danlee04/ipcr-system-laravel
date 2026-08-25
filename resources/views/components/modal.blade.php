@@ -14,6 +14,22 @@ $maxWidth = [
 ][$maxWidth];
 @endphp
 
+{{--
+    IMPORTANT - the panel needs `relative z-10`.
+
+    The original Breeze markup relies on `transform` to give the panel a
+    stacking context. That works under Tailwind v3, where `.transform` emits a
+    real matrix. Under v4 it is `transform: var(--tw-rotate-x,) ...` - every
+    variable is empty when no rotate or skew is set, so it resolves to
+    `transform: none`.
+
+    The result: the panel is static and the `fixed` backdrop covers it. The
+    whole modal looks washed out under 75% gray, and every click lands on the
+    backdrop, whose handler is `show = false`. Click anything inside and the
+    modal simply closes.
+
+    `relative z-10` puts the panel where it belongs. Do not remove it.
+--}}
 <div
     x-data="{
         show: @js($show),
@@ -46,12 +62,13 @@ $maxWidth = [
     x-on:keydown.tab.prevent="$event.shiftKey || nextFocusable().focus()"
     x-on:keydown.shift.tab.prevent="prevFocusable().focus()"
     x-show="show"
-    class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50"
+    class="fixed inset-0 z-50 overflow-y-auto"
     style="display: {{ $show ? 'block' : 'none' }};"
 >
+    {{-- Backdrop. Stays fixed so it covers the viewport even while scrolling. --}}
     <div
         x-show="show"
-        class="fixed inset-0 transform transition-all"
+        class="fixed inset-0 bg-gray-500/75 transition-opacity"
         x-on:click="show = false"
         x-transition:enter="ease-out duration-300"
         x-transition:enter-start="opacity-0"
@@ -59,20 +76,23 @@ $maxWidth = [
         x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
-    >
-        <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-    </div>
+        aria-hidden="true"
+    ></div>
 
-    <div
-        x-show="show"
-        class="mb-6 bg-white rounded-lg overflow-hidden shadow-xl transform transition-all sm:w-full {{ $maxWidth }} sm:mx-auto"
-        x-transition:enter="ease-out duration-300"
-        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-        x-transition:leave="ease-in duration-200"
-        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-    >
-        {{ $slot }}
+    {{-- Centred, but `min-h-full` plus `items-center` keeps the top from being
+         cut off when the content is taller than the screen. --}}
+    <div class="flex min-h-full items-center justify-center p-4 sm:p-6">
+        <div
+            x-show="show"
+            class="relative z-10 w-full transform overflow-hidden rounded-lg bg-white shadow-xl transition-all {{ $maxWidth }}"
+            x-transition:enter="ease-out duration-300"
+            x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        >
+            {{ $slot }}
+        </div>
     </div>
 </div>

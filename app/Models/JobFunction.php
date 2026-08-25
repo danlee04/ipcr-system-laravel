@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Master catalog entry. HINDI ito ang IPCR line item - panukala lang
- * na pwedeng piliin ng empleyado kapag manu-mano siyang nag-a-add sa IPCR niya.
+ * Master catalog entry. This is NOT the IPCR line item - only a suggestion
+ * the employee can pick when manually adding functions to their IPCR.
  */
 class JobFunction extends Model
 {
@@ -52,7 +52,7 @@ class JobFunction extends Model
         return $query->where('category', $category);
     }
 
-    /** Ang open pool - walang kabit na position o designation. */
+    /** The open pool - not tied to any position or designation. */
     public function scopeCommon(Builder $query): Builder
     {
         return $query->where('category', FunctionCategory::Common);

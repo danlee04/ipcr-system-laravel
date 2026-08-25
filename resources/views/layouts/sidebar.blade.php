@@ -10,12 +10,12 @@
 @endphp
 
 {{--
-    Ang sidebar. Isang markup lang para sa dalawang anyo:
-      - lg pataas: naka-fix sa kaliwa, pwedeng i-collapse sa icon-only
-      - mababa sa lg: off-canvas drawer na hinihila ng `drawerOpen`
+    The sidebar. One piece of markup serving two shapes:
+      - lg and up: fixed to the left, collapsible to icons only
+      - below lg: an off-canvas drawer driven by `drawerOpen`
 
-    Ang `collapsed` ay laging naka-scope sa `lg:` - sa cellphone ay buong
-    lapad at buong label palagi ang drawer, kahit naka-collapse ang desktop.
+    `collapsed` is always scoped to `lg:` - on a phone the drawer is always full
+    width with full labels, even when the desktop view is collapsed.
 --}}
 <aside
     id="app-sidebar"
@@ -42,7 +42,7 @@
             </span>
         </a>
 
-        {{-- Isara ang drawer - sa cellphone lang. --}}
+        {{-- Close the drawer - phones only. --}}
         <button
             type="button"
             @click="closeDrawer()"
@@ -75,9 +75,40 @@
             </x-slot:icon>
             My IPCRs
         </x-sidebar-link>
+
+        @if ($user?->hasRole('admin'))
+            {{-- Administration. Hidden entirely from non-admins: the routes
+                 return 403 anyway, but there is no reason to advertise them. --}}
+            <p class="px-3 pb-1 pt-5 font-data text-[0.625rem] uppercase tracking-[0.18em] text-nav-300"
+                :class="collapsed ? 'lg:hidden' : ''">
+                Administration
+            </p>
+
+            <x-sidebar-link :href="route('admin.divisions.index')"
+                :active="request()->routeIs('admin.divisions.*')">
+                <x-slot:icon>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 4v4m0 0H7.5A1.5 1.5 0 0 0 6 9.5V12m6-4h4.5A1.5 1.5 0 0 1 18 9.5V12M4 15h4v5H4v-5Zm6 0h4v5h-4v-5Zm6 0h4v5h-4v-5Z" />
+                    </svg>
+                </x-slot:icon>
+                Divisions
+            </x-sidebar-link>
+
+            <x-sidebar-link :href="route('admin.job-titles.index')"
+                :active="request()->routeIs('admin.job-titles.*')">
+                <x-slot:icon>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 6.5V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5v1M4.5 6.5h15A1.5 1.5 0 0 1 21 8v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V8a1.5 1.5 0 0 1 1.5-1.5ZM3 12h18" />
+                    </svg>
+                </x-slot:icon>
+                Job Titles
+            </x-sidebar-link>
+        @endif
     </nav>
 
-    {{-- Sino ang naka-login --}}
+    {{-- Who is signed in --}}
     <div class="shrink-0 border-t border-white/10 p-3">
         <div class="flex items-center gap-3 rounded-md px-1 py-2">
             <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-nav-700 font-data text-xs font-medium text-white ring-1 ring-white/10">
@@ -124,7 +155,7 @@
             </form>
         </div>
 
-        {{-- Collapse toggle - desktop lang. --}}
+        {{-- Collapse toggle - desktop only. --}}
         <button
             type="button"
             @click="toggleCollapsed()"

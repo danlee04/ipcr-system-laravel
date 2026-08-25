@@ -1,14 +1,14 @@
 import Alpine from 'alpinejs';
 
 /**
- * Ang app shell. Dalawang bagay lang ang hawak nito:
+ * The app shell. It holds just two things:
  *
- *   drawerOpen - bukas ba ang off-canvas na sidebar sa maliit na screen
- *   collapsed  - naka-icon-only ba ang sidebar sa desktop
+ *   drawerOpen - is the off-canvas sidebar open on a small screen
+ *   collapsed  - is the sidebar reduced to icons only on desktop
  *
- * Naaalala ang `collapsed` sa localStorage para hindi na paulit-ulit
- * i-collapse ng user sa bawat page load. Nakabalot sa try/catch dahil
- * nag-a-throw ang localStorage kapag naka-block ang site data.
+ * `collapsed` is remembered in localStorage so the user does not have to
+ * collapse it again on every page load. Wrapped in try/catch because
+ * localStorage throws when site data is blocked.
  */
 Alpine.data('appShell', () => ({
     drawerOpen: false,
@@ -18,7 +18,7 @@ Alpine.data('appShell', () => ({
         try {
             this.collapsed = localStorage.getItem('sidebar-collapsed') === '1';
         } catch (e) {
-            // Naka-block ang storage - expanded na lang ang default.
+            // Storage is blocked - fall back to the expanded default.
         }
     },
 
@@ -28,7 +28,7 @@ Alpine.data('appShell', () => ({
         try {
             localStorage.setItem('sidebar-collapsed', this.collapsed ? '1' : '0');
         } catch (e) {
-            // Hindi maalala ngayong session - hindi naman ito fatal.
+            // Not remembered this session - hardly fatal.
         }
     },
 

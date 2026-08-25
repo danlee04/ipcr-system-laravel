@@ -5,9 +5,9 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Divisions (pinakamataas na org unit sa ilalim ng Chief of Hospital).
- * Ang division_head_employee_id ay idadagdag sa hiwalay na migration
- * dahil kailangan munang mag-exist ang employees table.
+ * Divisions - the highest org unit below the Chief of Hospital.
+ * division_head_employee_id is added in a separate migration because the
+ * employees table has to exist first.
  */
 return new class extends Migration
 {

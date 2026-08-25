@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Plantilla positions (e.g. "Statistician II", "Nurse III").
- * Ito ang pinanggagalingan ng CORE functions ng isang empleyado.
+ * This is where an employee's CORE functions come from.
  */
 return new class extends Migration
 {

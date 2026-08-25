@@ -7,12 +7,12 @@ use App\Models\JobFunction;
 use Illuminate\Support\Collection;
 
 /**
- * Ang resulta ng FunctionCatalogService::availableFor() - nakahiwalay
- * kada kategorya para direktang magamit sa isang tabbed/grouped na
- * picker UI kapag nag-a-add ang empleyado ng functions sa IPCR niya.
+ * The result of FunctionCatalogService::availableFor(), split per category
+ * so it can drop straight into a tabbed or grouped picker UI when the
+ * employee is adding functions to their IPCR.
  *
- * Tandaan: ito ay LISTAHAN NG PWEDENG PILIIN lang. Walang laman dito
- * na awtomatikong isasama sa IPCR - manual pa rin lahat ng pag-add.
+ * Note: this is only a LIST OF WHAT MAY BE PICKED. Nothing in it is added
+ * to the IPCR automatically - every addition stays manual.
  */
 final readonly class EmployeeFunctionCatalog
 {

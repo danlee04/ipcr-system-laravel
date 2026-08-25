@@ -3,13 +3,13 @@
 namespace App\Enums;
 
 /**
- * Kategorya ng bawat job function / IPCR item.
+ * The category of each job function / IPCR item.
  *
- * Saan galing ang bawat isa (tingnan ang FunctionCatalogService):
- *   Core      -> ang IISANG plantilla position ng empleyado
- *   Strategic -> mga KASALUKUYANG ACTIVE designations niya
- *   Support   -> mga KASALUKUYANG ACTIVE designations niya
- *   Common    -> open pool, bukas sa lahat
+ * Where each one comes from (see FunctionCatalogService):
+ *   Core      -> the employee's SINGLE plantilla position
+ *   Strategic -> their CURRENTLY ACTIVE designations
+ *   Support   -> their CURRENTLY ACTIVE designations
+ *   Common    -> an open pool, available to everyone
  */
 enum FunctionCategory: string
 {
@@ -18,7 +18,7 @@ enum FunctionCategory: string
     case Support   = 'support';
     case Common    = 'common';
 
-    /** Ang salitang nakikita ng user sa IPCR form. */
+    /** The wording the user sees on the IPCR form. */
     public function label(): string
     {
         return match ($this) {
@@ -29,7 +29,7 @@ enum FunctionCategory: string
         };
     }
 
-    /** Tailwind classes para sa category badge/tab. */
+    /** Tailwind classes for the category badge/tab. */
     public function badgeClasses(): string
     {
         return match ($this) {

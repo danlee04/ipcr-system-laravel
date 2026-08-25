@@ -15,7 +15,7 @@ enum ApprovalAction: string
         };
     }
 
-    /** Kailangan ba ng remarks? Oo kapag ibinalik - dapat alam ng empleyado ang dahilan. */
+    /** Are remarks required? Yes when returned - the employee must know why. */
     public function requiresRemarks(): bool
     {
         return $this === self::Returned;

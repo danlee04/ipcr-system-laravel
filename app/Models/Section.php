@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Section extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'division_id',
         'name',
@@ -27,7 +30,7 @@ class Section extends Model
         return $this->belongsTo(Division::class);
     }
 
-    /** Routing lang ang gamit nito - walang epekto sa IPCR functions ng head. */
+    /** Used for routing only - it does not affect the head's own IPCR functions. */
     public function head(): BelongsTo
     {
         return $this->belongsTo(Employee::class, 'section_head_employee_id');

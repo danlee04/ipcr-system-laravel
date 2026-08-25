@@ -5,11 +5,11 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Audit trail. Append-only - bawat aksyon sa approval chain ay bagong row,
- * kahit ilang beses pang ma-return at ma-resubmit ang IPCR.
+ * Audit trail. Append-only: every action in the approval chain is a new row,
+ * however many times the IPCR is returned and resubmitted.
  *
- * Dito mo makikita: sino ang umaksyon, anong stage, kailan, at bakit
- * (lalo na kung `returned`, para alam ng empleyado kung ano ang aayusin).
+ * It records who acted, at which stage, when, and why - especially for
+ * `returned`, so the employee knows what to fix.
  */
 return new class extends Migration
 {
