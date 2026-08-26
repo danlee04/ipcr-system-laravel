@@ -114,6 +114,16 @@
                 Administration
             </p>
 
+            <x-sidebar-link :href="route('admin.ipcrs.index')" :active="request()->routeIs('admin.ipcrs.*')">
+                <x-slot:icon>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4 5.5h16M4 12h16M4 18.5h10" />
+                    </svg>
+                </x-slot:icon>
+                All IPCRs
+            </x-sidebar-link>
+
             <x-sidebar-link :href="route('admin.divisions.index')" :active="request()->routeIs('admin.divisions.*')">
                 <x-slot:icon>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">

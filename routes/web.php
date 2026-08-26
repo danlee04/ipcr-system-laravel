@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DesignationController;
+use App\Http\Controllers\Admin\IpcrController as AdminIpcrController;
 use App\Http\Controllers\Admin\DivisionController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\JobFunctionController;
@@ -71,6 +72,7 @@ Route::prefix('admin')
         Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
         Route::get('/periods', [PeriodController::class, 'index'])->name('periods.index');
         Route::get('/job-functions', [JobFunctionController::class, 'index'])->name('job-functions.index');
+        Route::get('/ipcrs', [AdminIpcrController::class, 'index'])->name('ipcrs.index');
 
         Route::post('/divisions', [DivisionController::class, 'store'])->name('divisions.store');
         Route::put('/divisions/{division}', [DivisionController::class, 'update'])->name('divisions.update');

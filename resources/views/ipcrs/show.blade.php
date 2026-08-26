@@ -1,3 +1,12 @@
+@php
+    // Two conditions, not one. isEditableByOwner() only asks about the status;
+    // HR and administrators can now open anyone's IPCR, and a draft would
+    // otherwise offer them the owner's add, edit and submit controls - every
+    // one of which is refused on POST.
+    $canEdit = (auth()->user()?->can('update', $ipcr) ?? false) && $ipcr->isEditableByOwner();
+    $isViewingSomeoneElses = ! (auth()->user()?->can('update', $ipcr) ?? false);
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
@@ -27,6 +36,14 @@
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
+                </div>
+            @endif
+
+            {{-- Says plainly why none of the usual controls are here. --}}
+            @if ($isViewingSomeoneElses)
+                <div class="rounded-md bg-sky-50 p-4 text-sm text-sky-900 ring-1 ring-sky-500/20">
+                    You are viewing this IPCR read-only. Editing, assessing and approving belong to
+                    {{ $ipcr->employee?->full_name ?? 'the employee' }} and the approvers in their chain.
                 </div>
             @endif
 
@@ -91,7 +108,7 @@
                         @endif
                     </div>
 
-                    @if ($badTotals !== [] && $ipcr->isEditableByOwner())
+                    @if ($badTotals !== [] && $canEdit)
                         <p class="mt-2 text-xs text-amber-800">
                             Each category must total 100% before this IPCR can be submitted.
                         </p>
@@ -110,7 +127,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Weight</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Avg. Rating
                                 </th>
-                                @if ($ipcr->isEditableByOwner())
+                                @if ($canEdit)
                                     <th class="px-6 py-3"></th>
                                 @endif
                             </tr>
@@ -133,7 +150,7 @@
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-600">{{ $item->weight ?? '—' }}%</td>
                                     <td class="px-6 py-4 text-sm text-gray-600">{{ $item->average_rating ?? '—' }}</td>
-                                    @if ($ipcr->isEditableByOwner())
+                                    @if ($canEdit)
                                         <td class="space-y-1 px-6 py-4 text-right text-sm">
                                             <details class="inline-block text-left">
                                                 <summary class="cursor-pointer text-gray-900 hover:underline">Edit
@@ -176,7 +193,7 @@
             </div>
 
             {{-- Add function --}}
-            @if ($ipcr->isEditableByOwner())
+            @if ($canEdit)
                 <div class="space-y-6 bg-white shadow-sm sm:rounded-lg ring-1 ring-gray-950/5 p-6">
                     <h3 class="text-sm font-semibold text-gray-900">Add a Function</h3>
 

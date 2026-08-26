@@ -46,7 +46,20 @@
         </div>
 
         {{-- Filters submit on change; the page is server-rendered from the
-             query string, so there is one source of truth for what is shown. --}}
+             query string, so there is one source of truth for what is shown.
+             The scope carries through to the IPCR list, so "Medical Services
+             this semester" stays selected when you drill in. --}}
+        <div class="flex flex-wrap items-end gap-2">
+            <a href="{{ route('admin.ipcrs.index', array_filter([
+                'period' => $scope->periodId,
+                'division' => $scope->divisionId,
+                'section' => $scope->sectionId,
+            ])) }}"
+                class="rounded-lg bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800">
+                Open IPCRs
+            </a>
+        </div>
+
         <form method="GET" action="{{ route('dashboard') }}" class="flex flex-wrap items-end gap-2"
             x-data x-on:change="$el.submit()">
             @foreach ([['filter_period_id', 'Period', 'periods', 'All periods'], ['filter_division_id', 'Division', 'divisions', 'All divisions'], ['filter_section_id', 'Section', 'sections', 'All sections']] as [$name, $label, $key, $blank])

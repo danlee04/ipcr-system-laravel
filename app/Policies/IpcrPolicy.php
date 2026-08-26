@@ -37,9 +37,19 @@ class IpcrPolicy
             || $employeeId === $ipcr->final_approver_employee_id;
     }
 
+    /**
+     * Owner, the two approvers, and HR or an administrator.
+     *
+     * The admin roles are read-only here on purpose: they appear in `view` and
+     * nowhere else in this policy. HR chases people who have not submitted, so
+     * they have to be able to open the IPCR they are chasing - but editing,
+     * assessing, approving and deleting stay with the people in the chain.
+     */
     public function view(User $user, Ipcr $ipcr): bool
     {
-        return $this->owns($user, $ipcr) || $this->isApprover($user, $ipcr);
+        return $this->owns($user, $ipcr)
+            || $this->isApprover($user, $ipcr)
+            || $user->hasAnyRole(['admin', 'hr']);
     }
 
     public function update(User $user, Ipcr $ipcr): bool
@@ -71,15 +81,32 @@ class IpcrPolicy
      */
     public function assess(User $user, Ipcr $ipcr): bool
     {
-        return $user->employee?->id === $ipcr->assessor_employee_id
+        return $this->isStampedAs($user, $ipcr->assessor_employee_id)
             && $ipcr->status === IpcrStatus::Submitted;
     }
 
     /** Give the final rating. The final approver only, once assessment is done. */
     public function finalize(User $user, Ipcr $ipcr): bool
     {
-        return $user->employee?->id === $ipcr->final_approver_employee_id
+        return $this->isStampedAs($user, $ipcr->final_approver_employee_id)
             && $ipcr->status === IpcrStatus::Assessed;
+    }
+
+    /**
+     * Is this user the employee stamped in that slot on the IPCR?
+     *
+     * Both sides are checked for null before comparing. A user with no
+     * employee record and an IPCR with no approver assigned would otherwise
+     * match on `null === null`, handing the approval to anyone without an
+     * employee record - the seeded administrator included.
+     */
+    private function isStampedAs(User $user, ?int $approverEmployeeId): bool
+    {
+        $employeeId = $user->employee?->id;
+
+        return $employeeId !== null
+            && $approverEmployeeId !== null
+            && $employeeId === $approverEmployeeId;
     }
 
     /**
