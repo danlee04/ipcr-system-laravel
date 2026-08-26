@@ -17,9 +17,12 @@ class AppShellTest extends TestCase
 
     public function test_the_sidebar_renders_for_an_authenticated_user(): void
     {
+        // Given an Employee record, because "My IPCRs" is only shown to people
+        // who have one - IpcrController aborts 403 without it.
         $user = User::factory()->create();
+        \App\Models\Employee::factory()->create(['user_id' => $user->id]);
 
-        $response = $this->actingAs($user)->get('/dashboard');
+        $response = $this->actingAs($user->fresh())->get('/dashboard');
 
         $response->assertOk();
         $response->assertSee('id="app-sidebar"', false);

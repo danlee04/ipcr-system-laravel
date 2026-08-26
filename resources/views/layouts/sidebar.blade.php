@@ -9,6 +9,12 @@
         ? \App\Models\Ipcr::query()->awaitingAssessmentBy($employee)->count()
             + \App\Models\Ipcr::query()->awaitingFinalRatingBy($employee)->count()
         : 0;
+
+    // Whether they are an approver at all. Kept separate from the count so the
+    // link survives an empty queue - it is how they get back to the inbox.
+    $isApprover = $employee
+        ? \App\Models\Ipcr::query()->routedTo($employee)->exists()
+        : false;
     $initials = collect(preg_split('/\s+/', trim((string) $displayName)))
         ->filter()
         ->take(2)
@@ -73,17 +79,24 @@
             Dashboard
         </x-sidebar-link>
 
-        <x-sidebar-link :href="route('ipcrs.index')" :active="request()->routeIs('ipcrs.*')">
-            <x-slot:icon>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 3.5h7.5L19 8v12.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5Z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 3.5V8h5M9 12.5h6M9 16h4" />
-                </svg>
-            </x-slot:icon>
-            My IPCRs
-        </x-sidebar-link>
+        {{-- Only for people who have an Employee record. IpcrController aborts
+             403 without one, so for an account like the system administrator
+             this link would just be an invitation to an error page. --}}
+        @if ($employee)
+            <x-sidebar-link :href="route('ipcrs.index')" :active="request()->routeIs('ipcrs.*')">
+                <x-slot:icon>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 3.5h7.5L19 8v12.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14 3.5V8h5M9 12.5h6M9 16h4" />
+                    </svg>
+                </x-slot:icon>
+                My IPCRs
+            </x-sidebar-link>
+        @endif
 
-        @if ($pendingApprovals > 0)
+        {{-- Shown to anyone ever routed an IPCR, not only when something is
+             waiting. The badge is what carries the count. --}}
+        @if ($isApprover)
             <x-sidebar-link :href="route('approvals.inbox')" :active="request()->routeIs('approvals.*')">
                 <x-slot:icon>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -91,7 +104,9 @@
                     </svg>
                 </x-slot:icon>
                 For My Approval
-                <x-slot:badge>{{ $pendingApprovals }}</x-slot:badge>
+                @if ($pendingApprovals > 0)
+                    <x-slot:badge>{{ $pendingApprovals }}</x-slot:badge>
+                @endif
             </x-sidebar-link>
         @endif
 

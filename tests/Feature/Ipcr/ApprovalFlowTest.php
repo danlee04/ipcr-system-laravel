@@ -394,6 +394,35 @@ class ApprovalFlowTest extends TestCase
             ->assertDontSee('For My Approval');
     }
 
+    /**
+     * The link must survive an empty queue.
+     *
+     * Tying it to the pending count alone means it vanishes the moment an
+     * approver finishes, leaving no way back to the inbox to check.
+     */
+    public function test_an_approver_with_an_empty_queue_still_sees_the_link(): void
+    {
+        $ipcr = $this->submittedIpcr(['status' => IpcrStatus::Approved]);
+
+        $this->assertSame(0, Ipcr::query()->awaitingAssessmentBy($this->assessor)->count());
+
+        $this->actingAs($this->assessor->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('For My Approval');
+    }
+
+    public function test_someone_who_has_never_been_an_approver_does_not_see_the_link(): void
+    {
+        $this->submittedIpcr();
+        $bystander = $this->employeeWithLogin();
+
+        $this->actingAs($bystander->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('For My Approval');
+    }
+
     // -----------------------------------------------------------------
     // End to end
     // -----------------------------------------------------------------
