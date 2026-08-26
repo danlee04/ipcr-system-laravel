@@ -10,17 +10,16 @@
     $currentSection = $function?->position?->section_id ?? '';
     $currentDivision = $function?->position?->section?->division_id ?? '';
 
-    // A core function reaches people through one of two routes. Which one is
-    // in use is read off the record rather than stored: whichever link it
-    // carries is the route it took.
-    $coreVia = old('core_via', $function?->designation_id && $function?->category === FunctionCategory::Core
-        ? 'designation'
-        : 'position');
+    // Which of the two routes this function takes. Not stored anywhere: the
+    // link it carries is the route it took, so it is read back off the record.
+    $appliesTo = old('applies_to', $function?->designation_id ? 'designation' : 'position');
 @endphp
 
 {{-- Shared by the create and edit modals so the two forms cannot drift apart.
-     Which link applies depends on the category, so the three link fields are
-     shown and hidden by Alpine rather than all at once. --}}
+
+     Two questions: what kind of work this is, and who it reaches. Only the
+     common pool skips the second - it reaches everyone - so the link fields
+     are shown and hidden by Alpine rather than all at once. --}}
 <div class="space-y-4" x-data="{ category: '{{ $current }}' }">
     <div class="grid gap-4 sm:grid-cols-2">
         <label class="block">
@@ -45,37 +44,37 @@
         </label>
     </div>
 
-    {{-- Core functions take one of two routes to an employee: their plantilla
-         position, or a designation they hold. A designation is not a category
-         of work - an Infection Control Officer has core duties as one - so
-         forcing those into "support" would file them under the wrong heading
-         and weight them at 20% instead of 80%. --}}
-    <div x-show="category === 'core'" x-cloak
-        x-data="{ via: '{{ $coreVia }}', division: '{{ $currentDivision }}', section: '{{ $currentSection }}' }"
+    {{-- Who the function reaches, asked once for every rated category.
+
+         The category is what kind of work this is; it never decided the
+         audience. A Section Head's strategic commitments belong to their
+         post, and an OIC's core duties belong to their designation - so both
+         routes are open whatever the category. Only the common pool needs
+         neither, reaching everyone. --}}
+    <div x-show="category !== 'common'" x-cloak
+        x-data="{ via: '{{ $appliesTo }}', division: '{{ $currentDivision }}', section: '{{ $currentSection }}' }"
         class="space-y-4">
 
         <fieldset class="flex flex-wrap gap-4 rounded-md bg-gray-50 p-3 ring-1 ring-inset ring-gray-200">
-            <legend class="sr-only">How this core function reaches people</legend>
+            <legend class="mb-2 w-full text-sm font-medium text-gray-700">Applies to</legend>
 
             <label class="flex items-center gap-2 text-sm">
-                <input type="radio" name="core_via" value="position" x-model="via">
-                <span>Through a <strong>position</strong></span>
+                <input type="radio" name="applies_to" value="position" x-model="via">
+                <span>Whoever holds a <strong>position</strong></span>
             </label>
 
             <label class="flex items-center gap-2 text-sm">
-                <input type="radio" name="core_via" value="designation" x-model="via">
-                <span>Through a <strong>designation</strong></span>
+                <input type="radio" name="applies_to" value="designation" x-model="via">
+                <span>Whoever holds a <strong>designation</strong></span>
             </label>
         </fieldset>
 
-        {{-- Disabled, not merely hidden. A hidden field is still submitted,
-             and there is a second designation_id in the strategic/support
-             branch below: two selects of the same name would fight, and the
-             loser's value would silently win. --}}
+        {{-- Disabled, not merely hidden. A hidden field is still submitted, so
+             an inactive branch would send a stale link and quietly win. --}}
         <label class="block" x-show="via === 'designation'" x-cloak>
             <span class="mb-1 block text-sm font-medium text-gray-700">Designation</span>
             <select name="designation_id" class="w-full rounded-md border-gray-300 text-sm"
-                :disabled="category !== 'core' || via !== 'designation'">
+                :disabled="category === 'common' || via !== 'designation'">
                 <option value="">— Choose a designation —</option>
                 @foreach ($designations as $designation)
                     <option value="{{ $designation->id }}" @selected(old('designation_id', $function?->designation_id) == $designation->id)>
@@ -83,8 +82,8 @@
                     </option>
                 @endforeach
             </select>
-            <span class="mt-1 block text-xs text-gray-500">Everyone currently holding this designation will see it as
-                a core function.</span>
+            <span class="mt-1 block text-xs text-gray-500">Everyone currently holding this designation will see
+                it.</span>
         </label>
 
         <div x-show="via === 'position'" x-cloak class="space-y-4">
@@ -119,7 +118,7 @@
         <label class="block">
             <span class="mb-1 block text-sm font-medium text-gray-700">Position</span>
             <select name="position_id" class="w-full rounded-md border-gray-300 text-sm"
-                :disabled="category !== 'core' || via !== 'position'">
+                :disabled="category === 'common' || via !== 'position'">
                 <option value="">— Choose a position —</option>
                 @foreach ($positions as $position)
                     <option value="{{ $position->id }}" data-section="{{ $position->section_id }}"
@@ -138,22 +137,6 @@
         </label>
         </div>
     </div>
-
-    {{-- Strategic and support reach them through their designations. --}}
-    <label class="block" x-show="category === 'strategic' || category === 'support'" x-cloak>
-        <span class="mb-1 block text-sm font-medium text-gray-700">Designation</span>
-        <select name="designation_id" class="w-full rounded-md border-gray-300 text-sm"
-            :disabled="category !== 'strategic' && category !== 'support'">
-            <option value="">— Choose a designation —</option>
-            @foreach ($designations as $designation)
-                <option value="{{ $designation->id }}" @selected(old('designation_id', $function?->designation_id) == $designation->id)>
-                    {{ $designation->title }}
-                </option>
-            @endforeach
-        </select>
-        <span class="mt-1 block text-xs text-gray-500">Everyone currently holding this designation will see
-            it.</span>
-    </label>
 
     {{-- Common is a pool, not a rating bucket, so it needs to say which of the
          three rated categories a line built from it counts towards. --}}

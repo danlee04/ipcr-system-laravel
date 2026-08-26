@@ -138,7 +138,7 @@
                         <h2 class="text-lg font-semibold text-gray-900">Edit employee</h2>
 
                         <x-admin.employee-fields :employee="$employee" :divisions="$divisions" :sections="$sections"
-                            :positions="$positions" />
+                            :positions="$positions" :designations="$designations" />
 
                         <div class="flex justify-end gap-3 pt-2">
                             <button type="button"
@@ -174,7 +174,8 @@
                     on the next screen.
                 </p>
 
-                <x-admin.employee-fields :divisions="$divisions" :sections="$sections" :positions="$positions" />
+                <x-admin.employee-fields :divisions="$divisions" :sections="$sections" :positions="$positions"
+                    :designations="$designations" />
 
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" x-on:click="$dispatch('close-modal', 'create-employee')"

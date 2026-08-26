@@ -135,23 +135,27 @@ class FunctionManagementTest extends TestCase
         ]);
     }
 
-    /** The same leftover, the other way round. */
-    public function test_a_leftover_position_is_ignored_on_a_designation_function(): void
+    /**
+     * A stale position on a designation function used to be discarded, because
+     * the category decided the audience and a support function could only ever
+     * be a designation's.
+     *
+     * Both links are legitimate now, so two of them is not a leftover to clean
+     * up - it is a question with two answers, and guessing would attach the
+     * function to an audience nobody asked for. It is refused instead, and the
+     * form's disabled branches are what stop it arising.
+     */
+    public function test_naming_both_a_position_and_a_designation_is_refused(): void
     {
-        $designation = Designation::factory()->create();
-
         $this->actingAs($this->admin())
             ->post(route('admin.functions.store'), $this->payload([
                 'category'       => FunctionCategory::Support->value,
-                'designation_id' => $designation->id,
+                'designation_id' => Designation::factory()->create()->id,
                 'position_id'    => Position::factory()->create()->id,
             ]))
-            ->assertSessionHasNoErrors();
+            ->assertSessionHasErrors('position_id');
 
-        $this->assertDatabaseHas('job_functions', [
-            'designation_id' => $designation->id,
-            'position_id'    => null,
-        ]);
+        $this->assertDatabaseCount('job_functions', 0);
     }
 
     public function test_the_form_offers_a_core_function_both_routes(): void
@@ -162,8 +166,8 @@ class FunctionManagementTest extends TestCase
         $this->actingAs($this->admin())
             ->get(route('admin.functions.index'))
             ->assertOk()
-            ->assertSee('name="core_via" value="position"', false)
-            ->assertSee('name="core_via" value="designation"', false);
+            ->assertSee('name="applies_to" value="position"', false)
+            ->assertSee('name="applies_to" value="designation"', false);
     }
 
     /**
@@ -236,13 +240,21 @@ class FunctionManagementTest extends TestCase
             ->assertSessionHasErrors('position_id');
     }
 
-    public function test_a_strategic_function_must_name_a_designation(): void
+    /**
+     * A strategic function needs one of the two links, not a designation in
+     * particular - the category stopped deciding the audience. See
+     * FunctionReachTest for the rule across every category.
+     */
+    public function test_a_strategic_function_must_name_somebody(): void
     {
         $this->actingAs($this->admin())
             ->post(route('admin.functions.store'), $this->payload([
-                'category' => FunctionCategory::Strategic->value, 'designation_id' => null,
+                'category' => FunctionCategory::Strategic->value,
+                'designation_id' => null, 'position_id' => null,
             ]))
-            ->assertSessionHasErrors('designation_id');
+            ->assertSessionHasErrors('position_id');
+
+        $this->assertDatabaseCount('job_functions', 0);
     }
 
     public function test_a_common_function_needs_neither_and_takes_a_rating_category(): void

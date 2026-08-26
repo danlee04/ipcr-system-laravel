@@ -6,6 +6,7 @@ use App\Enums\OrgPost;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreEmployeeRequest;
 use App\Http\Requests\Admin\UpdateEmployeeRequest;
+use App\Models\Designation;
 use App\Models\Division;
 use App\Models\Employee;
 use App\Models\Position;
@@ -35,7 +36,7 @@ class EmployeeController extends Controller
     public function index(Request $request): View
     {
         $employees = Employee::query()
-            ->with(['position', 'section.division', 'division', 'user'])
+            ->with(['position', 'section.division', 'division', 'user', 'activeDesignations', 'headedSection', 'headedDivision'])
             ->when($request->string('search')->trim()->value(), $this->searchFor(...))
             ->when($request->integer('division'), fn ($q, int $id) => $q->where('division_id', $id))
             ->when($request->integer('section'), fn ($q, int $id) => $q->where('section_id', $id))
@@ -55,7 +56,11 @@ class EmployeeController extends Controller
         // describe a combination that does not exist.
         $positions = Position::query()->with('section')->orderBy('title')->get();
 
-        return view('admin.employees.index', compact('employees', 'divisions', 'sections', 'positions'));
+        return view('admin.employees.index', compact('employees', 'divisions', 'sections', 'positions') + [
+            // A designation can sit anywhere in the hospital, so the whole
+            // list is offered rather than one narrowed by the placement.
+            'designations' => Designation::query()->active()->orderBy('title')->get(),
+        ]);
     }
 
     public function store(StoreEmployeeRequest $request): RedirectResponse
@@ -71,6 +76,7 @@ class EmployeeController extends Controller
             }
 
             $this->applyPost($employee, $data);
+            $this->applyDesignations($employee, $data);
 
             return $employee;
         });
@@ -114,6 +120,7 @@ class EmployeeController extends Controller
             }
 
             $this->applyPost($employee, $data);
+            $this->applyDesignations($employee, $data);
         });
 
         $message = "Updated employee \"{$employee->fresh()->full_name}\".";
@@ -227,6 +234,29 @@ class EmployeeController extends Controller
     }
 
     /**
+     * The posts this employee is designated to.
+     *
+     * A designation can sit anywhere - the OIC of HRD may be on another
+     * section's plantilla entirely - so it is deliberately not checked against
+     * their division or section.
+     *
+     * syncWithPivotValues, not sync: FunctionCatalogService reads only the
+     * ACTIVE rows, so a designation attached without is_active would be
+     * recorded and still reach nobody.
+     */
+    private function applyDesignations(Employee $employee, array $data): void
+    {
+        if (! array_key_exists('designations', $data)) {
+            return;   // The form did not ask; leave what they hold alone.
+        }
+
+        $employee->designations()->syncWithPivotValues(
+            $data['designations'] ?? [],
+            ['is_active' => true]
+        );
+    }
+
+    /**
      * Writes the chosen post onto the org chart.
      *
      * The post is not a column on the employee - it IS the org chart, and the
@@ -243,19 +273,26 @@ class EmployeeController extends Controller
         $employee->refresh();
         $post = OrgPost::tryFrom((string) ($data['post'] ?? ''));
 
+        // What they lead, which is not always where they sit. Someone on the
+        // Health Information Management plantilla can be Section Head of HRD;
+        // reading the headship off section_id would put them at the head of
+        // the wrong section and leave the right one with none.
+        $headsSection = $data['heads_section_id'] ?? $employee->section_id;
+        $headsDivision = $data['heads_division_id'] ?? $employee->division_id;
+
         Section::query()
             ->where('section_head_employee_id', $employee->id)
             ->when(
-                $post === OrgPost::SectionHead && $employee->section_id,
-                fn (Builder $query) => $query->whereKeyNot($employee->section_id)
+                $post === OrgPost::SectionHead && $headsSection,
+                fn (Builder $query) => $query->whereKeyNot($headsSection)
             )
             ->update(['section_head_employee_id' => null]);
 
         Division::query()
             ->where('division_head_employee_id', $employee->id)
             ->when(
-                $post === OrgPost::DivisionHead && $employee->division_id,
-                fn (Builder $query) => $query->whereKeyNot($employee->division_id)
+                $post === OrgPost::DivisionHead && $headsDivision,
+                fn (Builder $query) => $query->whereKeyNot($headsDivision)
             )
             ->update(['division_head_employee_id' => null]);
 
@@ -273,11 +310,11 @@ class EmployeeController extends Controller
             // One head per section and per division, so taking the post up
             // replaces whoever held it - no separate demotion needed.
             OrgPost::SectionHead => Section::query()
-                ->whereKey($employee->section_id)
+                ->whereKey($headsSection)
                 ->update(['section_head_employee_id' => $employee->id]),
 
             OrgPost::DivisionHead => Division::query()
-                ->whereKey($employee->division_id)
+                ->whereKey($headsDivision)
                 ->update(['division_head_employee_id' => $employee->id]),
 
             default => null,

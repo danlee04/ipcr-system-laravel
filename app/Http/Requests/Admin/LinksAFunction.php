@@ -10,17 +10,17 @@ use Illuminate\Validation\Validator;
  * The rules a catalog function is saved under, shared by create and edit so
  * the two cannot drift apart.
  *
- * How a function reaches an employee, per FunctionCatalogService:
+ * A function answers two separate questions, and they used to be tangled:
  *
- *   core      -> their plantilla position, OR one of their designations
- *   strategic -> one of their designations
- *   support   -> one of their designations
- *   common    -> everyone, and it says which rated category it counts towards
+ *   category   -> what kind of work it is: strategic, core, support, or the
+ *                 common pool
+ *   applies to -> who it reaches: whoever holds a position, or whoever holds
+ *                 a designation
  *
- * Core takes either link because a designation is not a category of work. An
- * Infection Control Officer has core duties as one; filing those under
- * "support" would put them in a category they do not belong to, and weight
- * them at 20% instead of 80%.
+ * The category never decided the audience. A Section Head's strategic
+ * commitments belong to their post; an OIC's core duties belong to their
+ * designation. So every rated category takes either link - exactly one - and
+ * common takes neither, reaching everyone.
  */
 trait LinksAFunction
 {
@@ -89,27 +89,17 @@ trait LinksAFunction
                 return;   // Open to everyone; any link submitted is discarded.
             }
 
-            if ($category === FunctionCategory::Core) {
-                if ($position && $designation) {
-                    $validator->errors()->add(
-                        'position_id',
-                        'A core function belongs to a position or to a designation, not to both.'
-                    );
-                } elseif (! $position && ! $designation) {
-                    $validator->errors()->add(
-                        'position_id',
-                        'Choose the position or the designation this core function belongs to, or nobody will see it.'
-                    );
-                }
-
-                return;
-            }
-
-            // Strategic and support reach people through designations only.
-            if (! $designation) {
+            // Exactly one link, whatever the category. What kind of work it is
+            // and who it reaches are separate questions.
+            if ($position && $designation) {
                 $validator->errors()->add(
-                    'designation_id',
-                    'This function must belong to a designation, or nobody will see it.'
+                    'position_id',
+                    'A function belongs to a position or to a designation, not to both.'
+                );
+            } elseif (! $position && ! $designation) {
+                $validator->errors()->add(
+                    'position_id',
+                    'Choose the position or the designation this function belongs to, or nobody will see it.'
                 );
             }
         });

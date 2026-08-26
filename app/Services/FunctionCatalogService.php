@@ -17,32 +17,38 @@ use Illuminate\Support\Collection;
  * each item by hand and adds it as an ipcr_items row.
  *
  * Where each category comes from:
- *   core      -> the employee's SINGLE plantilla position
- *   strategic -> all of their CURRENTLY ACTIVE designations
- *   support   -> all of their CURRENTLY ACTIVE designations
- *   common    -> the open pool, available to everyone
+ *   strategic, core, support -> the employee's plantilla position, and every
+ *                               designation they currently hold
+ *   common                   -> the open pool, available to everyone
+ *
+ * The category is what kind of work a function is, never who sees it. Which
+ * of the two links a function carries is decided per function, on the
+ * Functions screen.
  */
 class FunctionCatalogService
 {
     public function availableFor(Employee $employee): EmployeeFunctionCatalog
     {
         return new EmployeeFunctionCatalog(
-            core: $this->coreFunctions($employee),
-            strategic: $this->designationFunctions($employee, FunctionCategory::Strategic),
-            support: $this->designationFunctions($employee, FunctionCategory::Support),
+            core: $this->reaching($employee, FunctionCategory::Core),
+            strategic: $this->reaching($employee, FunctionCategory::Strategic),
+            support: $this->reaching($employee, FunctionCategory::Support),
             common: $this->commonFunctions(),
         );
     }
 
     /**
-     * From the employee's plantilla position AND from their designations.
+     * Every function of one category that reaches this employee.
      *
-     * A designation is not a category of work: an Infection Control Officer
-     * has core duties as one. Reaching core only through the position left
-     * those nowhere to go but "support", which put them in the wrong category
-     * and weighted them at 20% instead of 80%.
+     * One method for all three rated categories, because they all reach
+     * people the same two ways: through the plantilla position, or through a
+     * designation currently held. The category says what kind of work it is,
+     * never who sees it.
+     *
+     * Designations are aggregated: someone holding both OIC-Budget and
+     * OIC-HRMO at once sees the functions of both.
      */
-    private function coreFunctions(Employee $employee): Collection
+    private function reaching(Employee $employee, FunctionCategory $category): Collection
     {
         $designationIds = $employee->activeDesignations()->pluck('designations.id');
 
@@ -52,7 +58,7 @@ class FunctionCatalogService
 
         return JobFunction::query()
             ->active()
-            ->ofCategory(FunctionCategory::Core)
+            ->ofCategory($category)
             ->where(function ($query) use ($employee, $designationIds): void {
                 if ($employee->position_id !== null) {
                     $query->where('position_id', $employee->position_id);
@@ -62,27 +68,6 @@ class FunctionCatalogService
                     $query->orWhereIn('designation_id', $designationIds);
                 }
             })
-            ->orderBy('title')
-            ->get();
-    }
-
-    /**
-     * From ALL of the employee's currently active designations.
-     * This is where they are aggregated: someone holding both OIC-Budget and
-     * OIC-HRMO at the same time sees the functions from both.
-     */
-    private function designationFunctions(Employee $employee, FunctionCategory $category): Collection
-    {
-        $activeDesignationIds = $employee->activeDesignations()->pluck('designations.id');
-
-        if ($activeDesignationIds->isEmpty()) {
-            return collect();
-        }
-
-        return JobFunction::query()
-            ->active()
-            ->ofCategory($category)
-            ->whereIn('designation_id', $activeDesignationIds)
             ->orderBy('title')
             ->get();
     }

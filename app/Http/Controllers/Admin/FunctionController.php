@@ -164,11 +164,11 @@ class FunctionController extends Controller
         $position = $data['position_id'] ?? null;
         $designation = $data['designation_id'] ?? null;
 
-        [$position, $designation] = match ($category) {
-            FunctionCategory::Common                            => [null, null],
-            FunctionCategory::Core                              => [$position ?: null, $position ? null : ($designation ?: null)],
-            FunctionCategory::Strategic, FunctionCategory::Support => [null, $designation ?: null],
-        };
+        // Common reaches everyone and needs no link; every other category
+        // takes exactly one, and the validator has already insisted on that.
+        [$position, $designation] = $category === FunctionCategory::Common
+            ? [null, null]
+            : [$position ?: null, $position ? null : ($designation ?: null)];
 
         return [
             'category'          => $category,

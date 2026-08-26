@@ -105,7 +105,7 @@ class IpcrController extends Controller
             ['employee_id' => $employee->id, 'ipcr_period_id' => $period->id],
             [
                 'position_title' => $employee->position?->title,
-                'office_name'    => $employee->section?->name ?? $employee->division?->name,
+                'office_name'    => $employee->officeName(),
                 'status'         => IpcrStatus::Draft,
                 'mode'           => $mode,
             ]

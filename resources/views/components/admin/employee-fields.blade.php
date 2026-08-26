@@ -1,4 +1,4 @@
-@props(['employee' => null, 'divisions', 'sections', 'positions'])
+@props(['employee' => null, 'divisions', 'sections', 'positions', 'designations' => null])
 
 @php
     use App\Enums\EmploymentStatus;
@@ -157,6 +157,44 @@
             </label>
         </div>
 
+        {{-- What they lead is not always where they sit. Someone on the Health
+             Information Management plantilla can be Section Head of HRD, and
+             reading the headship off the placement above would hand it to the
+             wrong section. Blank means the one they sit in. --}}
+        <div class="grid gap-4 sm:grid-cols-2" x-show="post !== ''" x-cloak>
+            <label class="block" x-show="post === 'section_head'">
+                <span class="mb-1 block text-sm font-medium text-gray-700">
+                    Section led
+                    <span class="font-normal text-gray-500">— if not their own</span>
+                </span>
+                <select name="heads_section_id" class="w-full rounded-md border-gray-300 text-sm">
+                    <option value="">Their own section</option>
+                    @foreach ($sections as $option)
+                        <option value="{{ $option->id }}" @selected(old('heads_section_id', $employee?->headedSection?->id) == $option->id)>
+                            {{ $option->name }}@if ($option->division)
+                                — {{ $option->division->name }}
+                            @endif
+                        </option>
+                    @endforeach
+                </select>
+            </label>
+
+            <label class="block" x-show="post === 'division_head'">
+                <span class="mb-1 block text-sm font-medium text-gray-700">
+                    Division led
+                    <span class="font-normal text-gray-500">— if not their own</span>
+                </span>
+                <select name="heads_division_id" class="w-full rounded-md border-gray-300 text-sm">
+                    <option value="">Their own division</option>
+                    @foreach ($divisions as $option)
+                        <option value="{{ $option->id }}" @selected(old('heads_division_id', $employee?->headedDivision?->id) == $option->id)>
+                            {{ $option->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </label>
+        </div>
+
         {{-- Under the row, not squeezed into a quarter of it: the sentence
              changes with the choice and needs the width to stay one line. --}}
         <p class="text-sm text-gray-600">
@@ -168,6 +206,41 @@
             </span>
         </p>
     </fieldset>
+
+    {{-- ---------------------------------------------------------------
+         Designations. A post they perform on top of their plantilla, and it
+         can sit anywhere in the hospital: the OIC of HRD may be on another
+         section's plantilla entirely. That is why this list is not narrowed
+         by the placement above.
+
+         Until now nothing in the app attached one, so no strategic or
+         support function could reach anybody at all.
+    --------------------------------------------------------------- --}}
+    @if ($designations !== null)
+        <fieldset class="rounded-lg bg-white p-4 ring-1 ring-inset ring-gray-200">
+            <legend class="px-1 text-sm font-semibold text-gray-900">Designations</legend>
+
+            @if ($designations->isEmpty())
+                <p class="text-sm text-gray-600">
+                    None have been set up yet. Add them on the Positions screen, under Designations.
+                </p>
+            @else
+                <p class="mb-3 text-xs text-gray-600">
+                    Tick every one they currently hold. Each brings its own functions to their IPCR.
+                </p>
+
+                <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach ($designations as $designation)
+                        <label class="flex items-start gap-2 rounded-md p-2 text-sm ring-1 ring-inset ring-gray-200 hover:bg-gray-50">
+                            <input type="checkbox" name="designations[]" value="{{ $designation->id }}"
+                                @checked(in_array($designation->id, old('designations', $employee?->activeDesignations->pluck('id')->all() ?? []))) class="mt-0.5 rounded border-gray-300 text-nav-900 focus:ring-nav-700">
+                            <span class="text-gray-800">{{ $designation->title }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            @endif
+        </fieldset>
+    @endif
 
     {{-- ---------------------------------------------------------------
          The login. Its own card because it is its own thing: an employee

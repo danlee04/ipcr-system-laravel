@@ -178,6 +178,23 @@ class Employee extends Model
         return $this->post()?->label();
     }
 
+    /**
+     * The office to print on their IPCR.
+     *
+     * Where the work is done, which for a head is the unit they lead - not the
+     * plantilla they happen to sit on. The Section Head of HRDS may be on the
+     * HIMS plantilla under another division entirely; printing HIMS would put
+     * the sheet at odds with the signature block below it, which names the
+     * head of the division HRDS belongs to.
+     */
+    public function officeName(): ?string
+    {
+        return $this->headedSection?->name
+            ?? $this->headedDivision?->name
+            ?? $this->section?->name
+            ?? $this->division?->name;
+    }
+
     /** Their name with the post that explains their place in a chain. */
     public function nameWithPost(): string
     {

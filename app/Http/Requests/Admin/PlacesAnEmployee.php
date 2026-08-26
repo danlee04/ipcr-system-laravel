@@ -41,6 +41,19 @@ trait PlacesAnEmployee
             // held before, because this field states the present, not an
             // addition to a list.
             'post' => ['nullable', Rule::in(OrgPost::values())],
+
+            // Which section or division they lead, when that is not the one
+            // they sit in. An Administrative Officer on the Health Information
+            // Management plantilla can be Section Head of HRD; collapsing the
+            // two would hand the headship to the wrong section.
+            'heads_section_id'  => ['nullable', 'integer', 'exists:sections,id'],
+            'heads_division_id' => ['nullable', 'integer', 'exists:divisions,id'],
+
+            // The posts they are designated to, wherever those sit. Nothing
+            // attached these before, so no strategic or support function could
+            // reach anybody.
+            'designations'   => ['nullable', 'array'],
+            'designations.*' => ['integer', 'exists:designations,id'],
         ];
     }
 
@@ -83,11 +96,15 @@ trait PlacesAnEmployee
     {
         $post = OrgPost::tryFrom((string) $this->input('post'));
 
-        if ($post === OrgPost::SectionHead && ! $this->input('section_id')) {
+        // The section led, falling back to the one they sit in. Only when
+        // neither is given is there nothing to write the headship onto.
+        if ($post === OrgPost::SectionHead
+            && ! $this->input('heads_section_id') && ! $this->input('section_id')) {
             $validator->errors()->add('post', 'Choose the section this Section Head leads.');
         }
 
-        if ($post === OrgPost::DivisionHead && ! $this->input('division_id')) {
+        if ($post === OrgPost::DivisionHead
+            && ! $this->input('heads_division_id') && ! $this->input('division_id')) {
             $validator->errors()->add('post', 'Choose the division this Division Head leads.');
         }
     }
