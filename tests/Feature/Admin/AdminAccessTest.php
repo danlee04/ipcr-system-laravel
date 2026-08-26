@@ -25,6 +25,8 @@ class AdminAccessTest extends TestCase
             'divisions' => ['admin.divisions.index'],
             'job titles' => ['admin.job-titles.index'],
             'employees' => ['admin.employees.index'],
+            'periods' => ['admin.periods.index'],
+            'job functions' => ['admin.job-functions.index'],
         ];
     }
 

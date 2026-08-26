@@ -17,6 +17,7 @@ class JobFunction extends Model
         'position_id',
         'designation_id',
         'category',
+        'rating_category',
         'title',
         'success_indicator',
         'default_weight',
@@ -26,10 +27,28 @@ class JobFunction extends Model
     protected function casts(): array
     {
         return [
-            'category'       => FunctionCategory::class,
-            'default_weight' => 'decimal:2',
-            'is_active'      => 'boolean',
+            'category'        => FunctionCategory::class,
+            'rating_category' => FunctionCategory::class,
+            'default_weight'  => 'decimal:2',
+            'is_active'       => 'boolean',
         ];
+    }
+
+    /**
+     * Which of the three rated categories an IPCR line built from this
+     * function belongs to.
+     *
+     * For strategic, core and support that is simply the function's own
+     * category. "Common" only says the function is open to everyone, so it
+     * carries a separate assignment - and returns null until HR makes it.
+     */
+    public function ratingCategory(): ?FunctionCategory
+    {
+        if ($this->category !== FunctionCategory::Common) {
+            return $this->category;
+        }
+
+        return $this->rating_category;
     }
 
     public function position(): BelongsTo
@@ -56,5 +75,17 @@ class JobFunction extends Model
     public function scopeCommon(Builder $query): Builder
     {
         return $query->where('category', FunctionCategory::Common);
+    }
+
+    /**
+     * Common functions HR has not yet filed under a rated category.
+     *
+     * Nobody can add these to an IPCR, so the admin screen surfaces them
+     * rather than leaving them to fail at the point of use.
+     */
+    public function scopeNeedingRatingCategory(Builder $query): Builder
+    {
+        return $query->where('category', FunctionCategory::Common)
+            ->whereNull('rating_category');
     }
 }

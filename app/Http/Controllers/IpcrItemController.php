@@ -7,6 +7,7 @@ use App\Http\Requests\StoreIpcrItemRequest;
 use App\Http\Requests\UpdateIpcrItemRequest;
 use App\Models\Ipcr;
 use App\Models\IpcrItem;
+use App\Models\JobFunction;
 use Illuminate\Http\RedirectResponse;
 
 class IpcrItemController extends Controller
@@ -18,6 +19,26 @@ class IpcrItemController extends Controller
         abort_unless($ipcr->isEditableByOwner(), 403, 'This IPCR can no longer be edited.');
 
         $data = $request->validated();
+
+        // "Common" is a pool, not a rated category. A line picked from it is
+        // filed under whichever category HR assigned to the function; without
+        // one it cannot be rated at all, so it is refused here rather than
+        // landing in a bucket the calculator ignores.
+        if (($data['category'] ?? null) === FunctionCategory::Common->value) {
+            $function = isset($data['job_function_id'])
+                ? JobFunction::find($data['job_function_id'])
+                : null;
+
+            $resolved = $function?->ratingCategory();
+
+            if ($resolved === null) {
+                return back()->with('error', $function === null
+                    ? 'Pick a category of Strategic, Core or Support for this function.'
+                    : "\"{$function->title}\" has not been filed under a rated category yet. Ask HR to set one on the Job Functions screen.");
+            }
+
+            $data['category'] = $resolved->value;
+        }
 
         if ($overflow = $this->weightOverflow($ipcr, $data['category'], (float) ($data['weight'] ?? 0))) {
             return back()->with('error', $overflow);

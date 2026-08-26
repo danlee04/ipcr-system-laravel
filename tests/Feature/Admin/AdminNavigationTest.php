@@ -24,6 +24,8 @@ class AdminNavigationTest extends TestCase
         $response->assertSee('Divisions');
         $response->assertSee('Job Titles');
         $response->assertSee('Employees');
+        $response->assertSee('Rating Periods');
+        $response->assertSee('Job Functions');
     }
 
     public function test_an_hr_user_sees_the_administration_group(): void

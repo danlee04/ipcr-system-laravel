@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Designation;
 use App\Models\Division;
+use App\Models\IpcrPeriod;
 use App\Models\Position;
 use App\Models\Section;
 use App\Support\DeletionReport;
@@ -38,6 +39,12 @@ class OrgDeletionGuard
             $record instanceof Designation => [
                 'job functions' => $record->jobFunctions()->count(),
                 'employees'     => $record->employees()->count(),
+            ],
+            // A period holding IPCRs is somebody's performance record. Closing
+            // it is the way to retire it; deleting would take the IPCRs down
+            // with it through the foreign key.
+            $record instanceof IpcrPeriod => [
+                'IPCRs' => $record->ipcrs()->count(),
             ],
             default => throw new InvalidArgumentException(
                 'OrgDeletionGuard does not handle ' . $record::class . '.'

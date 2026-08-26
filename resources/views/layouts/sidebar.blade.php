@@ -137,6 +137,28 @@
                 </x-slot:icon>
                 Employees
             </x-sidebar-link>
+
+            <x-sidebar-link :href="route('admin.periods.index')"
+                :active="request()->routeIs('admin.periods.*')">
+                <x-slot:icon>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M7 3.5V6m10-2.5V6M4.5 8.5h15M6 6h12a1.5 1.5 0 0 1 1.5 1.5V19A1.5 1.5 0 0 1 18 20.5H6A1.5 1.5 0 0 1 4.5 19V7.5A1.5 1.5 0 0 1 6 6Z" />
+                    </svg>
+                </x-slot:icon>
+                Rating Periods
+            </x-sidebar-link>
+
+            <x-sidebar-link :href="route('admin.job-functions.index')"
+                :active="request()->routeIs('admin.job-functions.*')">
+                <x-slot:icon>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M5 5.5h14M5 10h14M5 14.5h9M5 19h6" />
+                    </svg>
+                </x-slot:icon>
+                Job Functions
+            </x-sidebar-link>
         @endif
     </nav>
 

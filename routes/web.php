@@ -3,7 +3,9 @@
 use App\Http\Controllers\Admin\DesignationController;
 use App\Http\Controllers\Admin\DivisionController;
 use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\JobFunctionController;
 use App\Http\Controllers\Admin\JobTitleController;
+use App\Http\Controllers\Admin\PeriodController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\ProfileController;
@@ -66,6 +68,8 @@ Route::prefix('admin')
         Route::get('/divisions', [DivisionController::class, 'index'])->name('divisions.index');
         Route::get('/job-titles', [JobTitleController::class, 'index'])->name('job-titles.index');
         Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
+        Route::get('/periods', [PeriodController::class, 'index'])->name('periods.index');
+        Route::get('/job-functions', [JobFunctionController::class, 'index'])->name('job-functions.index');
 
         Route::post('/divisions', [DivisionController::class, 'store'])->name('divisions.store');
         Route::put('/divisions/{division}', [DivisionController::class, 'update'])->name('divisions.update');
@@ -91,6 +95,16 @@ Route::prefix('admin')
         Route::put('/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
         Route::patch('/employees/{employee}/active', [EmployeeController::class, 'setActive'])->name('employees.active');
         Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
+
+        Route::post('/periods', [PeriodController::class, 'store'])->name('periods.store');
+        Route::put('/periods/{period}', [PeriodController::class, 'update'])->name('periods.update');
+        Route::patch('/periods/{period}/status', [PeriodController::class, 'setStatus'])->name('periods.status');
+        Route::delete('/periods/{period}', [PeriodController::class, 'destroy'])->name('periods.destroy');
+
+        Route::post('/job-functions', [JobFunctionController::class, 'store'])->name('job-functions.store');
+        Route::put('/job-functions/{jobFunction}', [JobFunctionController::class, 'update'])->name('job-functions.update');
+        Route::patch('/job-functions/{jobFunction}/active', [JobFunctionController::class, 'setActive'])->name('job-functions.active');
+        Route::delete('/job-functions/{jobFunction}', [JobFunctionController::class, 'destroy'])->name('job-functions.destroy');
     });
 
 require __DIR__ . '/auth.php';
