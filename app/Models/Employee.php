@@ -143,6 +143,21 @@ class Employee extends Model
         return $this->is_chief_of_hospital;
     }
 
+    /**
+     * Does this employee hold a post that IPCRs get routed to?
+     *
+     * Asked of the post, not of the inbox. A newly appointed section head has
+     * nothing routed to them yet, and before the first submission of a cycle
+     * that is true of every head - so a check based on routed IPCRs would hide
+     * the inbox from exactly the people who need to find it.
+     */
+    public function holdsApprovingPost(): bool
+    {
+        return $this->isSectionHead()
+            || $this->isDivisionHead()
+            || $this->isChiefOfHospital();
+    }
+
     // ---------------------------------------------------------------
     // Scopes
     // ---------------------------------------------------------------

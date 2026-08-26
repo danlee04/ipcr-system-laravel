@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/ipcrs/create', [IpcrController::class, 'create'])->name('ipcrs.create');
     Route::post('/ipcrs', [IpcrController::class, 'store'])->name('ipcrs.store');
     Route::get('/ipcrs/{ipcr}', [IpcrController::class, 'show'])->name('ipcrs.show');
+    Route::get('/ipcrs/{ipcr}/print', [IpcrController::class, 'print'])->name('ipcrs.print');
     Route::delete('/ipcrs/{ipcr}', [IpcrController::class, 'destroy'])->name('ipcrs.destroy');
     Route::post('/ipcrs/{ipcr}/submit', [IpcrController::class, 'submit'])->name('ipcrs.submit');
 

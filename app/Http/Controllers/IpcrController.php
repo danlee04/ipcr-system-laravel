@@ -10,6 +10,7 @@ use App\Models\Ipcr;
 use App\Models\IpcrPeriod;
 use App\Services\FunctionCatalogService;
 use App\Services\IpcrRoutingService;
+use App\Services\RatingCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -20,6 +21,7 @@ class IpcrController extends Controller
     public function __construct(
         private readonly FunctionCatalogService $functionCatalog,
         private readonly IpcrRoutingService $routing,
+        private readonly RatingCalculator $ratings,
     ) {}
 
     /**
@@ -142,6 +144,34 @@ class IpcrController extends Controller
         $catalog = $this->functionCatalog->availableFor($ipcr->employee);
 
         return view('ipcrs.show', compact('ipcr', 'catalog'));
+    }
+
+    /**
+     * The printable sheet.
+     *
+     * Guarded by `view`, so the owner, both approvers, and HR or an
+     * administrator can produce it. Rendered on its own layout with no sidebar
+     * or navigation: this is the sheet that gets signed and filed, and the
+     * signatures are what make it the record rather than the database row.
+     */
+    public function print(Request $request, Ipcr $ipcr): View
+    {
+        $this->authorize('view', $ipcr);
+
+        $ipcr->load(['items', 'period', 'employee.position', 'assessor', 'finalApprover']);
+
+        // Grouped in reading order, which is the order the CSC form uses.
+        $grouped = collect([
+            FunctionCategory::Strategic,
+            FunctionCategory::Core,
+            FunctionCategory::Support,
+        ])->mapWithKeys(fn (FunctionCategory $category): array => [
+            $category->value => $ipcr->items->where('category', $category)->sortBy('sort_order')->values(),
+        ])->filter(fn ($items) => $items->isNotEmpty());
+
+        $breakdown = $this->ratings->for($ipcr);
+
+        return view('ipcrs.print', compact('ipcr', 'grouped', 'breakdown'));
     }
 
     /**

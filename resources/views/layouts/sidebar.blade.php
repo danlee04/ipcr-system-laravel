@@ -12,7 +12,13 @@
 
     // Whether they are an approver at all. Kept separate from the count so the
     // link survives an empty queue - it is how they get back to the inbox.
-    $isApprover = $employee ? \App\Models\Ipcr::query()->routedTo($employee)->exists() : false;
+    //
+    // The post comes first: a head must find their inbox before anyone has
+    // submitted anything. The routed check is the tail case - someone who has
+    // since been replaced still needs to reach what was routed to them.
+    $isApprover = $employee
+        ? $employee->holdsApprovingPost() || \App\Models\Ipcr::query()->routedTo($employee)->exists()
+        : false;
     $initials = collect(preg_split('/\s+/', trim((string) $displayName)))
         ->filter()
         ->take(2)

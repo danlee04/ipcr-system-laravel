@@ -13,7 +13,18 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 IPCR — {{ $ipcr->period->name }}
             </h2>
-            <x-status-badge :status="$ipcr->status" />
+            <div class="flex items-center gap-3">
+                <a href="{{ route('ipcrs.print', $ipcr) }}" target="_blank"
+                    class="inline-flex items-center gap-2 rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 transition-colors hover:bg-gray-50">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M7 8V4h10v4M7 17H5.5A1.5 1.5 0 0 1 4 15.5v-5A1.5 1.5 0 0 1 5.5 9h13a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5H17M7 14h10v6H7v-6Z" />
+                    </svg>
+                    Print
+                </a>
+                <x-status-badge :status="$ipcr->status" />
+            </div>
         </div>
     </x-slot>
 

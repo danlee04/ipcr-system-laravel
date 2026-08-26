@@ -395,6 +395,69 @@ class ApprovalFlowTest extends TestCase
     }
 
     /**
+     * A head sees their inbox before anything has ever been routed to them.
+     *
+     * Tying the link to a routed IPCR means a newly appointed section head has
+     * no way to find the inbox at all until someone happens to submit - and
+     * before the first submission of a cycle, that is everybody.
+     */
+    public function test_a_section_head_sees_the_link_before_anything_is_submitted(): void
+    {
+        $section = \App\Models\Section::factory()->create();
+        $head = $this->employeeWithLogin();
+        $section->update(['section_head_employee_id' => $head->id]);
+
+        $this->assertSame(0, Ipcr::query()->routedTo($head)->count(), 'Nothing has been routed yet.');
+
+        $this->actingAs($head->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('For My Approval');
+    }
+
+    public function test_a_division_head_sees_the_link_before_anything_is_submitted(): void
+    {
+        $division = \App\Models\Division::factory()->create();
+        $head = $this->employeeWithLogin();
+        $division->update(['division_head_employee_id' => $head->id]);
+
+        $this->actingAs($head->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('For My Approval');
+    }
+
+    public function test_the_chief_of_hospital_sees_the_link(): void
+    {
+        $chief = Employee::factory()->chiefOfHospital()->create(['user_id' => User::factory()->create()->id]);
+
+        $this->actingAs($chief->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('For My Approval');
+    }
+
+    public function test_rank_and_file_never_see_the_link(): void
+    {
+        $this->actingAs($this->employeeWithLogin()->user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('For My Approval');
+    }
+
+    public function test_the_inbox_opens_and_says_it_is_empty(): void
+    {
+        $section = \App\Models\Section::factory()->create();
+        $head = $this->employeeWithLogin();
+        $section->update(['section_head_employee_id' => $head->id]);
+
+        $this->actingAs($head->user)
+            ->get(route('approvals.inbox'))
+            ->assertOk()
+            ->assertSee('Nothing is waiting on you');
+    }
+
+    /**
      * The link must survive an empty queue.
      *
      * Tying it to the pending count alone means it vanishes the moment an
