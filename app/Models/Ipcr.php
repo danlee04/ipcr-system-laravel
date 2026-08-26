@@ -201,6 +201,21 @@ class Ipcr extends Model
             ->where('final_approver_employee_id', $approver->id);
     }
 
+    /**
+     * Every IPCR this employee is named on as assessor or final approver,
+     * whatever its status.
+     *
+     * Backs the sidebar link, which must not disappear the moment the queue
+     * empties - an approver still needs a way back to the inbox.
+     */
+    public function scopeRoutedTo(Builder $query, Employee $approver): Builder
+    {
+        return $query->where(function (Builder $inner) use ($approver): void {
+            $inner->where('assessor_employee_id', $approver->id)
+                ->orWhere('final_approver_employee_id', $approver->id);
+        });
+    }
+
     public function scopeForPeriod(Builder $query, IpcrPeriod|int $period): Builder
     {
         return $query->where('ipcr_period_id', $period instanceof IpcrPeriod ? $period->id : $period);
