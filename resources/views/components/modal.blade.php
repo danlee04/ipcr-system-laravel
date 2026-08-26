@@ -11,6 +11,13 @@ $maxWidth = [
     'lg' => 'sm:max-w-lg',
     'xl' => 'sm:max-w-xl',
     '2xl' => 'sm:max-w-2xl',
+
+    // Wider than Breeze shipped with. A form of three or four columns needs
+    // the room, and a modal that stops at 2xl wastes the screen it is
+    // floating over.
+    '3xl' => 'sm:max-w-3xl',
+    '4xl' => 'sm:max-w-4xl',
+    '5xl' => 'sm:max-w-5xl',
 ][$maxWidth];
 @endphp
 

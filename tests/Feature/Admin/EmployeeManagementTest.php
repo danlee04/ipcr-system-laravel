@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\OrgPost;
 use App\Models\Division;
 use App\Models\Employee;
 use App\Models\Position;
@@ -109,7 +110,11 @@ class EmployeeManagementTest extends TestCase
     {
         $division = Division::factory()->create();
         $section = Section::factory()->create(['division_id' => $division->id]);
-        $position = Position::factory()->create();
+
+        // The position has to sit in that section. A position from anywhere
+        // else describes a placement that does not exist, and is refused -
+        // see EmployeeFormTest.
+        $position = Position::factory()->create(['section_id' => $section->id]);
 
         $this->actingAs($this->admin())->post(route('admin.employees.store'), $this->payload([
             'division_id' => $division->id,
@@ -227,7 +232,7 @@ class EmployeeManagementTest extends TestCase
             'last_name'            => $incoming->last_name,
             'employee_number'      => $incoming->employee_number,
             'employment_status'    => 'permanent',
-            'is_chief_of_hospital' => 1,
+            'post'                 => OrgPost::ChiefOfHospital->value,
         ]);
 
         $this->assertTrue($incoming->fresh()->is_chief_of_hospital);
@@ -266,7 +271,7 @@ class EmployeeManagementTest extends TestCase
             'last_name'            => $chief->last_name,
             'employee_number'      => $chief->employee_number,
             'employment_status'    => 'permanent',
-            'is_chief_of_hospital' => 1,
+            'post'                 => OrgPost::ChiefOfHospital->value,
         ]);
 
         $chain = $routing->resolve($divisionHead->fresh());

@@ -56,7 +56,8 @@
                  cannot resolve a chain for any Section Head or Division Head. --}}
             <div class="rounded-md bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-500/20">
                 No Chief of Hospital is set. Until one is, no Section Head or Division Head can submit an IPCR —
-                they have nobody to approve it. Edit an employee and tick <strong>Chief of Hospital</strong>.
+                they have nobody to approve it. Edit an employee and set their
+                <strong>Approving post</strong> to Chief of Hospital.
             </div>
         @endif
 
@@ -77,10 +78,12 @@
                 <tr>
                     <td class="px-6 py-4 text-sm">
                         <span class="font-medium text-gray-900">{{ $employee->full_name }}</span>
-                        @if ($employee->is_chief_of_hospital)
+                        {{-- Every approving post, not only the Chief's. Who
+                             heads what decides where each IPCR goes, so it
+                             belongs on the list rather than one page away. --}}
+                        @if ($post = $employee->postTitle())
                             <span
-                                class="ms-2 inline-flex items-center rounded-full bg-seal/15 px-2 py-0.5 font-data text-[0.625rem] uppercase tracking-wide text-amber-800 ring-1 ring-inset ring-amber-500/30">Chief
-                                of Hospital</span>
+                                class="ms-2 inline-flex items-center rounded-full bg-seal/15 px-2 py-0.5 font-data text-[0.625rem] uppercase tracking-wide text-amber-800 ring-1 ring-inset ring-amber-500/30">{{ $post }}</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 font-data text-sm text-gray-600">{{ $employee->employee_number }}</td>
@@ -127,7 +130,7 @@
                     </td>
                 </tr>
 
-                <x-modal name="edit-employee-{{ $employee->id }}" focusable max-width="2xl">
+                <x-modal name="edit-employee-{{ $employee->id }}" focusable max-width="4xl">
                     <form method="POST" action="{{ route('admin.employees.update', $employee) }}"
                         class="space-y-4 p-6">
                         @csrf
@@ -162,7 +165,7 @@
 
         {{ $employees->links() }}
 
-        <x-modal name="create-employee" focusable max-width="2xl">
+        <x-modal name="create-employee" focusable max-width="4xl">
             <form method="POST" action="{{ route('admin.employees.store') }}" class="space-y-4 p-6">
                 @csrf
                 <h2 class="text-lg font-semibold text-gray-900">New employee</h2>

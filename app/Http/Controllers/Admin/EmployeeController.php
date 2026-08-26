@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\OrgPost;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreEmployeeRequest;
 use App\Http\Requests\Admin\UpdateEmployeeRequest;
@@ -49,7 +50,10 @@ class EmployeeController extends Controller
 
         $divisions = Division::query()->orderBy('name')->get();
         $sections = Section::query()->with('division')->orderBy('name')->get();
-        $positions = Position::query()->orderBy('title')->get();
+        // The section comes with it: the position picker narrows on it, and on
+        // the division behind it, so the three placement selects can never
+        // describe a combination that does not exist.
+        $positions = Position::query()->with('section')->orderBy('title')->get();
 
         return view('admin.employees.index', compact('employees', 'divisions', 'sections', 'positions'));
     }
@@ -66,7 +70,7 @@ class EmployeeController extends Controller
                 $temporaryPassword = $this->createAccountFor($employee, $data);
             }
 
-            $this->enforceSingleChiefOfHospital($employee, $data);
+            $this->applyPost($employee, $data);
 
             return $employee;
         });
@@ -98,12 +102,18 @@ class EmployeeController extends Controller
                 if (! empty($data['role'])) {
                     $employee->user->syncRoles([$data['role']]);
                 }
+
+                // Resetting the password of an account that already exists.
+                // Blank means "leave it alone", not "clear it".
+                if (! empty($data['password'])) {
+                    $employee->user->update(['password' => Hash::make($data['password'])]);
+                }
             } elseif (! empty($data['email'])) {
                 // Giving an existing employee a login for the first time.
                 $temporaryPassword = $this->createAccountFor($employee, $data);
             }
 
-            $this->enforceSingleChiefOfHospital($employee, $data);
+            $this->applyPost($employee, $data);
         });
 
         $message = "Updated employee \"{$employee->fresh()->full_name}\".";
@@ -184,15 +194,25 @@ class EmployeeController extends Controller
             'division_id'          => $data['division_id'] ?? null,
             'section_id'           => $data['section_id'] ?? null,
             'employment_status'    => $data['employment_status'],
-            'date_hired'           => $data['date_hired'] ?? null,
-            'is_chief_of_hospital' => (bool) ($data['is_chief_of_hospital'] ?? false),
         ];
     }
 
-    /** Creates the login, links it, and returns the password to show once. */
-    private function createAccountFor(Employee $employee, array $data): string
+    /**
+     * Creates the login, links it, and returns the password to show once.
+     *
+     * A password typed on the form wins; a blank one is generated. Either way
+     * it comes back to be shown, because a password nobody can read is a
+     * locked account.
+     */
+    private function createAccountFor(Employee $employee, array $data): ?string
     {
-        $password = Str::password(12, symbols: false);
+        $chosen = $data['password'] ?? null;
+        $chosen = is_string($chosen) && $chosen !== '' ? $chosen : null;
+
+        // Only a generated one is worth reporting back. Reading an
+        // administrator their own password onto the screen tells them nothing
+        // and puts it somewhere it need not be.
+        $password = $chosen ?? Str::password(12, symbols: false);
 
         $user = User::create([
             'name'     => $employee->full_name,
@@ -203,25 +223,64 @@ class EmployeeController extends Controller
         $user->syncRoles([$data['role'] ?? 'employee']);
         $employee->update(['user_id' => $user->id]);
 
-        return $password;
+        return $chosen === null ? $password : null;
     }
 
     /**
-     * There is exactly one Chief of Hospital.
+     * Writes the chosen post onto the org chart.
      *
-     * IpcrRoutingService takes the first active employee carrying the flag, so
-     * a second one would silently decide every Division Head's approval chain
-     * by row order. Promoting someone demotes whoever held it before.
+     * The post is not a column on the employee - it IS the org chart, and the
+     * org chart is what IpcrRoutingService reads. Storing it anywhere else
+     * would give an answer the routing never sees.
+     *
+     * The field states the present, so standing down comes first: whatever
+     * they held and no longer hold is released before the new post is taken
+     * up. Without that, moving a Section Head to another section would leave
+     * the old section with a head who no longer leads it.
      */
-    private function enforceSingleChiefOfHospital(Employee $employee, array $data): void
+    private function applyPost(Employee $employee, array $data): void
     {
-        if (! ($data['is_chief_of_hospital'] ?? false)) {
-            return;
-        }
+        $employee->refresh();
+        $post = OrgPost::tryFrom((string) ($data['post'] ?? ''));
 
-        Employee::query()
-            ->where('is_chief_of_hospital', true)
-            ->whereKeyNot($employee->id)
-            ->update(['is_chief_of_hospital' => false]);
+        Section::query()
+            ->where('section_head_employee_id', $employee->id)
+            ->when(
+                $post === OrgPost::SectionHead && $employee->section_id,
+                fn (Builder $query) => $query->whereKeyNot($employee->section_id)
+            )
+            ->update(['section_head_employee_id' => null]);
+
+        Division::query()
+            ->where('division_head_employee_id', $employee->id)
+            ->when(
+                $post === OrgPost::DivisionHead && $employee->division_id,
+                fn (Builder $query) => $query->whereKeyNot($employee->division_id)
+            )
+            ->update(['division_head_employee_id' => null]);
+
+        $employee->update(['is_chief_of_hospital' => $post === OrgPost::ChiefOfHospital]);
+
+        match ($post) {
+            // Exactly one Chief of Hospital: IpcrRoutingService takes the
+            // first active employee carrying the flag, so a second would
+            // silently decide every Division Head's chain by row order.
+            OrgPost::ChiefOfHospital => Employee::query()
+                ->where('is_chief_of_hospital', true)
+                ->whereKeyNot($employee->id)
+                ->update(['is_chief_of_hospital' => false]),
+
+            // One head per section and per division, so taking the post up
+            // replaces whoever held it - no separate demotion needed.
+            OrgPost::SectionHead => Section::query()
+                ->whereKey($employee->section_id)
+                ->update(['section_head_employee_id' => $employee->id]),
+
+            OrgPost::DivisionHead => Division::query()
+                ->whereKey($employee->division_id)
+                ->update(['division_head_employee_id' => $employee->id]),
+
+            default => null,
+        };
     }
 }

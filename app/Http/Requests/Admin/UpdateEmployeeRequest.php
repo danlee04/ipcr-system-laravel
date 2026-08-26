@@ -4,9 +4,15 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class UpdateEmployeeRequest extends FormRequest
 {
+    use PlacesAnEmployee;
+
+    /** The same list the create form hands out. */
+    public const ROLES = StoreEmployeeRequest::ROLES;
+
     public function authorize(): bool
     {
         return true;
@@ -16,11 +22,7 @@ class UpdateEmployeeRequest extends FormRequest
     {
         $employee = $this->route('employee');
 
-        return [
-            'first_name'      => ['required', 'string', 'max:255'],
-            'middle_name'     => ['nullable', 'string', 'max:255'],
-            'last_name'       => ['required', 'string', 'max:255'],
-            'suffix'          => ['nullable', 'string', 'max:20'],
+        return $this->employeeRules() + $this->accountRules() + [
             'employee_number' => [
                 'required', 'string', 'max:50',
                 Rule::unique('employees', 'employee_number')->ignore($employee->id),
@@ -32,15 +34,16 @@ class UpdateEmployeeRequest extends FormRequest
                 'nullable', 'email', 'max:255',
                 Rule::unique('users', 'email')->ignore($employee->user_id),
             ],
-            'role' => ['nullable', Rule::in(StoreEmployeeRequest::ROLES)],
-
-            'position_id' => ['nullable', 'integer', 'exists:positions,id'],
-            'division_id' => ['nullable', 'integer', 'exists:divisions,id'],
-            'section_id'  => ['nullable', 'integer', 'exists:sections,id'],
-
-            'employment_status'    => ['required', Rule::in(StoreEmployeeRequest::EMPLOYMENT_STATUSES)],
-            'date_hired'           => ['nullable', 'date'],
-            'is_chief_of_hospital' => ['nullable', 'boolean'],
         ];
+    }
+
+    public function messages(): array
+    {
+        return $this->employeeMessages();
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $this->validatePlacement($validator);
     }
 }

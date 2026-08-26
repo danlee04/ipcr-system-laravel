@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OrgPost;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -158,6 +159,12 @@ class Employee extends Model
             || $this->isChiefOfHospital();
     }
 
+    /** The approving post they hold, read off the org chart. */
+    public function post(): ?OrgPost
+    {
+        return OrgPost::heldBy($this);
+    }
+
     /**
      * The approving post they hold, for showing beside their name.
      *
@@ -165,18 +172,10 @@ class Employee extends Model
      * assesses and the Division Head gives the final approval. Without the
      * post beside the name, nobody can tell whether an IPCR went where it
      * should have.
-     *
-     * Ordered most senior first - one person can hold more than one, and the
-     * highest is the one that explains why an IPCR reached them.
      */
     public function postTitle(): ?string
     {
-        return match (true) {
-            $this->isChiefOfHospital() => 'Chief of Hospital',
-            $this->isDivisionHead()    => 'Division Head',
-            $this->isSectionHead()     => 'Section Head',
-            default                    => null,
-        };
+        return $this->post()?->label();
     }
 
     /** Their name with the post that explains their place in a chain. */
