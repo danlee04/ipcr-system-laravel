@@ -3,8 +3,11 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('Divisions') }}</h2>
             <div class="flex flex-wrap items-center gap-3">
+                {{-- Asked of the whole hospital, not the page: a filter that
+                     hides every division must not disable the button that
+                     would let you add a section to one of them. --}}
                 <button type="button" x-data x-on:click="$dispatch('open-modal', 'create-section')"
-                    @disabled($divisions->isEmpty())
+                    @disabled($allDivisions->isEmpty())
                     class="inline-flex items-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:text-gray-300">
                     + New Section
                 </button>
@@ -25,6 +28,37 @@
                 the division can submit an IPCR.
             </div>
         @endif
+
+        {{-- Division narrows Section, the same cascade as everywhere else, so
+             the two filters can never describe a pair that has no rows. --}}
+        <x-admin.filter-bar :action="route('admin.divisions.index')" placeholder="Search by name or code">
+            <div class="flex flex-wrap items-end gap-2"
+                x-data="{ division: '{{ request('division') }}', section: '{{ request('section') }}' }">
+                <label class="block">
+                    <span class="sr-only">Division</span>
+                    <select name="division" x-model="division" x-on:change="section = ''"
+                        class="w-48 rounded-lg border-gray-300 text-sm">
+                        <option value="">All divisions</option>
+                        @foreach ($allDivisions as $option)
+                            <option value="{{ $option->id }}">{{ $option->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="block">
+                    <span class="sr-only">Section</span>
+                    <select name="section" x-model="section" class="w-48 rounded-lg border-gray-300 text-sm">
+                        <option value="">All sections</option>
+                        @foreach ($allSections as $option)
+                            <option value="{{ $option->id }}" data-division="{{ $option->division_id }}"
+                                x-show="division === '' || division === '{{ $option->division_id }}'">
+                                {{ $option->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </label>
+            </div>
+        </x-admin.filter-bar>
 
         <x-admin.table>
             <x-slot:head>
@@ -98,7 +132,10 @@
                             <label class="block">
                                 <span class="mb-1 block text-sm font-medium text-gray-700">Division</span>
                                 <select name="division_id" required class="w-full rounded-md border-gray-300 text-sm">
-                                    @foreach ($divisions as $option)
+                                    {{-- Every division, not the page: moving a
+                                         section to one that is filtered out
+                                         has to stay possible. --}}
+                                    @foreach ($allDivisions as $option)
                                         <option value="{{ $option->id }}"
                                             @selected($section->division_id === $option->id)>{{ $option->name }}</option>
                                     @endforeach
@@ -198,10 +235,18 @@
                 </x-modal>
             @empty
                 <tr>
-                    <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">No divisions yet.</td>
+                    <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">
+                        @if (request()->hasAny(['search', 'division', 'section']))
+                            No divisions match this search.
+                        @else
+                            No divisions yet.
+                        @endif
+                    </td>
                 </tr>
             @endforelse
         </x-admin.table>
+
+        {{ $divisions->links() }}
 
         <x-modal name="create-division" focusable max-width="lg">
             <form method="POST" action="{{ route('admin.divisions.store') }}" class="space-y-4 p-6">
@@ -254,7 +299,9 @@
                     <span class="mb-1 block text-sm font-medium text-gray-700">Division</span>
                     <select name="division_id" required class="w-full rounded-md border-gray-300 text-sm">
                         <option value="">Select division…</option>
-                        @foreach ($divisions as $division)
+                        {{-- Every division in the hospital. The paged list
+                             would shrink this to whatever is on screen. --}}
+                        @foreach ($allDivisions as $division)
                             <option value="{{ $division->id }}">{{ $division->name }}</option>
                         @endforeach
                     </select>
