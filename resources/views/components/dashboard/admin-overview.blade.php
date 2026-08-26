@@ -15,7 +15,7 @@
     // Only the four states worth charting; Returned is an exception path and
     // would flatten the other slices.
     $donut = [
-        'labels' => ['Draft', 'For Assessment', 'For Final Rating', 'Approved'],
+        'labels' => ['Draft', 'For Assessment', 'For Final Approval', 'Approved'],
         'data' => [$t['draft'], $t['review'], $t['final'], $t['approved']],
         'colors' => ['#EF9F27', '#378ADD', '#5DCAA5', '#639922'],
     ];
@@ -125,7 +125,7 @@
             </x-slot:icon>
         </x-dashboard.kpi-card>
 
-        <x-dashboard.kpi-card label="For Assessment" :value="$t['review']" sub="with the assessor" accent="teal"
+        <x-dashboard.kpi-card label="For Assessment" :value="$t['review']" sub="waiting to be assessed" accent="teal"
             :percent="$pct($t['review'])">
             <x-slot:icon>
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -135,7 +135,7 @@
             </x-slot:icon>
         </x-dashboard.kpi-card>
 
-        <x-dashboard.kpi-card label="For Final Rating" :value="$t['final']" sub="with the final approver"
+        <x-dashboard.kpi-card label="For Final Approval" :value="$t['final']" sub="waiting for final approval"
             accent="blue" :percent="$pct($t['final'])">
             <x-slot:icon>
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -283,7 +283,7 @@
                     <thead>
                         <tr class="border-b border-gray-100 text-[0.6875rem] uppercase tracking-wide text-gray-500">
                             <th class="px-5 py-2.5 text-start font-medium">Division</th>
-                            @foreach (['Total', 'Approved', 'For Assessment', 'For Final Rating', 'Draft', 'Avg Rating', 'Progress'] as $heading)
+                            @foreach (['Total', 'Approved', 'For Assessment', 'For Final Approval', 'Draft', 'Avg Rating', 'Progress'] as $heading)
                                 <th class="px-3 py-2.5 text-center font-medium">{{ $heading }}</th>
                             @endforeach
                         </tr>

@@ -24,6 +24,7 @@ class Ipcr extends Model
         'office_name',
         'assessor_employee_id',
         'final_approver_employee_id',
+        'chain_overridden_at',
         'status',
         'mode',
         'strategic_weight',
@@ -55,6 +56,7 @@ class Ipcr extends Model
             'support_rating'         => 'decimal:3',
             'common_rating'          => 'decimal:3',
             'final_numerical_rating' => 'decimal:3',
+            'chain_overridden_at'    => 'datetime',
             'submitted_at'           => 'datetime',
             'assessed_at'            => 'datetime',
             'approved_at'            => 'datetime',
@@ -168,6 +170,20 @@ class Ipcr extends Model
             $this->weightTotalsByCategory(),
             fn (float $total): bool => abs($total - 100.0) > $tolerance
         );
+    }
+
+    /**
+     * Did HR or an administrator choose this chain by hand?
+     *
+     * Submission asks before resolving the chain from the org chart. Only a
+     * chain somebody chose survives; one merely left over from an earlier
+     * submission is resolved again, so a change of section head is picked up.
+     */
+    public function hasOverriddenChain(): bool
+    {
+        return $this->chain_overridden_at !== null
+            && $this->assessor_employee_id !== null
+            && $this->final_approver_employee_id !== null;
     }
 
     public function isAwaitingAssessment(): bool

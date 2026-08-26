@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DesignationController;
 use App\Http\Controllers\Admin\IpcrController as AdminIpcrController;
 use App\Http\Controllers\Admin\DivisionController;
+use App\Http\Controllers\Admin\IpcrChainController;
 use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\FunctionController;
 use App\Http\Controllers\Admin\PositionPageController;
@@ -74,6 +75,15 @@ Route::prefix('admin')
         Route::get('/periods', [PeriodController::class, 'index'])->name('periods.index');
         Route::get('/functions', [FunctionController::class, 'index'])->name('functions.index');
         Route::get('/ipcrs', [AdminIpcrController::class, 'index'])->name('ipcrs.index');
+
+        /*
+         * The administrative escape hatches. Guarded by IpcrPolicy on top of
+         * the group's role check: whether they apply depends on the IPCR's
+         * status, not only on who is asking.
+         */
+        Route::put('/ipcrs/{ipcr}/chain', [IpcrChainController::class, 'update'])->name('ipcrs.chain');
+        Route::delete('/ipcrs/{ipcr}/chain', [IpcrChainController::class, 'destroy'])->name('ipcrs.chain.release');
+        Route::post('/ipcrs/{ipcr}/reopen', [IpcrChainController::class, 'reopen'])->name('ipcrs.reopen');
 
         Route::post('/divisions', [DivisionController::class, 'store'])->name('divisions.store');
         Route::put('/divisions/{division}', [DivisionController::class, 'update'])->name('divisions.update');

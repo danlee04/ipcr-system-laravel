@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\IpcrStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Division;
+use App\Models\Employee;
 use App\Models\Ipcr;
 use App\Models\IpcrPeriod;
 use App\Models\Section;
@@ -54,6 +55,11 @@ class IpcrController extends Controller
             'divisions'  => Division::query()->orderBy('name')->get(),
             'sections'   => Section::query()->orderBy('name')->get(),
             'statuses'   => IpcrStatus::cases(),
+
+            // Backs the approver pickers. Active only: naming a retired
+            // employee as assessor would route the IPCR into a dead account.
+            'employees'  => Employee::query()->active()
+                ->orderBy('last_name')->orderBy('first_name')->get(),
         ]);
     }
 

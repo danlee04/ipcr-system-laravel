@@ -140,7 +140,7 @@ class IpcrController extends Controller
     {
         $this->authorize('view', $ipcr);
 
-        $ipcr->load(['items', 'period', 'employee', 'assessor', 'finalApprover', 'approvals.approver']);
+        $ipcr->load(['items', 'period', 'employee', 'assessor', 'finalApprover', 'approvals.approver', 'approvals.actedBy']);
         $catalog = $this->functionCatalog->availableFor($ipcr->employee);
 
         return view('ipcrs.show', compact('ipcr', 'catalog'));
@@ -218,6 +218,21 @@ class IpcrController extends Controller
                 'error',
                 'Weights must total 100% in each category. ' . implode('; ', $parts) . '.'
             );
+        }
+
+        // A chain HR or an administrator set by hand wins over the org chart.
+        // It is the only way the Chief of Hospital's own IPCR moves at all -
+        // IpcrRoutingService refuses to route them, having nobody above them.
+        // A chain merely left over from an earlier submission does not count:
+        // that one is resolved again, so a change of head is picked up.
+        if ($ipcr->hasOverriddenChain()) {
+            $ipcr->update([
+                'status'       => IpcrStatus::Submitted,
+                'submitted_at' => now(),
+            ]);
+
+            return redirect()->route('ipcrs.show', $ipcr)
+                ->with('status', "Submitted for assessment to {$ipcr->assessor->full_name}.");
         }
 
         try {

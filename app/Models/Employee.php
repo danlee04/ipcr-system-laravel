@@ -158,6 +158,35 @@ class Employee extends Model
             || $this->isChiefOfHospital();
     }
 
+    /**
+     * The approving post they hold, for showing beside their name.
+     *
+     * An IPCR names people, but the flow is about posts: the Section Head
+     * assesses and the Division Head gives the final approval. Without the
+     * post beside the name, nobody can tell whether an IPCR went where it
+     * should have.
+     *
+     * Ordered most senior first - one person can hold more than one, and the
+     * highest is the one that explains why an IPCR reached them.
+     */
+    public function postTitle(): ?string
+    {
+        return match (true) {
+            $this->isChiefOfHospital() => 'Chief of Hospital',
+            $this->isDivisionHead()    => 'Division Head',
+            $this->isSectionHead()     => 'Section Head',
+            default                    => null,
+        };
+    }
+
+    /** Their name with the post that explains their place in a chain. */
+    public function nameWithPost(): string
+    {
+        $post = $this->postTitle();
+
+        return $post === null ? $this->full_name : "{$this->full_name} — {$post}";
+    }
+
     // ---------------------------------------------------------------
     // Scopes
     // ---------------------------------------------------------------

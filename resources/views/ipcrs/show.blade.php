@@ -73,15 +73,21 @@
                         <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Office</dt>
                         <dd class="mt-1 text-sm text-gray-900">{{ $ipcr->office_name ?? '—' }}</dd>
                     </div>
+                    {{-- Named by the stage, not by a job title the hospital
+                         does not use. Who takes each one follows from the org
+                         chart: the Section Head assesses, the Division Head
+                         gives the final approval - so the post is shown beside
+                         the name, which is what tells you the routing is
+                         right. --}}
                     <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Assessor</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $ipcr->assessor?->full_name ?? 'Not yet routed' }}
-                        </dd>
+                        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">For Assessment</dt>
+                        <dd class="mt-1 text-sm text-gray-900">
+                            {{ $ipcr->assessor?->nameWithPost() ?? 'Not yet routed' }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Final Approver</dt>
+                        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">For Final Approval</dt>
                         <dd class="mt-1 text-sm text-gray-900">
-                            {{ $ipcr->finalApprover?->full_name ?? 'Not yet routed' }}</dd>
+                            {{ $ipcr->finalApprover?->nameWithPost() ?? 'Not yet routed' }}</dd>
                     </div>
                     <div>
                         <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Final Rating</dt>
@@ -309,8 +315,12 @@
                     <h3 class="mb-4 text-sm font-semibold text-gray-900">Approval History</h3>
                     <ul class="space-y-3">
                         @foreach ($ipcr->approvals as $approval)
-                            <li class="border-l-2 border-gray-200 pl-3 text-sm text-gray-700">
-                                <span class="font-medium">{{ $approval->approver->full_name }}</span>
+                            {{-- An administrative row has no approver: HR and
+                                 administrators need not be employees, so the
+                                 name comes from whichever record exists. --}}
+                            <li
+                                class="border-l-2 pl-3 text-sm text-gray-700 {{ $approval->isAdministrative() ? 'border-amber-400' : 'border-gray-200' }}">
+                                <span class="font-medium">{{ $approval->actorName() }}</span>
                                 — {{ $approval->action->label() }} ({{ $approval->stage->label() }})
                                 <span class="text-gray-400">· {{ $approval->acted_at->format('M d, Y g:ia') }}</span>
                                 @if ($approval->remarks)

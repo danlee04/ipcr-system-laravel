@@ -358,17 +358,17 @@
                     <div class="role">Assessed by</div>
                     <div class="name">{{ $ipcr->assessor?->full_name }}</div>
                     <div class="caption">
-                        Immediate Supervisor
+                        {{ $ipcr->assessor?->postTitle() ?? 'Immediate Supervisor' }}
                         @if ($ipcr->assessed_at)
                             · {{ $ipcr->assessed_at->format('d M Y') }}
                         @endif
                     </div>
                 </td>
                 <td>
-                    <div class="role">Final rating by</div>
+                    <div class="role">Final approval by</div>
                     <div class="name">{{ $ipcr->finalApprover?->full_name }}</div>
                     <div class="caption">
-                        Approving Authority
+                        {{ $ipcr->finalApprover?->postTitle() ?? 'Approving Authority' }}
                         @if ($ipcr->approved_at)
                             · {{ $ipcr->approved_at->format('d M Y') }}
                         @endif

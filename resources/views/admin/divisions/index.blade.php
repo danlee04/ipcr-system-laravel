@@ -130,7 +130,7 @@
                                     @endforeach
                                 </select>
                                 <span class="mt-1 block text-xs text-gray-500">
-                                    This is the assessor for everyone in the section.
+                                    This is who assesses everyone in the section.
                                 </span>
                             </label>
 

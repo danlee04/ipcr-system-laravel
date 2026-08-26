@@ -114,7 +114,7 @@
                             ·
                         @endif
                         @if ($pending['final'] > 0)
-                            {{ $pending['final'] }} to give a final rating
+                            {{ $pending['final'] }} awaiting your final approval
                         @endif
                     </p>
                 </a>

@@ -113,11 +113,11 @@ class IpcrApprovalController extends Controller
 
         return redirect()->route('approvals.inbox')->with(
             'status',
-            "Assessment complete for {$ipcr->employee->full_name}. Sent to {$ipcr->finalApprover?->full_name} for final rating."
+            "Assessment complete for {$ipcr->employee->full_name}. Sent to {$ipcr->finalApprover?->full_name} for final approval."
         );
     }
 
-    /** Give the final rating. This is the last step. */
+    /** Give the final approval. This is the last step. */
     public function approve(Request $request, Ipcr $ipcr): RedirectResponse
     {
         $this->authorize('finalize', $ipcr);

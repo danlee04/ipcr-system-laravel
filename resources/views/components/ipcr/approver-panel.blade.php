@@ -17,7 +17,7 @@
                     Rate every function from 1 to 5 on quality, efficiency and timeliness. Save as often as you
                     like — the assessment is only complete when you say so.
                 @else
-                    The assessor has rated every function. Approving makes this rating permanent.
+                    Every function has been rated at the assessment stage. Approving makes this rating permanent.
                 @endif
             </p>
         </div>
@@ -99,7 +99,7 @@
 
             @if ($canAssess)
                 <form method="POST" action="{{ route('ipcrs.assess', $ipcr) }}"
-                    onsubmit="return confirm('Complete the assessment and send this to the final approver?');">
+                    onsubmit="return confirm('Complete the assessment and send this on for final approval?');">
                     @csrf
                     <button type="submit"
                         class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">
@@ -112,7 +112,7 @@
                     @csrf
                     <button type="submit"
                         class="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500">
-                        Approve final rating
+                        Give final approval
                     </button>
                 </form>
             @endif

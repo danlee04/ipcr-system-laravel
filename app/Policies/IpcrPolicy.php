@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Enums\IpcrStatus;
 use App\Models\Ipcr;
 use App\Models\User;
+use App\Services\IpcrRoutingService;
 
 /**
  * Who may view and edit an IPCR.
@@ -18,6 +19,8 @@ use App\Models\User;
  */
 class IpcrPolicy
 {
+    public function __construct(private readonly IpcrRoutingService $routing) {}
+
     /** Does this user own the IPCR? */
     private function owns(User $user, Ipcr $ipcr): bool
     {
@@ -107,6 +110,57 @@ class IpcrPolicy
         return $employeeId !== null
             && $approverEmployeeId !== null
             && $employeeId === $approverEmployeeId;
+    }
+
+    /**
+     * Set who assesses and who gives the final approval.
+     *
+     * Deliberately narrow. Routing is automatic - the Section Head assesses,
+     * the Division Head gives the final approval - and nobody chooses an
+     * approver where the org chart already answers the question. Two reasons:
+     * a hand-set chain stops following a change of head, and a door left open
+     * becomes the habit rather than the exception.
+     *
+     * So this needs all of:
+     *   - HR or an administrator
+     *   - not yet approved; once signed the chain is history, and correcting
+     *     an approved IPCR goes through reopen(), which leaves a record
+     *   - either the org chart cannot route this employee (the Chief of
+     *     Hospital, or a section with no head), or a chain was already set by
+     *     hand and now needs correcting
+     */
+    public function reroute(User $user, Ipcr $ipcr): bool
+    {
+        if (! $user->hasAnyRole(['admin', 'hr']) || $ipcr->isFinal()) {
+            return false;
+        }
+
+        return $ipcr->hasOverriddenChain() || ! $this->routing->canResolveFor($ipcr->employee);
+    }
+
+    /**
+     * Hand a hand-set chain back to the org chart.
+     *
+     * The counterpart to reroute(), and not optional: without it an IPCR
+     * routed by hand while a section had no head would go on ignoring the
+     * head appointed afterwards, forever.
+     */
+    public function releaseChain(User $user, Ipcr $ipcr): bool
+    {
+        return $user->hasAnyRole(['admin', 'hr'])
+            && ! $ipcr->isFinal()
+            && $ipcr->hasOverriddenChain();
+    }
+
+    /**
+     * Undo an approval.
+     *
+     * The mirror of reroute(): approved IPCRs only. Anything earlier is still
+     * moving under its own power and belongs to the people in its chain.
+     */
+    public function reopen(User $user, Ipcr $ipcr): bool
+    {
+        return $user->hasAnyRole(['admin', 'hr']) && $ipcr->isFinal();
     }
 
     /**

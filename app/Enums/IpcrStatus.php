@@ -16,7 +16,7 @@ enum IpcrStatus: string
         return match ($this) {
             self::Draft     => 'Draft',
             self::Submitted => 'For Assessment',
-            self::Assessed  => 'For Final Rating',
+            self::Assessed  => 'For Final Approval',
             self::Approved  => 'Approved',
             self::Returned  => 'Returned for Revision',
         };

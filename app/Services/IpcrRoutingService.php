@@ -47,6 +47,25 @@ class IpcrRoutingService
     }
 
     /**
+     * Can the org chart answer this on its own?
+     *
+     * Asked before offering anyone the chance to set a chain by hand. Where
+     * the answer is yes, hand-routing is not an option: it would stop the
+     * IPCR following a change of head, and it would let a habit form around
+     * what is meant to be an exception.
+     */
+    public function canResolveFor(Employee $employee): bool
+    {
+        try {
+            $this->resolve($employee);
+
+            return true;
+        } catch (IpcrRoutingException) {
+            return false;
+        }
+    }
+
+    /**
      * Rank and file (or a Section Head holding no section - an edge case):
      *   assessor      = the Section Head of their section
      *   finalApprover = the Division Head of that section's division

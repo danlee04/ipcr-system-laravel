@@ -16,8 +16,8 @@
                     'stampLabel' => 'Submitted',
                 ],
                 [
-                    'title' => 'For Final Rating',
-                    'blurb' => 'The assessment is done. Confirm the marks to give the final rating.',
+                    'title' => 'For Final Approval',
+                    'blurb' => 'The assessment is done. Confirm the marks to give the final approval.',
                     'items' => $forFinalRating,
                     'stamp' => 'assessed_at',
                     'stampLabel' => 'Assessed',

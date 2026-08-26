@@ -373,7 +373,7 @@ class ApprovalFlowTest extends TestCase
         $this->actingAs($this->finalApprover->user)
             ->get(route('ipcrs.show', $ipcr))
             ->assertOk()
-            ->assertSee('Approve final rating')
+            ->assertSee('Give final approval')
             ->assertDontSee('name="ratings[' . $item->id . '][quality]"', false);
     }
 

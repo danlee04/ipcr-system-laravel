@@ -7,8 +7,10 @@
         <x-admin.flash />
 
         <p class="max-w-3xl text-sm text-gray-600">
-            Every IPCR in the hospital, read-only. Assessing and approving stay with the people in each IPCR's own
-            approval chain.
+            Every IPCR in the hospital. Routing is automatic — the Section Head assesses, the Division Head gives the
+            final approval — so <strong>Approvers</strong> appears only where the org chart cannot work that out, such
+            as the Chief of Hospital's own IPCR. <strong>Reopen</strong> undoes an approval. Both are recorded in the
+            IPCR's history.
         </p>
 
         <x-admin.filter-bar :action="route('admin.ipcrs.index')" placeholder="Search by employee name or number">
@@ -79,13 +81,21 @@
                     <td class="px-6 py-4 text-sm text-gray-700">{{ $ipcr->period?->name ?? '—' }}</td>
                     <td class="px-6 py-4"><x-status-badge :status="$ipcr->status" /></td>
                     <td class="px-6 py-4 text-sm text-gray-600">
-                        {{-- Whoever the IPCR is sitting with right now. --}}
+                        {{-- Whoever the IPCR is sitting with right now, and the
+                             post that put them there. --}}
                         @if ($ipcr->isAwaitingAssessment())
-                            {{ $ipcr->assessor?->full_name ?? 'Not routed' }}
+                            {{ $ipcr->assessor?->nameWithPost() ?? 'Not routed' }}
                         @elseif ($ipcr->isAwaitingFinalRating())
-                            {{ $ipcr->finalApprover?->full_name ?? 'Not routed' }}
+                            {{ $ipcr->finalApprover?->nameWithPost() ?? 'Not routed' }}
                         @else
                             <span class="text-gray-400">—</span>
+                        @endif
+
+                        @if ($ipcr->hasOverriddenChain())
+                            {{-- Worth saying on the list: a chain that did not
+                                 come from the org chart is the first thing to
+                                 check when the routing looks wrong. --}}
+                            <span class="mt-1 block text-xs text-amber-700">chain set by hand</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 text-sm">
@@ -99,13 +109,29 @@
                     </td>
                     <td class="px-6 py-4 font-data text-xs text-gray-500">{{ $ipcr->updated_at?->format('d M Y') }}
                     </td>
-                    <td class="px-6 py-4 text-end">
-                        <a href="{{ route('ipcrs.show', $ipcr) }}"
-                            class="inline-flex items-center rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 transition-colors hover:bg-gray-50">
-                            Open
-                        </a>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center justify-end gap-3">
+                            @can('reroute', $ipcr)
+                                <button type="button" x-data
+                                    x-on:click="$dispatch('open-modal', 'chain-{{ $ipcr->id }}')"
+                                    class="text-sm font-medium text-gray-900 hover:underline">Approvers</button>
+                            @endcan
+
+                            @can('reopen', $ipcr)
+                                <button type="button" x-data
+                                    x-on:click="$dispatch('open-modal', 'reopen-{{ $ipcr->id }}')"
+                                    class="text-sm font-medium text-red-600 hover:underline">Reopen</button>
+                            @endcan
+
+                            <a href="{{ route('ipcrs.show', $ipcr) }}"
+                                class="inline-flex items-center rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 transition-colors hover:bg-gray-50">
+                                Open
+                            </a>
+                        </div>
                     </td>
                 </tr>
+
+                <x-admin.ipcr-chain-modals :ipcr="$ipcr" :employees="$employees" />
             @empty
                 <tr>
                     <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-500">
