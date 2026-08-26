@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Designation;
+use App\Models\Division;
+use App\Models\Section;
 use App\Models\Position;
 use App\Services\OrgDeletionGuard;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,7 +21,7 @@ use Illuminate\View\View;
  * functions; a designation is an extra assignment an employee may hold several
  * of, and is the source of STRATEGIC and SUPPORT functions.
  */
-class JobTitleController extends Controller
+class PositionPageController extends Controller
 {
     public function __construct(private readonly OrgDeletionGuard $guard) {}
 
@@ -34,7 +36,13 @@ class JobTitleController extends Controller
         // The search applies only to the tab being looked at, so switching tabs
         // does not silently carry a filter that made sense for the other one.
         $positions = Position::query()
+            ->with('section.division')
             ->when($tab === 'positions' && $search, fn ($q) => $this->matching($q, $search, ['title', 'item_number']))
+            ->when($request->integer('section'), fn (Builder $q, int $id) => $q->where('section_id', $id))
+            ->when(
+                $request->integer('division'),
+                fn (Builder $q, int $id) => $q->whereHas('section', fn (Builder $s) => $s->where('division_id', $id))
+            )
             ->orderBy('title')
             ->paginate(self::PER_PAGE, ['*'], 'page')
             ->withQueryString();
@@ -60,10 +68,13 @@ class JobTitleController extends Controller
             fn (Designation $designation) => [$designation->id => $this->guard->for($designation)]
         );
 
-        return view('admin.job-titles.index', compact(
+        return view('admin.positions.index', compact(
             'tab', 'positions', 'designations', 'positionReports', 'designationReports',
             'positionCount', 'designationCount', 'search'
-        ));
+        ) + [
+            'divisions' => Division::query()->orderBy('name')->get(),
+            'sections'  => Section::query()->with('division')->orderBy('name')->get(),
+        ]);
     }
 
     /** Every word in the term must appear in one of the given columns. */

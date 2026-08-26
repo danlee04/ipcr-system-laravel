@@ -34,7 +34,7 @@ class IpcrItemController extends Controller
             if ($resolved === null) {
                 return back()->with('error', $function === null
                     ? 'Pick a category of Strategic, Core or Support for this function.'
-                    : "\"{$function->title}\" has not been filed under a rated category yet. Ask HR to set one on the Job Functions screen.");
+                    : "\"{$function->title}\" has not been filed under a rated category yet. Ask HR to set one on the Functions screen.");
             }
 
             $data['category'] = $resolved->value;

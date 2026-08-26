@@ -140,14 +140,14 @@
                 Divisions
             </x-sidebar-link>
 
-            <x-sidebar-link :href="route('admin.job-titles.index')" :active="request()->routeIs('admin.job-titles.*')">
+            <x-sidebar-link :href="route('admin.positions.index')" :active="request()->routeIs('admin.positions.*')">
                 <x-slot:icon>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M9 6.5V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5v1M4.5 6.5h15A1.5 1.5 0 0 1 21 8v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18V8a1.5 1.5 0 0 1 1.5-1.5ZM3 12h18" />
                     </svg>
                 </x-slot:icon>
-                Job Titles
+                Positions
             </x-sidebar-link>
 
             <x-sidebar-link :href="route('admin.employees.index')" :active="request()->routeIs('admin.employees.*')">
@@ -170,13 +170,13 @@
                 Rating Periods
             </x-sidebar-link>
 
-            <x-sidebar-link :href="route('admin.job-functions.index')" :active="request()->routeIs('admin.job-functions.*')">
+            <x-sidebar-link :href="route('admin.functions.index')" :active="request()->routeIs('admin.functions.*')">
                 <x-slot:icon>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 5.5h14M5 10h14M5 14.5h9M5 19h6" />
                     </svg>
                 </x-slot:icon>
-                Job Functions
+                Functions
             </x-sidebar-link>
         @endif
     </nav>

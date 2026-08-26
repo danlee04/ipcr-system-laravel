@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 
 /**
  * A position is the single plantilla post an employee holds, and the source of
- * their CORE job functions. Positions is the default tab on the Job Titles
+ * their CORE job functions. Positions is the default tab on the Positions
  * page, so these redirects carry no tab parameter.
  */
 class PositionController extends Controller
@@ -23,7 +23,7 @@ class PositionController extends Controller
     {
         $position = Position::create($request->validated() + ['is_active' => true]);
 
-        return redirect()->route('admin.job-titles.index')
+        return redirect()->route('admin.positions.index')
             ->with('status', "Created position \"{$position->title}\".");
     }
 
@@ -31,7 +31,7 @@ class PositionController extends Controller
     {
         $position->update($request->validated());
 
-        return redirect()->route('admin.job-titles.index')
+        return redirect()->route('admin.positions.index')
             ->with('status', "Updated position \"{$position->title}\".");
     }
 
@@ -43,7 +43,7 @@ class PositionController extends Controller
 
         $position->update(['is_active' => $validated['active']]);
 
-        return redirect()->route('admin.job-titles.index')->with(
+        return redirect()->route('admin.positions.index')->with(
             'status',
             ($validated['active'] ? 'Activated' : 'Deactivated') . " position \"{$position->title}\"."
         );
@@ -56,13 +56,13 @@ class PositionController extends Controller
         $report = $this->guard->for($position);
 
         if (! $report->deletable) {
-            return redirect()->route('admin.job-titles.index')->with('error', $report->message());
+            return redirect()->route('admin.positions.index')->with('error', $report->message());
         }
 
         $title = $position->title;
         $position->delete();
 
-        return redirect()->route('admin.job-titles.index')
+        return redirect()->route('admin.positions.index')
             ->with('status', "Deleted position \"{$title}\".");
     }
 }

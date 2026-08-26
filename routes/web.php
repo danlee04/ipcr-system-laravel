@@ -4,8 +4,8 @@ use App\Http\Controllers\Admin\DesignationController;
 use App\Http\Controllers\Admin\IpcrController as AdminIpcrController;
 use App\Http\Controllers\Admin\DivisionController;
 use App\Http\Controllers\Admin\EmployeeController;
-use App\Http\Controllers\Admin\JobFunctionController;
-use App\Http\Controllers\Admin\JobTitleController;
+use App\Http\Controllers\Admin\FunctionController;
+use App\Http\Controllers\Admin\PositionPageController;
 use App\Http\Controllers\Admin\PeriodController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\SectionController;
@@ -69,10 +69,10 @@ Route::prefix('admin')
     ->middleware(['auth', 'role:admin|hr'])
     ->group(function () {
         Route::get('/divisions', [DivisionController::class, 'index'])->name('divisions.index');
-        Route::get('/job-titles', [JobTitleController::class, 'index'])->name('job-titles.index');
+        Route::get('/positions', [PositionPageController::class, 'index'])->name('positions.index');
         Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
         Route::get('/periods', [PeriodController::class, 'index'])->name('periods.index');
-        Route::get('/job-functions', [JobFunctionController::class, 'index'])->name('job-functions.index');
+        Route::get('/functions', [FunctionController::class, 'index'])->name('functions.index');
         Route::get('/ipcrs', [AdminIpcrController::class, 'index'])->name('ipcrs.index');
 
         Route::post('/divisions', [DivisionController::class, 'store'])->name('divisions.store');
@@ -105,10 +105,10 @@ Route::prefix('admin')
         Route::patch('/periods/{period}/status', [PeriodController::class, 'setStatus'])->name('periods.status');
         Route::delete('/periods/{period}', [PeriodController::class, 'destroy'])->name('periods.destroy');
 
-        Route::post('/job-functions', [JobFunctionController::class, 'store'])->name('job-functions.store');
-        Route::put('/job-functions/{jobFunction}', [JobFunctionController::class, 'update'])->name('job-functions.update');
-        Route::patch('/job-functions/{jobFunction}/active', [JobFunctionController::class, 'setActive'])->name('job-functions.active');
-        Route::delete('/job-functions/{jobFunction}', [JobFunctionController::class, 'destroy'])->name('job-functions.destroy');
+        Route::post('/functions', [FunctionController::class, 'store'])->name('functions.store');
+        Route::put('/functions/{jobFunction}', [FunctionController::class, 'update'])->name('functions.update');
+        Route::patch('/functions/{jobFunction}/active', [FunctionController::class, 'setActive'])->name('functions.active');
+        Route::delete('/functions/{jobFunction}', [FunctionController::class, 'destroy'])->name('functions.destroy');
     });
 
 require __DIR__ . '/auth.php';

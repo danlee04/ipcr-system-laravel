@@ -23,10 +23,10 @@ class AdminAccessTest extends TestCase
     {
         return [
             'divisions' => ['admin.divisions.index'],
-            'job titles' => ['admin.job-titles.index'],
+            'job titles' => ['admin.positions.index'],
             'employees' => ['admin.employees.index'],
             'periods' => ['admin.periods.index'],
-            'job functions' => ['admin.job-functions.index'],
+            'job functions' => ['admin.functions.index'],
         ];
     }
 

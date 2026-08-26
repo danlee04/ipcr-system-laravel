@@ -7,8 +7,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreJobFunctionRequest;
 use App\Http\Requests\Admin\UpdateJobFunctionRequest;
 use App\Models\Designation;
+use App\Models\Division;
 use App\Models\JobFunction;
 use App\Models\Position;
+use App\Models\Section;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -24,7 +27,7 @@ use Illuminate\View\View;
  *   common    -> open to everyone, and carries the rated category it counts
  *                towards, because "common" is a pool, not a rating bucket
  */
-class JobFunctionController extends Controller
+class FunctionController extends Controller
 {
     /** Rows per page, matching the other admin lists. */
     private const PER_PAGE = 20;
@@ -35,35 +38,65 @@ class JobFunctionController extends Controller
         $category = FunctionCategory::tryFrom((string) $request->query('category'));
 
         $functions = JobFunction::query()
-            ->with(['position', 'designation'])
-            ->when($search, function ($query, string $term): void {
+            ->with(['position.section.division', 'designation'])
+            ->when($search, function (Builder $query, string $term): void {
                 $like = '%' . $term . '%';
-                $query->where(fn ($inner) => $inner->where('title', 'like', $like)
+                $query->where(fn (Builder $inner) => $inner->where('title', 'like', $like)
                     ->orWhere('success_indicator', 'like', $like));
             })
-            ->when($category, fn ($query) => $query->where('category', $category))
+            ->when($category, fn (Builder $query) => $query->where('category', $category))
+            ->when($request->integer('position'), $this->throughPosition(...))
+            ->when($request->integer('section'), fn (Builder $q, int $id) => $this->throughPosition(
+                $q, null, fn (Builder $p) => $p->where('section_id', $id)
+            ))
+            ->when($request->integer('division'), fn (Builder $q, int $id) => $this->throughPosition(
+                $q, null, fn (Builder $p) => $p->whereHas('section', fn (Builder $s) => $s->where('division_id', $id))
+            ))
             ->orderBy('category')
             ->orderBy('title')
             ->paginate(self::PER_PAGE)
             ->withQueryString();
 
-        $positions = Position::query()->orderBy('title')->get();
+        $positions = Position::query()->with('section')->orderBy('title')->get();
         $designations = Designation::query()->orderBy('title')->get();
+        $divisions = Division::query()->orderBy('name')->get();
+        $sections = Section::query()->with('division')->orderBy('name')->get();
 
         // Counted against the table, not the page. A warning that only fires
         // when the offending row happens to be on screen is worthless.
         $unfiledCount = JobFunction::query()->needingRatingCategory()->count();
 
-        return view('admin.job-functions.index', compact(
-            'functions', 'positions', 'designations', 'unfiledCount', 'search', 'category'
+        return view('admin.functions.index', compact(
+            'functions', 'positions', 'designations', 'divisions', 'sections',
+            'unfiledCount', 'search', 'category'
         ));
+    }
+
+    /**
+     * Narrow to functions reached through a position, without hiding the
+     * common pool.
+     *
+     * Common functions belong to everyone, so a division or section filter
+     * must leave them in - the same rule the old Function Library stated on
+     * its own filter bar. Only position-scoped rows are narrowed.
+     */
+    private function throughPosition(Builder $query, ?int $positionId = null, ?\Closure $constrain = null): Builder
+    {
+        return $query->where(function (Builder $outer) use ($positionId, $constrain): void {
+            $outer->where('category', FunctionCategory::Common)
+                ->orWhere(function (Builder $scoped) use ($positionId, $constrain): void {
+                    $positionId === null
+                        ? $scoped->whereHas('position', $constrain)
+                        : $scoped->where('position_id', $positionId);
+                });
+        });
     }
 
     public function store(StoreJobFunctionRequest $request): RedirectResponse
     {
         $function = JobFunction::create($this->attributes($request->validated()) + ['is_active' => true]);
 
-        return redirect()->route('admin.job-functions.index')
+        return redirect()->route('admin.functions.index')
             ->with('status', 'Added function "' . $this->shorten($function->title) . '".');
     }
 
@@ -71,7 +104,7 @@ class JobFunctionController extends Controller
     {
         $jobFunction->update($this->attributes($request->validated()));
 
-        return redirect()->route('admin.job-functions.index')
+        return redirect()->route('admin.functions.index')
             ->with('status', 'Updated function "' . $this->shorten($jobFunction->title) . '".');
     }
 
@@ -83,7 +116,7 @@ class JobFunctionController extends Controller
 
         $jobFunction->update(['is_active' => $validated['active']]);
 
-        return redirect()->route('admin.job-functions.index')->with(
+        return redirect()->route('admin.functions.index')->with(
             'status',
             ($validated['active'] ? 'Activated' : 'Deactivated') . ' function "' . $this->shorten($jobFunction->title) . '".'
         );
@@ -101,7 +134,7 @@ class JobFunctionController extends Controller
         $title = $this->shorten($jobFunction->title);
         $jobFunction->delete();
 
-        return redirect()->route('admin.job-functions.index')
+        return redirect()->route('admin.functions.index')
             ->with('status', "Deleted function \"{$title}\". IPCRs already using it are untouched.");
     }
 

@@ -69,7 +69,7 @@ class SetupHealth
             $problems[] = [
                 'message' => $this->count($unfiled, 'common function', 'common functions')
                     . ' with no rating category. They cannot be added to an IPCR.',
-                'route' => route('admin.job-functions.index'),
+                'route' => route('admin.functions.index'),
             ];
         }
 

@@ -250,9 +250,14 @@
 
                             <label class="sm:col-span-4">
                                 <span class="mb-1 block text-xs font-medium text-gray-600">Category</span>
+                                {{-- The three rated categories only. Common is a
+                                     pool in the catalog, not something a line
+                                     can be filed under, and offering it here
+                                     would be offering an option that always
+                                     fails validation. --}}
                                 <select name="category" class="w-full rounded-md border-gray-300 text-sm" required>
                                     <option value="">Select category…</option>
-                                    @foreach (\App\Enums\FunctionCategory::cases() as $case)
+                                    @foreach ([\App\Enums\FunctionCategory::Strategic, \App\Enums\FunctionCategory::Core, \App\Enums\FunctionCategory::Support] as $case)
                                         <option value="{{ $case->value }}">{{ $case->label() }}</option>
                                     @endforeach
                                 </select>

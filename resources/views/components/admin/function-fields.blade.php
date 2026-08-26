@@ -1,9 +1,14 @@
-@props(['function' => null, 'positions', 'designations'])
+@props(['function' => null, 'positions', 'designations', 'divisions' => null, 'sections' => null])
 
 @php
     use App\Enums\FunctionCategory;
 
     $current = old('category', $function?->category?->value ?? FunctionCategory::Core->value);
+
+    // Where the position being edited sits, so the two narrowing selects open
+    // already pointing at it instead of resetting to "all".
+    $currentSection = $function?->position?->section_id ?? '';
+    $currentDivision = $function?->position?->section?->division_id ?? '';
 @endphp
 
 {{-- Shared by the create and edit modals so the two forms cannot drift apart.
@@ -33,19 +38,59 @@
         </label>
     </div>
 
-    {{-- Core functions reach an employee through their plantilla position. --}}
-    <label class="block" x-show="category === 'core'" x-cloak>
-        <span class="mb-1 block text-sm font-medium text-gray-700">Position</span>
-        <select name="position_id" class="w-full rounded-md border-gray-300 text-sm">
-            <option value="">— Choose a position —</option>
-            @foreach ($positions as $position)
-                <option value="{{ $position->id }}" @selected(old('position_id', $function?->position_id) == $position->id)>
-                    {{ $position->title }}
-                </option>
-            @endforeach
-        </select>
-        <span class="mt-1 block text-xs text-gray-500">Everyone holding this position will see this function.</span>
-    </label>
+    {{-- Core functions reach an employee through their plantilla position.
+         Division and Section are here only to find that position: neither is
+         submitted, because a position already knows where it sits. --}}
+    <div x-show="category === 'core'" x-cloak
+        x-data="{ division: '{{ $currentDivision }}', section: '{{ $currentSection }}' }" class="space-y-4">
+        @if ($divisions && $sections)
+            <div class="grid gap-4 sm:grid-cols-2">
+                <label class="block">
+                    <span class="mb-1 block text-sm font-medium text-gray-700">Division</span>
+                    <select x-model="division" x-on:change="section = ''"
+                        class="w-full rounded-md border-gray-300 text-sm">
+                        <option value="">All divisions</option>
+                        @foreach ($divisions as $division)
+                            <option value="{{ $division->id }}">{{ $division->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="block">
+                    <span class="mb-1 block text-sm font-medium text-gray-700">Section</span>
+                    <select x-model="section" class="w-full rounded-md border-gray-300 text-sm">
+                        <option value="">All sections</option>
+                        @foreach ($sections as $section)
+                            <option value="{{ $section->id }}" data-division="{{ $section->division_id }}"
+                                x-show="division === '' || division === '{{ $section->division_id }}'">
+                                {{ $section->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </label>
+            </div>
+        @endif
+
+        <label class="block">
+            <span class="mb-1 block text-sm font-medium text-gray-700">Position</span>
+            <select name="position_id" class="w-full rounded-md border-gray-300 text-sm">
+                <option value="">— Choose a position —</option>
+                @foreach ($positions as $position)
+                    <option value="{{ $position->id }}" data-section="{{ $position->section_id }}"
+                        data-division="{{ $position->section?->division_id }}"
+                        x-show="(section === '' || section === '{{ $position->section_id }}')
+                            && (division === '' || division === '{{ $position->section?->division_id }}')"
+                        @selected(old('position_id', $function?->position_id) == $position->id)>
+                        {{ $position->title }}@if ($position->section)
+                            — {{ $position->section->name }}
+                        @endif
+                    </option>
+                @endforeach
+            </select>
+            <span class="mt-1 block text-xs text-gray-500">Everyone holding this position will see this
+                function.</span>
+        </label>
+    </div>
 
     {{-- Strategic and support reach them through their designations. --}}
     <label class="block" x-show="category === 'strategic' || category === 'support'" x-cloak>

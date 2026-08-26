@@ -147,6 +147,17 @@ class CommonFunctionCategoryTest extends TestCase
         $this->assertSame(0, $ipcr->items()->count());
     }
 
+    /** Offering an option that always fails validation is worse than omitting it. */
+    public function test_the_manual_add_form_does_not_offer_common(): void
+    {
+        [$user, $ipcr] = $this->ownerWithDraft();
+
+        $response = $this->actingAs($user)->get(route('ipcrs.show', $ipcr))->assertOk();
+
+        $response->assertSee('<option value="core">', false);
+        $response->assertDontSee('<option value="common">', false);
+    }
+
     public function test_the_three_rated_categories_are_still_accepted(): void
     {
         [$user, $ipcr] = $this->ownerWithDraft();

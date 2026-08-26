@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('Job Titles') }}</h2>
+        <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('Positions') }}</h2>
     </x-slot>
 
     <x-page-container class="space-y-6">
@@ -16,11 +16,11 @@
              returns to the tab the administrator was working in. --}}
         <div class="flex items-center justify-between gap-4 border-b border-gray-200">
             <nav class="-mb-px flex gap-6" aria-label="Job title type">
-                <a href="{{ route('admin.job-titles.index') }}"
+                <a href="{{ route('admin.positions.index') }}"
                     class="border-b-2 px-1 pb-3 text-sm font-medium {{ $tab === 'positions' ? 'border-nav-900 text-nav-900' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
                     Positions ({{ $positionCount }})
                 </a>
-                <a href="{{ route('admin.job-titles.index', ['tab' => 'designations']) }}"
+                <a href="{{ route('admin.positions.index', ['tab' => 'designations']) }}"
                     class="border-b-2 px-1 pb-3 text-sm font-medium {{ $tab === 'designations' ? 'border-nav-900 text-nav-900' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
                     Designations ({{ $designationCount }})
                 </a>
@@ -33,7 +33,7 @@
             </button>
         </div>
 
-        <x-admin.filter-bar :action="route('admin.job-titles.index')"
+        <x-admin.filter-bar :action="route('admin.positions.index')"
             :placeholder="$tab === 'positions' ? 'Search by title or item number' : 'Search by title'"
             :hidden="$tab === 'designations' ? ['tab' => 'designations'] : []" />
 
@@ -41,6 +41,8 @@
             <x-admin.table>
                 <x-slot:head>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Title</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Section
+                    </th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Item No.
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">SG</th>
@@ -52,6 +54,14 @@
                 @forelse ($positions as $position)
                     <tr>
                         <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $position->title }}</td>
+                        <td class="px-6 py-4 text-sm">
+                            @if ($position->section)
+                                <span class="block text-gray-700">{{ $position->section->name }}</span>
+                                <span class="block text-xs text-gray-400">{{ $position->section->division?->name }}</span>
+                            @else
+                                <span class="text-gray-400">Office-wide</span>
+                            @endif
+                        </td>
                         <td class="px-6 py-4 font-data text-sm text-gray-600">{{ $position->item_number ?? '—' }}</td>
                         <td class="px-6 py-4 font-data text-sm text-gray-600">{{ $position->salary_grade ?? '—' }}</td>
                         <td class="px-6 py-4"><x-admin.active-badge :active="$position->is_active" /></td>
@@ -78,6 +88,12 @@
                                 <input type="text" name="title" value="{{ $position->title }}" required
                                     class="w-full rounded-md border-gray-300 text-sm">
                             </label>
+
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                <x-admin.section-picker :divisions="$divisions" :sections="$sections"
+                                    :selected="$position->section_id"
+                                    hint="Leave empty for an office-wide post." />
+                            </div>
 
                             <div class="grid gap-4 sm:grid-cols-2">
                                 <label class="block">
@@ -110,7 +126,7 @@
                     </x-modal>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">
+                        <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">
                             {{ $search ? 'No positions match this search.' : 'No positions yet.' }}
                         </td>
                     </tr>
@@ -129,6 +145,11 @@
                         <input type="text" name="title" required placeholder="Statistician II"
                             class="w-full rounded-md border-gray-300 text-sm">
                     </label>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <x-admin.section-picker :divisions="$divisions" :sections="$sections"
+                            hint="Leave empty for an office-wide post." />
+                    </div>
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <label class="block">

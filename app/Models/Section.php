@@ -36,6 +36,12 @@ class Section extends Model
         return $this->belongsTo(Employee::class, 'section_head_employee_id');
     }
 
+    /** The plantilla posts that sit in this section. */
+    public function positions(): HasMany
+    {
+        return $this->hasMany(Position::class);
+    }
+
     public function employees(): HasMany
     {
         return $this->hasMany(Employee::class);

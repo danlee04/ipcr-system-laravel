@@ -30,6 +30,7 @@ class OrgDeletionGuard
                 'employees' => $record->employees()->count(),
             ],
             $record instanceof Section => [
+                'positions' => $record->positions()->count(),
                 'employees' => $record->employees()->count(),
             ],
             $record instanceof Position => [

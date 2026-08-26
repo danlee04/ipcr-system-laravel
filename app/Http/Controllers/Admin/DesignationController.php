@@ -23,7 +23,7 @@ class DesignationController extends Controller
     private function backToTab(string $message, string $key = 'status'): RedirectResponse
     {
         return redirect()
-            ->route('admin.job-titles.index', ['tab' => 'designations'])
+            ->route('admin.positions.index', ['tab' => 'designations'])
             ->with($key, $message);
     }
 

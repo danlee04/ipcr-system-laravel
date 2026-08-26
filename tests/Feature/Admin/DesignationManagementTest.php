@@ -26,7 +26,7 @@ class DesignationManagementTest extends TestCase
     {
         $this->actingAs($this->admin())
             ->post(route('admin.designations.store'), ['title' => 'OIC - Budget Officer'])
-            ->assertRedirect(route('admin.job-titles.index', ['tab' => 'designations']));
+            ->assertRedirect(route('admin.positions.index', ['tab' => 'designations']));
 
         $this->assertDatabaseHas('designations', ['title' => 'OIC - Budget Officer', 'is_active' => true]);
     }
@@ -75,7 +75,7 @@ class DesignationManagementTest extends TestCase
         Designation::factory()->create(['title' => 'OIC - HRMO']);
 
         $this->actingAs($this->admin())
-            ->get(route('admin.job-titles.index', ['tab' => 'designations']))
+            ->get(route('admin.positions.index', ['tab' => 'designations']))
             ->assertOk()
             ->assertSee('OIC - HRMO');
     }
@@ -86,7 +86,7 @@ class DesignationManagementTest extends TestCase
         Position::factory()->create(['title' => 'Statistician II']);
 
         $this->actingAs($this->admin())
-            ->get(route('admin.job-titles.index'))
+            ->get(route('admin.positions.index'))
             ->assertOk()
             ->assertSee('Statistician II')
             ->assertDontSee('OIC - HRMO');

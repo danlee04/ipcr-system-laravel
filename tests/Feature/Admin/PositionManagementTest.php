@@ -28,7 +28,7 @@ class PositionManagementTest extends TestCase
             ->post(route('admin.positions.store'), [
                 'title' => 'Statistician II', 'item_number' => 'STAT-002', 'salary_grade' => 15,
             ])
-            ->assertRedirect(route('admin.job-titles.index'));
+            ->assertRedirect(route('admin.positions.index'));
 
         $this->assertDatabaseHas('positions', [
             'title' => 'Statistician II', 'item_number' => 'STAT-002', 'salary_grade' => 15, 'is_active' => true,
@@ -106,7 +106,7 @@ class PositionManagementTest extends TestCase
         Position::factory()->create(['title' => 'Statistician II']);
 
         $this->actingAs($this->admin())
-            ->get(route('admin.job-titles.index'))
+            ->get(route('admin.positions.index'))
             ->assertOk()
             ->assertSee('Statistician II');
     }

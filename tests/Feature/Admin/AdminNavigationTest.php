@@ -23,10 +23,10 @@ class AdminNavigationTest extends TestCase
         $response->assertOk();
         $response->assertSee('Administration');
         $response->assertSee('Divisions');
-        $response->assertSee('Job Titles');
+        $response->assertSee('Positions');
         $response->assertSee('Employees');
         $response->assertSee('Rating Periods');
-        $response->assertSee('Job Functions');
+        $response->assertSee('Functions');
     }
 
     public function test_an_hr_user_sees_the_administration_group(): void
@@ -51,7 +51,7 @@ class AdminNavigationTest extends TestCase
 
         $response->assertOk();
         $response->assertDontSee('Administration');
-        $response->assertDontSee('Job Titles');
+        $response->assertDontSee('Positions');
     }
     /**
      * "My IPCRs" needs an Employee record: IpcrController aborts 403 without

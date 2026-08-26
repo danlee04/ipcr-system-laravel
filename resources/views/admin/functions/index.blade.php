@@ -1,8 +1,8 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('Job Functions') }}</h2>
-            <button type="button" x-data x-on:click="$dispatch('open-modal', 'create-job-function')"
+            <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('Functions') }}</h2>
+            <button type="button" x-data x-on:click="$dispatch('open-modal', 'create-function')"
                 class="inline-flex items-center rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2">
                 + New Function
             </button>
@@ -19,11 +19,13 @@
             <strong>common</strong> reaches everyone.
         </p>
 
-        <x-admin.filter-bar :action="route('admin.job-functions.index')"
+        {{-- Division narrows Section, Section narrows Position: the three
+             selects can never describe a combination that has no rows. --}}
+        <x-admin.filter-bar :action="route('admin.functions.index')"
             placeholder="Search by output or success indicator">
             <label class="block">
                 <span class="sr-only">Category</span>
-                <select name="category" class="w-44 rounded-lg border-gray-300 text-sm">
+                <select name="category" class="w-40 rounded-lg border-gray-300 text-sm">
                     <option value="">All categories</option>
                     @foreach (\App\Enums\FunctionCategory::cases() as $option)
                         <option value="{{ $option->value }}" @selected(request('category') === $option->value)>
@@ -31,7 +33,52 @@
                     @endforeach
                 </select>
             </label>
+
+            <div class="flex flex-wrap items-end gap-2"
+                x-data="{ division: '{{ request('division') }}', section: '{{ request('section') }}' }">
+                <label class="block">
+                    <span class="sr-only">Division</span>
+                    <select name="division" x-model="division" x-on:change="section = ''"
+                        class="w-40 rounded-lg border-gray-300 text-sm">
+                        <option value="">All divisions</option>
+                        @foreach ($divisions as $division)
+                            <option value="{{ $division->id }}">{{ $division->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="block">
+                    <span class="sr-only">Section</span>
+                    <select name="section" x-model="section" class="w-44 rounded-lg border-gray-300 text-sm">
+                        <option value="">All sections</option>
+                        @foreach ($sections as $section)
+                            <option value="{{ $section->id }}" data-division="{{ $section->division_id }}"
+                                x-show="division === '' || division === '{{ $section->division_id }}'">
+                                {{ $section->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="block">
+                    <span class="sr-only">Position</span>
+                    <select name="position" class="w-44 rounded-lg border-gray-300 text-sm">
+                        <option value="">All positions</option>
+                        @foreach ($positions as $position)
+                            <option value="{{ $position->id }}" data-section="{{ $position->section_id }}"
+                                data-division="{{ $position->section?->division_id }}"
+                                x-show="(section === '' || section === '{{ $position->section_id }}')
+                                    && (division === '' || division === '{{ $position->section?->division_id }}')"
+                                @selected(request('position') == $position->id)>
+                                {{ $position->title }}</option>
+                        @endforeach
+                    </select>
+                </label>
+            </div>
         </x-admin.filter-bar>
+
+        <p class="-mt-3 text-xs text-gray-500">
+            The filters narrow position functions. Common functions belong to everyone, so they are always listed.
+        </p>
 
         @if ($unfiledCount > 0)
             {{-- These fail only at the moment an employee tries to use them,
@@ -90,10 +137,10 @@
                     <td class="px-6 py-4">
                         <div class="flex items-center justify-end gap-3">
                             <button type="button" x-data
-                                x-on:click="$dispatch('open-modal', 'edit-job-function-{{ $function->id }}')"
+                                x-on:click="$dispatch('open-modal', 'edit-function-{{ $function->id }}')"
                                 class="text-sm font-medium text-gray-900 hover:underline">Edit</button>
 
-                            <form method="POST" action="{{ route('admin.job-functions.active', $function) }}">
+                            <form method="POST" action="{{ route('admin.functions.active', $function) }}">
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="active" value="{{ $function->is_active ? 0 : 1 }}">
@@ -102,7 +149,7 @@
                                 </button>
                             </form>
 
-                            <form method="POST" action="{{ route('admin.job-functions.destroy', $function) }}"
+                            <form method="POST" action="{{ route('admin.functions.destroy', $function) }}"
                                 onsubmit="return confirm('Delete this function from the catalog? IPCRs already using it keep their own copy.');">
                                 @csrf
                                 @method('DELETE')
@@ -113,18 +160,18 @@
                     </td>
                 </tr>
 
-                <x-modal name="edit-job-function-{{ $function->id }}" focusable max-width="2xl">
-                    <form method="POST" action="{{ route('admin.job-functions.update', $function) }}"
+                <x-modal name="edit-function-{{ $function->id }}" focusable max-width="2xl">
+                    <form method="POST" action="{{ route('admin.functions.update', $function) }}"
                         class="space-y-4 p-6">
                         @csrf
                         @method('PUT')
                         <h2 class="text-lg font-semibold text-gray-900">Edit function</h2>
-                        <x-admin.job-function-fields :function="$function" :positions="$positions"
-                            :designations="$designations" />
+                        <x-admin.function-fields :function="$function" :positions="$positions"
+                            :designations="$designations" :divisions="$divisions" :sections="$sections" />
 
                         <div class="flex justify-end gap-3 pt-2">
                             <button type="button"
-                                x-on:click="$dispatch('close-modal', 'edit-job-function-{{ $function->id }}')"
+                                x-on:click="$dispatch('close-modal', 'edit-function-{{ $function->id }}')"
                                 class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</button>
                             <button type="submit"
                                 class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">Save
@@ -147,14 +194,15 @@
 
         {{ $functions->links() }}
 
-        <x-modal name="create-job-function" focusable max-width="2xl">
-            <form method="POST" action="{{ route('admin.job-functions.store') }}" class="space-y-4 p-6">
+        <x-modal name="create-function" focusable max-width="2xl">
+            <form method="POST" action="{{ route('admin.functions.store') }}" class="space-y-4 p-6">
                 @csrf
                 <h2 class="text-lg font-semibold text-gray-900">New function</h2>
-                <x-admin.job-function-fields :positions="$positions" :designations="$designations" />
+                <x-admin.function-fields :positions="$positions" :designations="$designations"
+                    :divisions="$divisions" :sections="$sections" />
 
                 <div class="flex justify-end gap-3 pt-2">
-                    <button type="button" x-on:click="$dispatch('close-modal', 'create-job-function')"
+                    <button type="button" x-on:click="$dispatch('close-modal', 'create-function')"
                         class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</button>
                     <button type="submit"
                         class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">Add

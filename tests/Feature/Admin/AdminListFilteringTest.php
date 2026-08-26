@@ -193,7 +193,7 @@ class AdminListFilteringTest extends TestCase
             ]);
         }
 
-        $response = $this->actingAs($this->admin())->get(route('admin.job-functions.index'))->assertOk();
+        $response = $this->actingAs($this->admin())->get(route('admin.functions.index'))->assertOk();
 
         $this->assertCount(self::PER_PAGE, $response->viewData('functions'));
     }
@@ -204,7 +204,7 @@ class AdminListFilteringTest extends TestCase
         JobFunction::create(['category' => FunctionCategory::Common, 'title' => 'Observes working hours', 'is_active' => true]);
 
         $response = $this->actingAs($this->admin())
-            ->get(route('admin.job-functions.index', ['search' => 'meetings']))
+            ->get(route('admin.functions.index', ['search' => 'meetings']))
             ->assertOk();
 
         $this->assertSame(['Attends agency meetings'], $response->viewData('functions')->pluck('title')->all());
@@ -217,7 +217,7 @@ class AdminListFilteringTest extends TestCase
         JobFunction::create(['category' => FunctionCategory::Common, 'title' => 'A common one', 'is_active' => true]);
 
         $response = $this->actingAs($this->admin())
-            ->get(route('admin.job-functions.index', ['category' => 'common']))
+            ->get(route('admin.functions.index', ['category' => 'common']))
             ->assertOk();
 
         $this->assertSame(['A common one'], $response->viewData('functions')->pluck('title')->all());
@@ -240,7 +240,7 @@ class AdminListFilteringTest extends TestCase
 
         JobFunction::create(['category' => FunctionCategory::Common, 'title' => 'Zzz unfiled', 'is_active' => true]);
 
-        $response = $this->actingAs($this->admin())->get(route('admin.job-functions.index'))->assertOk();
+        $response = $this->actingAs($this->admin())->get(route('admin.functions.index'))->assertOk();
 
         $this->assertSame(1, $response->viewData('unfiledCount'));
         $response->assertSee('cannot be added to an IPCR');
@@ -254,7 +254,7 @@ class AdminListFilteringTest extends TestCase
     {
         Position::factory()->count(self::PER_PAGE + 6)->create();
 
-        $response = $this->actingAs($this->admin())->get(route('admin.job-titles.index'))->assertOk();
+        $response = $this->actingAs($this->admin())->get(route('admin.positions.index'))->assertOk();
 
         $this->assertCount(self::PER_PAGE, $response->viewData('positions'));
     }
@@ -265,7 +265,7 @@ class AdminListFilteringTest extends TestCase
         Position::factory()->create(['title' => 'Medical Officer IV']);
 
         $response = $this->actingAs($this->admin())
-            ->get(route('admin.job-titles.index', ['search' => 'nurse']))
+            ->get(route('admin.positions.index', ['search' => 'nurse']))
             ->assertOk();
 
         $this->assertSame(['Nurse II'], $response->viewData('positions')->pluck('title')->all());
@@ -277,7 +277,7 @@ class AdminListFilteringTest extends TestCase
         Designation::factory()->create(['title' => 'OIC - HRMO']);
 
         $response = $this->actingAs($this->admin())
-            ->get(route('admin.job-titles.index', ['tab' => 'designations', 'search' => 'budget']))
+            ->get(route('admin.positions.index', ['tab' => 'designations', 'search' => 'budget']))
             ->assertOk();
 
         $this->assertSame(['OIC - Budget Officer'], $response->viewData('designations')->pluck('title')->all());
@@ -290,7 +290,7 @@ class AdminListFilteringTest extends TestCase
         Designation::factory()->count(2)->create();
 
         $response = $this->actingAs($this->admin())
-            ->get(route('admin.job-titles.index', ['search' => 'nothing matches this']))
+            ->get(route('admin.positions.index', ['search' => 'nothing matches this']))
             ->assertOk();
 
         $this->assertSame(3, $response->viewData('positionCount'));

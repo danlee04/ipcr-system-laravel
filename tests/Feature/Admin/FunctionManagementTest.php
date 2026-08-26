@@ -11,7 +11,7 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class JobFunctionManagementTest extends TestCase
+class FunctionManagementTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -48,8 +48,8 @@ class JobFunctionManagementTest extends TestCase
         $position = Position::factory()->create();
 
         $this->actingAs($this->admin())
-            ->post(route('admin.job-functions.store'), $this->payload(['position_id' => $position->id]))
-            ->assertRedirect(route('admin.job-functions.index'));
+            ->post(route('admin.functions.store'), $this->payload(['position_id' => $position->id]))
+            ->assertRedirect(route('admin.functions.index'));
 
         $this->assertDatabaseHas('job_functions', [
             'title' => 'Provides direct patient care', 'position_id' => $position->id, 'is_active' => true,
@@ -60,7 +60,7 @@ class JobFunctionManagementTest extends TestCase
     {
         $designation = Designation::factory()->create();
 
-        $this->actingAs($this->admin())->post(route('admin.job-functions.store'), $this->payload([
+        $this->actingAs($this->admin())->post(route('admin.functions.store'), $this->payload([
             'category' => FunctionCategory::Strategic->value,
             'title' => 'Prepares the annual budget proposal',
             'designation_id' => $designation->id,
@@ -74,7 +74,7 @@ class JobFunctionManagementTest extends TestCase
     public function test_a_function_needs_a_title(): void
     {
         $this->actingAs($this->admin())
-            ->post(route('admin.job-functions.store'), $this->payload(['title' => '']))
+            ->post(route('admin.functions.store'), $this->payload(['title' => '']))
             ->assertSessionHasErrors('title');
     }
 
@@ -86,14 +86,14 @@ class JobFunctionManagementTest extends TestCase
     public function test_a_core_function_must_name_a_position(): void
     {
         $this->actingAs($this->admin())
-            ->post(route('admin.job-functions.store'), $this->payload(['position_id' => null]))
+            ->post(route('admin.functions.store'), $this->payload(['position_id' => null]))
             ->assertSessionHasErrors('position_id');
     }
 
     public function test_a_strategic_function_must_name_a_designation(): void
     {
         $this->actingAs($this->admin())
-            ->post(route('admin.job-functions.store'), $this->payload([
+            ->post(route('admin.functions.store'), $this->payload([
                 'category' => FunctionCategory::Strategic->value, 'designation_id' => null,
             ]))
             ->assertSessionHasErrors('designation_id');
@@ -101,7 +101,7 @@ class JobFunctionManagementTest extends TestCase
 
     public function test_a_common_function_needs_neither_and_takes_a_rating_category(): void
     {
-        $this->actingAs($this->admin())->post(route('admin.job-functions.store'), $this->payload([
+        $this->actingAs($this->admin())->post(route('admin.functions.store'), $this->payload([
             'category'        => FunctionCategory::Common->value,
             'rating_category' => FunctionCategory::Support->value,
             'title'           => 'Observes official working hours',
@@ -115,7 +115,7 @@ class JobFunctionManagementTest extends TestCase
     public function test_a_common_functions_rating_category_cannot_itself_be_common(): void
     {
         $this->actingAs($this->admin())
-            ->post(route('admin.job-functions.store'), $this->payload([
+            ->post(route('admin.functions.store'), $this->payload([
                 'category'        => FunctionCategory::Common->value,
                 'rating_category' => FunctionCategory::Common->value,
             ]))
@@ -133,7 +133,7 @@ class JobFunctionManagementTest extends TestCase
             'category' => FunctionCategory::Core, 'title' => 'Old', 'position_id' => $position->id, 'is_active' => true,
         ]);
 
-        $this->actingAs($this->admin())->put(route('admin.job-functions.update', $function), $this->payload([
+        $this->actingAs($this->admin())->put(route('admin.functions.update', $function), $this->payload([
             'title' => 'New', 'position_id' => $position->id,
         ]));
 
@@ -149,7 +149,7 @@ class JobFunctionManagementTest extends TestCase
 
         $this->assertNull($function->ratingCategory());
 
-        $this->actingAs($this->admin())->put(route('admin.job-functions.update', $function), $this->payload([
+        $this->actingAs($this->admin())->put(route('admin.functions.update', $function), $this->payload([
             'category' => FunctionCategory::Common->value,
             'title' => 'Attends meetings',
             'rating_category' => FunctionCategory::Core->value,
@@ -164,10 +164,10 @@ class JobFunctionManagementTest extends TestCase
             'category' => FunctionCategory::Common, 'title' => 'A function', 'is_active' => true,
         ]);
 
-        $this->actingAs($this->admin())->patch(route('admin.job-functions.active', $function), ['active' => false]);
+        $this->actingAs($this->admin())->patch(route('admin.functions.active', $function), ['active' => false]);
         $this->assertFalse($function->fresh()->is_active);
 
-        $this->actingAs($this->admin())->patch(route('admin.job-functions.active', $function), ['active' => true]);
+        $this->actingAs($this->admin())->patch(route('admin.functions.active', $function), ['active' => true]);
         $this->assertTrue($function->fresh()->is_active);
     }
 
@@ -177,7 +177,7 @@ class JobFunctionManagementTest extends TestCase
             'category' => FunctionCategory::Common, 'title' => 'Disposable', 'is_active' => true,
         ]);
 
-        $this->actingAs($this->admin())->delete(route('admin.job-functions.destroy', $function));
+        $this->actingAs($this->admin())->delete(route('admin.functions.destroy', $function));
 
         $this->assertDatabaseMissing('job_functions', ['id' => $function->id]);
     }
@@ -195,7 +195,7 @@ class JobFunctionManagementTest extends TestCase
         ]);
 
         $this->actingAs($this->admin())
-            ->get(route('admin.job-functions.index'))
+            ->get(route('admin.functions.index'))
             ->assertOk()
             ->assertSee('Provides direct patient care');
     }
@@ -207,7 +207,7 @@ class JobFunctionManagementTest extends TestCase
         ]);
 
         $this->actingAs($this->admin())
-            ->get(route('admin.job-functions.index'))
+            ->get(route('admin.functions.index'))
             ->assertOk()
             ->assertSee('cannot be added to an IPCR');
     }
@@ -220,7 +220,7 @@ class JobFunctionManagementTest extends TestCase
         ]);
 
         $this->actingAs($this->admin())
-            ->get(route('admin.job-functions.index'))
+            ->get(route('admin.functions.index'))
             ->assertOk()
             ->assertDontSee('cannot be added to an IPCR');
     }
@@ -232,7 +232,7 @@ class JobFunctionManagementTest extends TestCase
     public function test_an_hr_user_can_manage_job_functions(): void
     {
         $this->actingAs($this->userWithRole('hr'))
-            ->get(route('admin.job-functions.index'))
+            ->get(route('admin.functions.index'))
             ->assertOk();
     }
 
@@ -241,7 +241,7 @@ class JobFunctionManagementTest extends TestCase
         $this->seed(RoleSeeder::class);
 
         $this->actingAs(User::factory()->create())
-            ->post(route('admin.job-functions.store'), $this->payload())
+            ->post(route('admin.functions.store'), $this->payload())
             ->assertForbidden();
     }
 }
