@@ -34,17 +34,34 @@ class FunctionCatalogService
         );
     }
 
-    /** From the employee's single plantilla position. */
+    /**
+     * From the employee's plantilla position AND from their designations.
+     *
+     * A designation is not a category of work: an Infection Control Officer
+     * has core duties as one. Reaching core only through the position left
+     * those nowhere to go but "support", which put them in the wrong category
+     * and weighted them at 20% instead of 80%.
+     */
     private function coreFunctions(Employee $employee): Collection
     {
-        if ($employee->position_id === null) {
+        $designationIds = $employee->activeDesignations()->pluck('designations.id');
+
+        if ($employee->position_id === null && $designationIds->isEmpty()) {
             return collect();
         }
 
         return JobFunction::query()
             ->active()
             ->ofCategory(FunctionCategory::Core)
-            ->where('position_id', $employee->position_id)
+            ->where(function ($query) use ($employee, $designationIds): void {
+                if ($employee->position_id !== null) {
+                    $query->where('position_id', $employee->position_id);
+                }
+
+                if ($designationIds->isNotEmpty()) {
+                    $query->orWhereIn('designation_id', $designationIds);
+                }
+            })
             ->orderBy('title')
             ->get();
     }

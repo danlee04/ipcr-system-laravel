@@ -9,6 +9,13 @@
     // already pointing at it instead of resetting to "all".
     $currentSection = $function?->position?->section_id ?? '';
     $currentDivision = $function?->position?->section?->division_id ?? '';
+
+    // A core function reaches people through one of two routes. Which one is
+    // in use is read off the record rather than stored: whichever link it
+    // carries is the route it took.
+    $coreVia = old('core_via', $function?->designation_id && $function?->category === FunctionCategory::Core
+        ? 'designation'
+        : 'position');
 @endphp
 
 {{-- Shared by the create and edit modals so the two forms cannot drift apart.
@@ -38,11 +45,49 @@
         </label>
     </div>
 
-    {{-- Core functions reach an employee through their plantilla position.
-         Division and Section are here only to find that position: neither is
-         submitted, because a position already knows where it sits. --}}
+    {{-- Core functions take one of two routes to an employee: their plantilla
+         position, or a designation they hold. A designation is not a category
+         of work - an Infection Control Officer has core duties as one - so
+         forcing those into "support" would file them under the wrong heading
+         and weight them at 20% instead of 80%. --}}
     <div x-show="category === 'core'" x-cloak
-        x-data="{ division: '{{ $currentDivision }}', section: '{{ $currentSection }}' }" class="space-y-4">
+        x-data="{ via: '{{ $coreVia }}', division: '{{ $currentDivision }}', section: '{{ $currentSection }}' }"
+        class="space-y-4">
+
+        <fieldset class="flex flex-wrap gap-4 rounded-md bg-gray-50 p-3 ring-1 ring-inset ring-gray-200">
+            <legend class="sr-only">How this core function reaches people</legend>
+
+            <label class="flex items-center gap-2 text-sm">
+                <input type="radio" name="core_via" value="position" x-model="via">
+                <span>Through a <strong>position</strong></span>
+            </label>
+
+            <label class="flex items-center gap-2 text-sm">
+                <input type="radio" name="core_via" value="designation" x-model="via">
+                <span>Through a <strong>designation</strong></span>
+            </label>
+        </fieldset>
+
+        {{-- Disabled, not merely hidden. A hidden field is still submitted,
+             and there is a second designation_id in the strategic/support
+             branch below: two selects of the same name would fight, and the
+             loser's value would silently win. --}}
+        <label class="block" x-show="via === 'designation'" x-cloak>
+            <span class="mb-1 block text-sm font-medium text-gray-700">Designation</span>
+            <select name="designation_id" class="w-full rounded-md border-gray-300 text-sm"
+                :disabled="category !== 'core' || via !== 'designation'">
+                <option value="">— Choose a designation —</option>
+                @foreach ($designations as $designation)
+                    <option value="{{ $designation->id }}" @selected(old('designation_id', $function?->designation_id) == $designation->id)>
+                        {{ $designation->title }}
+                    </option>
+                @endforeach
+            </select>
+            <span class="mt-1 block text-xs text-gray-500">Everyone currently holding this designation will see it as
+                a core function.</span>
+        </label>
+
+        <div x-show="via === 'position'" x-cloak class="space-y-4">
         @if ($divisions && $sections)
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="block">
@@ -73,7 +118,8 @@
 
         <label class="block">
             <span class="mb-1 block text-sm font-medium text-gray-700">Position</span>
-            <select name="position_id" class="w-full rounded-md border-gray-300 text-sm">
+            <select name="position_id" class="w-full rounded-md border-gray-300 text-sm"
+                :disabled="category !== 'core' || via !== 'position'">
                 <option value="">— Choose a position —</option>
                 @foreach ($positions as $position)
                     <option value="{{ $position->id }}" data-section="{{ $position->section_id }}"
@@ -90,12 +136,14 @@
             <span class="mt-1 block text-xs text-gray-500">Everyone holding this position will see this
                 function.</span>
         </label>
+        </div>
     </div>
 
     {{-- Strategic and support reach them through their designations. --}}
     <label class="block" x-show="category === 'strategic' || category === 'support'" x-cloak>
         <span class="mb-1 block text-sm font-medium text-gray-700">Designation</span>
-        <select name="designation_id" class="w-full rounded-md border-gray-300 text-sm">
+        <select name="designation_id" class="w-full rounded-md border-gray-300 text-sm"
+            :disabled="category !== 'strategic' && category !== 'support'">
             <option value="">— Choose a designation —</option>
             @foreach ($designations as $designation)
                 <option value="{{ $designation->id }}" @selected(old('designation_id', $function?->designation_id) == $designation->id)>
@@ -111,7 +159,8 @@
          three rated categories a line built from it counts towards. --}}
     <label class="block" x-show="category === 'common'" x-cloak>
         <span class="mb-1 block text-sm font-medium text-gray-700">Counts towards</span>
-        <select name="rating_category" class="w-full rounded-md border-gray-300 text-sm">
+        <select name="rating_category" class="w-full rounded-md border-gray-300 text-sm"
+            :disabled="category !== 'common'">
             <option value="">— Not set —</option>
             @foreach ([FunctionCategory::Strategic, FunctionCategory::Core, FunctionCategory::Support] as $rated)
                 <option value="{{ $rated->value }}" @selected(old('rating_category', $function?->rating_category?->value) === $rated->value)>

@@ -73,17 +73,20 @@ class FunctionController extends Controller
     }
 
     /**
-     * Narrow to functions reached through a position, without hiding the
-     * common pool.
+     * Narrow to functions reached through a position, without hiding the ones
+     * that reach people some other way.
      *
-     * Common functions belong to everyone, so a division or section filter
-     * must leave them in - the same rule the old Function Library stated on
-     * its own filter bar. Only position-scoped rows are narrowed.
+     * A division or section is a fact about a position. A function that has no
+     * position - the common pool, or one attached to a designation - sits in
+     * no division at all, so narrowing by division cannot say anything about
+     * it. Hiding those would make the filter look like it had found nothing
+     * when it had simply asked the wrong question. The old Function Library
+     * stated the same rule on its own filter bar.
      */
     private function throughPosition(Builder $query, ?int $positionId = null, ?\Closure $constrain = null): Builder
     {
         return $query->where(function (Builder $outer) use ($positionId, $constrain): void {
-            $outer->where('category', FunctionCategory::Common)
+            $outer->whereNull('position_id')
                 ->orWhere(function (Builder $scoped) use ($positionId, $constrain): void {
                     $positionId === null
                         ? $scoped->whereHas('position', $constrain)
@@ -142,20 +145,38 @@ class FunctionController extends Controller
     // Helpers
     // -----------------------------------------------------------------
 
-    /** Clears the link that does not apply to the chosen category. */
+    /**
+     * Clears the links that do not apply to the chosen category.
+     *
+     * This is what makes the hidden Alpine branches harmless: they are still
+     * submitted, and whatever they carry is discarded here rather than saved
+     * against a category it means nothing to.
+     *
+     * Core takes either link - a position or a designation - because a
+     * designation carries core duties of its own. Strategic and support reach
+     * people through designations only; common reaches everyone and needs no
+     * link at all.
+     */
     private function attributes(array $data): array
     {
         $category = FunctionCategory::from($data['category']);
+
+        $position = $data['position_id'] ?? null;
+        $designation = $data['designation_id'] ?? null;
+
+        [$position, $designation] = match ($category) {
+            FunctionCategory::Common                            => [null, null],
+            FunctionCategory::Core                              => [$position ?: null, $position ? null : ($designation ?: null)],
+            FunctionCategory::Strategic, FunctionCategory::Support => [null, $designation ?: null],
+        };
 
         return [
             'category'          => $category,
             'title'             => $data['title'],
             'success_indicator' => $data['success_indicator'] ?? null,
             'default_weight'    => $data['default_weight'] ?? null,
-            'position_id'       => $category === FunctionCategory::Core ? $data['position_id'] : null,
-            'designation_id'    => in_array($category, [FunctionCategory::Strategic, FunctionCategory::Support], true)
-                ? $data['designation_id']
-                : null,
+            'position_id'       => $position,
+            'designation_id'    => $designation,
             'rating_category'   => $category === FunctionCategory::Common
                 ? ($data['rating_category'] ?? null)
                 : null,
