@@ -10,6 +10,7 @@ use App\Models\Employee;
 use App\Models\Position;
 use App\Models\Section;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,13 +28,24 @@ use Illuminate\View\View;
  */
 class EmployeeController extends Controller
 {
-    public function index(): View
+    /** Rows per page on every admin list. */
+    private const PER_PAGE = 20;
+
+    public function index(Request $request): View
     {
         $employees = Employee::query()
             ->with(['position', 'section.division', 'division', 'user'])
+            ->when($request->string('search')->trim()->value(), $this->searchFor(...))
+            ->when($request->integer('division'), fn ($q, int $id) => $q->where('division_id', $id))
+            ->when($request->integer('section'), fn ($q, int $id) => $q->where('section_id', $id))
+            ->when(
+                in_array($request->query('status'), ['active', 'inactive'], true),
+                fn ($q) => $q->where('is_active', $request->query('status') === 'active')
+            )
             ->orderBy('last_name')
             ->orderBy('first_name')
-            ->get();
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
 
         $divisions = Division::query()->orderBy('name')->get();
         $sections = Section::query()->with('division')->orderBy('name')->get();
@@ -133,6 +145,31 @@ class EmployeeController extends Controller
     // -----------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------
+
+    /**
+     * Name, employee number, or the email on their account.
+     *
+     * The term is split on whitespace and every word must match somewhere, so
+     * "maria santos" finds a Maria Santos whose names live in two columns. No
+     * SQL concatenation is used: `||` means OR in MySQL and concat in SQLite,
+     * and this app runs on both.
+     */
+    private function searchFor(Builder $query, string $term): Builder
+    {
+        foreach (preg_split('/\s+/', $term, -1, PREG_SPLIT_NO_EMPTY) as $word) {
+            $like = '%' . $word . '%';
+
+            $query->where(function (Builder $inner) use ($like): void {
+                $inner->where('first_name', 'like', $like)
+                    ->orWhere('last_name', 'like', $like)
+                    ->orWhere('middle_name', 'like', $like)
+                    ->orWhere('employee_number', 'like', $like)
+                    ->orWhereHas('user', fn (Builder $user) => $user->where('email', 'like', $like));
+            });
+        }
+
+        return $query;
+    }
 
     /** The employee columns, without the account fields the form also carries. */
     private function employeeAttributes(array $data): array

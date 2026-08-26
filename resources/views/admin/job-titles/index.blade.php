@@ -18,11 +18,11 @@
             <nav class="-mb-px flex gap-6" aria-label="Job title type">
                 <a href="{{ route('admin.job-titles.index') }}"
                     class="border-b-2 px-1 pb-3 text-sm font-medium {{ $tab === 'positions' ? 'border-nav-900 text-nav-900' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
-                    Positions ({{ $positions->count() }})
+                    Positions ({{ $positionCount }})
                 </a>
                 <a href="{{ route('admin.job-titles.index', ['tab' => 'designations']) }}"
                     class="border-b-2 px-1 pb-3 text-sm font-medium {{ $tab === 'designations' ? 'border-nav-900 text-nav-900' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
-                    Designations ({{ $designations->count() }})
+                    Designations ({{ $designationCount }})
                 </a>
             </nav>
 
@@ -32,6 +32,10 @@
                 + New {{ $tab === 'positions' ? 'Position' : 'Designation' }}
             </button>
         </div>
+
+        <x-admin.filter-bar :action="route('admin.job-titles.index')"
+            :placeholder="$tab === 'positions' ? 'Search by title or item number' : 'Search by title'"
+            :hidden="$tab === 'designations' ? ['tab' => 'designations'] : []" />
 
         @if ($tab === 'positions')
             <x-admin.table>
@@ -106,10 +110,14 @@
                     </x-modal>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">No positions yet.</td>
+                        <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">
+                            {{ $search ? 'No positions match this search.' : 'No positions yet.' }}
+                        </td>
                     </tr>
                 @endforelse
             </x-admin.table>
+
+            {{ $positions->links() }}
 
             <x-modal name="create-position" focusable max-width="lg">
                 <form method="POST" action="{{ route('admin.positions.store') }}" class="space-y-4 p-6">
@@ -204,10 +212,14 @@
                     </x-modal>
                 @empty
                     <tr>
-                        <td colspan="3" class="px-6 py-8 text-center text-sm text-gray-500">No designations yet.</td>
+                        <td colspan="3" class="px-6 py-8 text-center text-sm text-gray-500">
+                            {{ $search ? 'No designations match this search.' : 'No designations yet.' }}
+                        </td>
                     </tr>
                 @endforelse
             </x-admin.table>
+
+            {{ $designations->links() }}
 
             <x-modal name="create-designation" focusable max-width="lg">
                 <form method="POST" action="{{ route('admin.designations.store') }}" class="space-y-4 p-6">

@@ -12,8 +12,43 @@
     <x-page-container class="space-y-6">
         <x-admin.flash />
 
+        <x-admin.filter-bar :action="route('admin.employees.index')"
+            placeholder="Search by name, employee number or email">
+            <label class="block">
+                <span class="sr-only">Division</span>
+                <select name="division" class="w-44 rounded-lg border-gray-300 text-sm">
+                    <option value="">All divisions</option>
+                    @foreach ($divisions as $division)
+                        <option value="{{ $division->id }}" @selected(request('division') == $division->id)>
+                            {{ $division->name }}</option>
+                    @endforeach
+                </select>
+            </label>
+
+            <label class="block">
+                <span class="sr-only">Section</span>
+                <select name="section" class="w-44 rounded-lg border-gray-300 text-sm">
+                    <option value="">All sections</option>
+                    @foreach ($sections as $section)
+                        <option value="{{ $section->id }}" @selected(request('section') == $section->id)>
+                            {{ $section->name }}</option>
+                    @endforeach
+                </select>
+            </label>
+
+            <label class="block">
+                <span class="sr-only">Status</span>
+                <select name="status" class="w-32 rounded-lg border-gray-300 text-sm">
+                    <option value="">Any status</option>
+                    <option value="active" @selected(request('status') === 'active')>Active</option>
+                    <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
+                </select>
+            </label>
+        </x-admin.filter-bar>
+
         @php
-            $chief = $employees->firstWhere('is_chief_of_hospital', true);
+            // Asked of the table, not the page: the Chief may sit on page 3.
+            $chief = \App\Models\Employee::query()->where('is_chief_of_hospital', true)->exists();
         @endphp
 
         @if (! $chief)
@@ -115,11 +150,17 @@
             @empty
                 <tr>
                     <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-500">
-                        No employees yet. Add one to start assigning heads.
+                        @if (request()->hasAny(['search', 'division', 'section', 'status']))
+                            No employees match this search.
+                        @else
+                            No employees yet. Add one to start assigning heads.
+                        @endif
                     </td>
                 </tr>
             @endforelse
         </x-admin.table>
+
+        {{ $employees->links() }}
 
         <x-modal name="create-employee" focusable max-width="2xl">
             <form method="POST" action="{{ route('admin.employees.store') }}" class="space-y-4 p-6">

@@ -26,24 +26,37 @@ use Illuminate\View\View;
  */
 class JobFunctionController extends Controller
 {
+    /** Rows per page, matching the other admin lists. */
+    private const PER_PAGE = 20;
+
     public function index(Request $request): View
     {
+        $search = $request->string('search')->trim()->value();
+        $category = FunctionCategory::tryFrom((string) $request->query('category'));
+
         $functions = JobFunction::query()
             ->with(['position', 'designation'])
+            ->when($search, function ($query, string $term): void {
+                $like = '%' . $term . '%';
+                $query->where(fn ($inner) => $inner->where('title', 'like', $like)
+                    ->orWhere('success_indicator', 'like', $like));
+            })
+            ->when($category, fn ($query) => $query->where('category', $category))
             ->orderBy('category')
             ->orderBy('title')
-            ->get();
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
 
         $positions = Position::query()->orderBy('title')->get();
         $designations = Designation::query()->orderBy('title')->get();
 
-        // Common functions nobody can actually use yet. Surfaced here because
-        // the failure otherwise only shows up when an employee tries to add one.
-        $unfiled = $functions->filter(
-            fn (JobFunction $f): bool => $f->category === FunctionCategory::Common && $f->rating_category === null
-        );
+        // Counted against the table, not the page. A warning that only fires
+        // when the offending row happens to be on screen is worthless.
+        $unfiledCount = JobFunction::query()->needingRatingCategory()->count();
 
-        return view('admin.job-functions.index', compact('functions', 'positions', 'designations', 'unfiled'));
+        return view('admin.job-functions.index', compact(
+            'functions', 'positions', 'designations', 'unfiledCount', 'search', 'category'
+        ));
     }
 
     public function store(StoreJobFunctionRequest $request): RedirectResponse

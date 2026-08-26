@@ -19,12 +19,26 @@
             <strong>common</strong> reaches everyone.
         </p>
 
-        @if ($unfiled->isNotEmpty())
+        <x-admin.filter-bar :action="route('admin.job-functions.index')"
+            placeholder="Search by output or success indicator">
+            <label class="block">
+                <span class="sr-only">Category</span>
+                <select name="category" class="w-44 rounded-lg border-gray-300 text-sm">
+                    <option value="">All categories</option>
+                    @foreach (\App\Enums\FunctionCategory::cases() as $option)
+                        <option value="{{ $option->value }}" @selected(request('category') === $option->value)>
+                            {{ $option->label() }}</option>
+                    @endforeach
+                </select>
+            </label>
+        </x-admin.filter-bar>
+
+        @if ($unfiledCount > 0)
             {{-- These fail only at the moment an employee tries to use them,
                  which is far too late to be useful feedback. --}}
             <div class="rounded-md bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-500/20">
-                <strong>{{ $unfiled->count() }} common
-                    function{{ $unfiled->count() === 1 ? '' : 's' }} cannot be added to an IPCR yet.</strong>
+                <strong>{{ $unfiledCount }} common
+                    function{{ $unfiledCount === 1 ? '' : 's' }} cannot be added to an IPCR yet.</strong>
                 Common is a pool, not a rating category — each one needs to say whether it counts towards Strategic,
                 Core or Support. Edit it and set <em>Counts towards</em>.
             </div>
@@ -121,11 +135,17 @@
             @empty
                 <tr>
                     <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">
-                        No functions in the catalog yet. Employees can still type their own on the IPCR.
+                        @if (request()->hasAny(['search', 'category']))
+                            No functions match this search.
+                        @else
+                            No functions in the catalog yet. Employees can still type their own on the IPCR.
+                        @endif
                     </td>
                 </tr>
             @endforelse
         </x-admin.table>
+
+        {{ $functions->links() }}
 
         <x-modal name="create-job-function" focusable max-width="2xl">
             <form method="POST" action="{{ route('admin.job-functions.store') }}" class="space-y-4 p-6">
