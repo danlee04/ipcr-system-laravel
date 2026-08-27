@@ -33,6 +33,12 @@ class PositionPageController extends Controller
         $tab = $request->query('tab') === 'designations' ? 'designations' : 'positions';
         $search = $request->string('search')->trim()->value();
 
+        // Anything else is ignored rather than emptying the list: a status
+        // nobody offered is a malformed question, not a request for nothing.
+        $status = in_array($request->query('status'), ['active', 'inactive'], true)
+            ? $request->query('status') === 'active'
+            : null;
+
         // The search applies only to the tab being looked at, so switching tabs
         // does not silently carry a filter that made sense for the other one.
         $positions = Position::query()
@@ -43,12 +49,14 @@ class PositionPageController extends Controller
                 $request->integer('division'),
                 fn (Builder $q, int $id) => $q->whereHas('section', fn (Builder $s) => $s->where('division_id', $id))
             )
+            ->when($tab === 'positions' && $status !== null, fn (Builder $q) => $q->where('is_active', $status))
             ->orderBy('title')
             ->paginate(self::PER_PAGE, ['*'], 'page')
             ->withQueryString();
 
         $designations = Designation::query()
             ->when($tab === 'designations' && $search, fn ($q) => $this->matching($q, $search, ['title']))
+            ->when($tab === 'designations' && $status !== null, fn (Builder $q) => $q->where('is_active', $status))
             ->orderBy('title')
             ->paginate(self::PER_PAGE, ['*'], 'page')
             ->withQueryString();

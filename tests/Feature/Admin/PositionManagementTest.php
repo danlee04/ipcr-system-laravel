@@ -22,6 +22,45 @@ class PositionManagementTest extends TestCase
         return $user;
     }
 
+    /**
+     * The create button belongs in the page header, beside the title, the way
+     * every other admin screen does it. Sitting it in the tab bar made this
+     * one page put its primary action somewhere nobody else does.
+     *
+     * Asserted by position in the markup rather than by class: the header
+     * renders before the tabs, so a button that comes after them is not in it.
+     */
+    public function test_the_create_button_sits_in_the_page_header(): void
+    {
+        $html = $this->actingAs($this->admin())
+            ->get(route('admin.positions.index'))
+            ->assertOk()
+            ->getContent();
+
+        $button = strpos($html, '+ New Position');
+        $tabs = strpos($html, 'aria-label="Job title type"');
+
+        $this->assertNotFalse($button, 'The create button should be on the page.');
+        $this->assertNotFalse($tabs);
+        $this->assertLessThan($tabs, $button, 'The button must come before the tabs, i.e. in the header.');
+    }
+
+    /** The tab decides which thing gets created, wherever the button sits. */
+    public function test_the_designations_tab_offers_a_new_designation_instead(): void
+    {
+        $html = $this->actingAs($this->admin())
+            ->get(route('admin.positions.index', ['tab' => 'designations']))
+            ->assertOk()
+            ->getContent();
+
+        $button = strpos($html, '+ New Designation');
+        $tabs = strpos($html, 'aria-label="Job title type"');
+
+        $this->assertNotFalse($button);
+        $this->assertLessThan($tabs, $button);
+        $this->assertStringNotContainsString('+ New Position', $html);
+    }
+
     public function test_an_admin_can_create_a_position(): void
     {
         $this->actingAs($this->admin())
