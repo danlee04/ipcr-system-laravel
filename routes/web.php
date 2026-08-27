@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\PositionPageController;
 use App\Http\Controllers\Admin\PeriodController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\SectionController;
+use App\Http\Controllers\Admin\SummaryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\IpcrApprovalController;
@@ -75,6 +76,9 @@ Route::prefix('admin')
         Route::get('/periods', [PeriodController::class, 'index'])->name('periods.index');
         Route::get('/functions', [FunctionController::class, 'index'])->name('functions.index');
         Route::get('/ipcrs', [AdminIpcrController::class, 'index'])->name('ipcrs.index');
+
+        Route::get('/summary', [SummaryController::class, 'index'])->name('summary.index');
+        Route::get('/summary/export', [SummaryController::class, 'export'])->name('summary.export');
 
         /*
          * The administrative escape hatches. Guarded by IpcrPolicy on top of

@@ -130,6 +130,16 @@
                 All IPCRs
             </x-sidebar-link>
 
+            <x-sidebar-link :href="route('admin.summary.index')" :active="request()->routeIs('admin.summary.*')">
+                <x-slot:icon>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4.5 19.5V13m5 6.5V7.5m5 12v-9m5 9V5M3 20.5h18" />
+                    </svg>
+                </x-slot:icon>
+                Period Summary
+            </x-sidebar-link>
+
             <x-sidebar-link :href="route('admin.divisions.index')" :active="request()->routeIs('admin.divisions.*')">
                 <x-slot:icon>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
