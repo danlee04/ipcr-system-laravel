@@ -58,27 +58,6 @@ class IpcrController extends Controller
         ));
     }
 
-    /** Show the form to start a new IPCR for the current open rating period. */
-    public function create(Request $request): View|RedirectResponse
-    {
-        $employee = $request->user()->employee;
-        abort_unless($employee, 403, 'No employee record is linked to your account.');
-
-        $period = IpcrPeriod::active();
-
-        if ($period === null) {
-            return back()->with('error', 'There is no open rating period right now. Contact HR/Admin.');
-        }
-
-        if ($employee->ipcrs()->where('ipcr_period_id', $period->id)->exists()) {
-            return redirect()->route('ipcrs.index')->with('error', 'You already have an IPCR for the current period.');
-        }
-
-        $catalog = $this->functionCatalog->availableFor($employee);
-
-        return view('ipcrs.create', compact('period', 'catalog'));
-    }
-
     /**
      * Create the draft IPCR header. No items yet - those are added
      * afterward through IpcrItemController on the "show" screen.

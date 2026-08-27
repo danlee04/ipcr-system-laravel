@@ -228,4 +228,43 @@ class PrintIpcrTest extends TestCase
             ->assertOk()
             ->assertSee(route('ipcrs.print', $ipcr), false);
     }
+
+    // -----------------------------------------------------------------
+    // The letterhead
+    // -----------------------------------------------------------------
+
+    /**
+     * The agency, not the software.
+     *
+     * The sheet used to print app.name under "Republic of the Philippines",
+     * which named the system on a document that is filed as the hospital's.
+     */
+    public function test_the_letterhead_names_the_agency(): void
+    {
+        config([
+            'agency.name'    => 'Dangerous Drugs Treatment and Rehabilitation Centre',
+            'app.name'       => 'IPCR System',
+        ]);
+
+        $owner = $this->employeeUser();
+
+        $this->actingAs($owner)->get(route('ipcrs.print', $this->ipcrWithItems($owner)))
+            ->assertOk()
+            ->assertSee('Dangerous Drugs Treatment and Rehabilitation Centre')
+            ->assertDontSee('IPCR System');
+    }
+
+    public function test_the_address_is_left_out_when_there_is_none(): void
+    {
+        config(['agency.name' => 'A Hospital', 'agency.address' => null]);
+
+        $owner = $this->employeeUser();
+        $html = $this->actingAs($owner)
+            ->get(route('ipcrs.print', $this->ipcrWithItems($owner)))
+            ->assertOk()
+            ->getContent();
+
+        // Three lines of letterhead means an empty one is showing.
+        $this->assertSame(2, substr_count($html, 'class="agency'));
+    }
 }

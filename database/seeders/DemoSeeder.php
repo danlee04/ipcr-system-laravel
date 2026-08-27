@@ -117,16 +117,16 @@ class DemoSeeder extends Seeder
         // --- Job functions -------------------------------------------
         // Core  -> attached to the PLANTILLA POSITION
         // Strategic/Support -> attached to the DESIGNATION
-        // Common -> attached to nothing, open to everyone
+        // Open to everyone -> attached to neither
 
-        $this->jobFunction($nurse->id, null, FunctionCategory::Core, 'Provides direct patient care', 'Nursing care delivered to every assigned patient each shift', 30);
-        $this->jobFunction($nurse->id, null, FunctionCategory::Core, 'Records vital signs and nursing notes', 'Records complete and up to date within the shift', 25);
+        $this->jobFunction($nurse->id, null, FunctionCategory::Core, 'Provides direct patient care', 'Nursing care delivered to every assigned patient each shift');
+        $this->jobFunction($nurse->id, null, FunctionCategory::Core, 'Records vital signs and nursing notes', 'Records complete and up to date within the shift');
 
-        $this->jobFunction(null, $oicBudget->id, FunctionCategory::Strategic, 'Prepares the annual budget proposal', 'Budget proposal submitted before the DBM deadline', 20);
-        $this->jobFunction(null, $oicBudget->id, FunctionCategory::Support, 'Reviews the monthly financial report', 'Report reviewed and submitted by the 5th of each month', 15);
+        $this->jobFunction(null, $oicBudget->id, FunctionCategory::Strategic, 'Prepares the annual budget proposal', 'Budget proposal submitted before the DBM deadline');
+        $this->jobFunction(null, $oicBudget->id, FunctionCategory::Support, 'Reviews the monthly financial report', 'Report reviewed and submitted by the 5th of each month');
 
-        $this->jobFunction(null, null, FunctionCategory::Support, 'Attends agency meetings and training', 'At least 80% attendance at scheduled meetings', 5);
-        $this->jobFunction(null, null, FunctionCategory::Support, 'Observes official working hours', 'No unauthorized absence or tardiness', 5);
+        $this->jobFunction(null, null, FunctionCategory::Support, 'Attends agency meetings and training', 'At least 80% attendance at scheduled meetings');
+        $this->jobFunction(null, null, FunctionCategory::Support, 'Observes official working hours', 'No unauthorized absence or tardiness');
 
         // --- Open rating period --------------------------------------
 
@@ -168,14 +168,13 @@ class DemoSeeder extends Seeder
         return Employee::updateOrCreate(
             ['user_id' => $user->id],
             $attributes + [
-                'date_hired'        => now()->subYears(3)->toDateString(),
                 'employment_status' => 'permanent',
                 'is_active'         => true,
             ],
         );
     }
 
-    private function jobFunction(?int $positionId, ?int $designationId, FunctionCategory $category, string $title, string $indicator, float $weight): void
+    private function jobFunction(?int $positionId, ?int $designationId, FunctionCategory $category, string $title, string $indicator): void
     {
         JobFunction::firstOrCreate(
             ['title' => $title, 'category' => $category],
@@ -183,7 +182,6 @@ class DemoSeeder extends Seeder
                 'position_id'       => $positionId,
                 'designation_id'    => $designationId,
                 'success_indicator' => $indicator,
-                'default_weight'    => $weight,
                 'is_active'         => true,
             ],
         );

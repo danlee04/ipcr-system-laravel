@@ -23,7 +23,6 @@ class JobFunction extends Model
         'title',
         'success_indicator',
         'accomplishment_template',
-        'default_weight',
         'is_active',
     ];
 
@@ -31,7 +30,6 @@ class JobFunction extends Model
     {
         return [
             'category'        => FunctionCategory::class,
-            'default_weight'  => 'decimal:2',
             'is_active'       => 'boolean',
         ];
     }

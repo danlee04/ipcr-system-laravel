@@ -32,7 +32,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/ipcrs', [IpcrController::class, 'index'])->name('ipcrs.index');
-    Route::get('/ipcrs/create', [IpcrController::class, 'create'])->name('ipcrs.create');
     Route::post('/ipcrs', [IpcrController::class, 'store'])->name('ipcrs.store');
     Route::get('/ipcrs/{ipcr}', [IpcrController::class, 'show'])->name('ipcrs.show');
     Route::get('/ipcrs/{ipcr}/print', [IpcrController::class, 'print'])->name('ipcrs.print');

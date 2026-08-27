@@ -29,7 +29,6 @@ class Employee extends Model
         'section_id',
         'division_id',
         'is_chief_of_hospital',
-        'date_hired',
         'employment_status',
         'is_active',
     ];
@@ -37,7 +36,6 @@ class Employee extends Model
     protected function casts(): array
     {
         return [
-            'date_hired'           => 'date',
             'is_chief_of_hospital' => 'boolean',
             'is_active'            => 'boolean',
         ];

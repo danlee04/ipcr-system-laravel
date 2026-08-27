@@ -14,8 +14,8 @@ use Tests\TestCase;
  * The employee picks targets-only or with-accomplishments straight from the
  * IPCR list - no separate page to pass through first.
  *
- * There are still two ways to create an IPCR (this modal and the create
- * page), so a test below pins down which of them offers the choice.
+ * There is one way in, and it is the modal here. The old create page asked
+ * nothing and quietly produced a targets-only IPCR; see RetiredSurfacesTest.
  */
 class NewIpcrEntryPointTest extends TestCase
 {
@@ -75,31 +75,25 @@ class NewIpcrEntryPointTest extends TestCase
     }
 
     /**
-     * Only one place chooses the mode: the modal on the list.
+     * Every mode is offered, and each of them exactly once.
      *
-     * The create page remains as a plain fallback, but it no longer offers the
-     * choice - go through it and you get Targets only, permanently.
+     * A mode listed twice would be two radio buttons for the same choice, and
+     * one missing would be a choice the employee can never make.
      */
-    public function test_the_mode_choice_lives_only_in_the_list(): void
+    public function test_the_list_offers_each_mode_exactly_once(): void
     {
         $user = $this->employeeUser();
         IpcrPeriod::factory()->create(['status' => 'open']);
 
-        $extractModes = function (string $html): array {
-            preg_match_all('/name="mode" value="([a-z_]+)"/', $html, $matches);
-            $values = array_unique($matches[1]);
-            sort($values);
+        $html = $this->actingAs($user)->get(route('ipcrs.index'))->getContent();
+        preg_match_all('/name="mode" value="([a-z_]+)"/', $html, $matches);
 
-            return $values;
-        };
+        $offered = $matches[1];
+        sort($offered);
 
         $expected = array_map(fn (IpcrMode $mode): string => $mode->value, IpcrMode::cases());
         sort($expected);
 
-        $fromList = $this->actingAs($user)->get(route('ipcrs.index'))->getContent();
-        $this->assertSame($expected, $extractModes($fromList), 'The list should offer every mode.');
-
-        $fromCreatePage = $this->actingAs($user)->get(route('ipcrs.create'))->getContent();
-        $this->assertSame([], $extractModes($fromCreatePage), 'The create page should no longer ask.');
+        $this->assertSame($expected, $offered);
     }
 }

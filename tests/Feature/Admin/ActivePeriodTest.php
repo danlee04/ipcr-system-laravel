@@ -196,9 +196,17 @@ class ActivePeriodTest extends TestCase
 
         $employee = Employee::factory()->create(['user_id' => User::factory()->create()->id]);
 
+        // Said on the list rather than left to be discovered at the end of a
+        // form, and refused at the route as well - the message is a courtesy,
+        // not the guard.
         $this->actingAs($employee->user)
-            ->get(route('ipcrs.create'))
-            ->assertSessionHas('error');
+            ->get(route('ipcrs.index'))
+            ->assertOk()
+            ->assertSee('No open rating period');
+
+        $this->actingAs($employee->user)
+            ->post(route('ipcrs.store'), ['mode' => 'targets_only'])
+            ->assertNotFound();
 
         $this->assertSame(0, $employee->ipcrs()->count());
     }

@@ -76,6 +76,14 @@
             font-size: 10pt;
         }
 
+        /* The hospital carries the letterhead - the lines around it are the
+           frame, not the name. */
+        header .agency-name {
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: .02em;
+        }
+
         header h1 {
             font-size: 13pt;
             font-weight: bold;
@@ -238,7 +246,10 @@
 
         <header>
             <div class="agency">Republic of the Philippines</div>
-            <div class="agency">{{ config('app.name') }}</div>
+            <div class="agency agency-name">{{ config('agency.name') }}</div>
+            @if (config('agency.address'))
+                <div class="agency">{{ config('agency.address') }}</div>
+            @endif
             <h1>INDIVIDUAL PERFORMANCE COMMITMENT AND REVIEW</h1>
             <div class="period">{{ $ipcr->period?->name ?? 'No rating period' }}</div>
         </header>
