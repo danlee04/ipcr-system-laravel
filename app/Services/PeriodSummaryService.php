@@ -37,7 +37,15 @@ class PeriodSummaryService
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get()
-            ->map(fn (Employee $employee): SummaryRow => new SummaryRow($employee, $employee->ipcrs->first()));
+            ->map(function (Employee $employee) use ($period): SummaryRow {
+                $ipcr = $employee->ipcrs->first();
+
+                // The period is already in hand. Handing it to the IPCR keeps
+                // the lateness check from fetching the same row once per name.
+                $ipcr?->setRelation('period', $period);
+
+                return new SummaryRow($employee, $ipcr);
+            });
     }
 
     /**

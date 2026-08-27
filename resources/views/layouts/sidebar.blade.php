@@ -19,6 +19,10 @@
     $isApprover = $employee
         ? $employee->holdsApprovingPost() || \App\Models\Ipcr::query()->routedTo($employee)->exists()
         : false;
+    // Unread only. The badge is a count of what still wants attention, not of
+    // everything that has ever happened.
+    $unreadNotifications = $user?->unreadNotifications()->count() ?? 0;
+
     $initials = collect(preg_split('/\s+/', trim((string) $displayName)))
         ->filter()
         ->take(2)
@@ -109,6 +113,21 @@
                 @endif
             </x-sidebar-link>
         @endif
+
+        {{-- Everyone signed in, approver or not: this is also where an
+             employee hears that their own IPCR came back or was approved. --}}
+        <x-sidebar-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
+            <x-slot:icon>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 4a5 5 0 0 0-5 5v3.5L5.5 16h13L17 12.5V9a5 5 0 0 0-5-5Zm-2 12a2 2 0 1 0 4 0" />
+                </svg>
+            </x-slot:icon>
+            Notifications
+            @if ($unreadNotifications > 0)
+                <x-slot:badge>{{ $unreadNotifications }}</x-slot:badge>
+            @endif
+        </x-sidebar-link>
 
         @if ($user?->hasAnyRole(['admin', 'hr']))
             {{-- Administration. Hidden entirely from everyone else: the routes

@@ -56,6 +56,17 @@ final class SummaryRow
             : null;
     }
 
+    /** Handed in after the period's deadline. */
+    public function isLate(): bool
+    {
+        return $this->ipcr?->isLate() ?? false;
+    }
+
+    public function daysLate(): int
+    {
+        return $this->ipcr?->daysLate() ?? 0;
+    }
+
     public function divisionName(): string
     {
         return $this->employee->division?->name ?? 'No division';

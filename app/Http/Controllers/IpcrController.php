@@ -8,11 +8,13 @@ use App\Enums\IpcrStatus;
 use App\Exceptions\IpcrRoutingException;
 use App\Models\Ipcr;
 use App\Models\IpcrPeriod;
+use App\Notifications\IpcrSubmitted;
 use App\Services\FunctionCatalogService;
 use App\Services\IpcrRoutingService;
 use App\Services\RatingCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -217,8 +219,10 @@ class IpcrController extends Controller
                 'submitted_at' => now(),
             ]);
 
+            $ipcr->assessor?->user?->notify(new IpcrSubmitted($ipcr->fresh()));
+
             return redirect()->route('ipcrs.show', $ipcr)
-                ->with('status', "Submitted for assessment to {$ipcr->assessor->full_name}.");
+                ->with('status', $this->submittedMessage($ipcr, $ipcr->assessor->full_name));
         }
 
         try {
@@ -234,7 +238,33 @@ class IpcrController extends Controller
             'submitted_at'               => now(),
         ]);
 
+        // Only the person it now waits on. Everyone else has nothing to do
+        // with it yet, and a notification they cannot act on is noise.
+        $chain->assessor->user?->notify(new IpcrSubmitted($ipcr->fresh()));
+
         return redirect()->route('ipcrs.show', $ipcr)
-            ->with('status', "Submitted for assessment to {$chain->assessor->full_name}.");
+            ->with('status', $this->submittedMessage($ipcr, $chain->assessor->full_name));
+    }
+
+    /**
+     * What the owner is told the moment they submit.
+     *
+     * A late submission is accepted - blocking one in a hospital turns into a
+     * phone call to the administrator - but it is never accepted quietly. The
+     * person who was late should hear it here, not find out weeks later on
+     * somebody else's report.
+     */
+    private function submittedMessage(Ipcr $ipcr, string $assessorName): string
+    {
+        $message = "Submitted for assessment to {$assessorName}.";
+
+        $ipcr = $ipcr->fresh();
+
+        if ($ipcr->isLate()) {
+            $days = $ipcr->daysLate();
+            $message .= ' This was ' . $days . ' ' . Str::plural('day', $days) . ' past the deadline.';
+        }
+
+        return $message;
     }
 }

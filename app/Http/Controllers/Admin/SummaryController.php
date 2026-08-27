@@ -72,7 +72,7 @@ class SummaryController extends Controller
             fputcsv($handle, [
                 'Employee No', 'Last Name', 'First Name', 'Middle Name', 'Position',
                 'Division', 'Section', 'Status', 'Final Rating', 'Adjectival Rating',
-                'Submitted', 'Approved',
+                'Submitted', 'Approved', 'Days Late',
             ]);
 
             foreach ($rows as $row) {
@@ -106,6 +106,10 @@ class SummaryController extends Controller
             $row->isApproved() ? (string) $ipcr->final_adjectival_rating : '',
             $ipcr?->submitted_at?->format('Y-m-d') ?? '',
             $ipcr?->approved_at?->format('Y-m-d') ?? '',
+
+            // Blank rather than 0 for the on-time ones, so the column sorts
+            // and filters down to the people who need chasing.
+            $row->isLate() ? (string) $row->daysLate() : '',
         ];
     }
 

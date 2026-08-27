@@ -16,6 +16,7 @@ final class SummaryTally
         public readonly int $expected,
         public readonly int $submitted,
         public readonly int $approved,
+        public readonly int $late,
         public readonly ?float $average,
     ) {}
 
@@ -29,6 +30,7 @@ final class SummaryTally
             expected: $rows->count(),
             submitted: $rows->filter(fn (SummaryRow $row): bool => $row->isSubmitted())->count(),
             approved: $rows->filter(fn (SummaryRow $row): bool => $row->isApproved())->count(),
+            late: $rows->filter(fn (SummaryRow $row): bool => $row->isLate())->count(),
 
             // Null, not zero. Nobody approved yet is not an average of nought,
             // and printing 0.00 beside a section would read as a failing one.

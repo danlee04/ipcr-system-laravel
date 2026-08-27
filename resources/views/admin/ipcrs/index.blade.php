@@ -79,7 +79,12 @@
                         </span>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-700">{{ $ipcr->period?->name ?? '—' }}</td>
-                    <td class="px-6 py-4"><x-status-badge :status="$ipcr->status" /></td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <x-status-badge :status="$ipcr->status" />
+                            <x-ipcr.late-badge :ipcr="$ipcr" />
+                        </div>
+                    </td>
                     <td class="px-6 py-4 text-sm text-gray-600">
                         {{-- Whoever the IPCR is sitting with right now, and the
                              post that put them there. --}}

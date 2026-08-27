@@ -27,6 +27,14 @@
         </span>
     @endif
 
+    {{-- Only when there are any. A "0 late" beside every office is noise on
+         the offices that have nothing to answer for. --}}
+    @if ($tally->late > 0)
+        <span class="{{ $chip }} bg-red-50 font-medium text-red-800 ring-red-500/20">
+            {{ $tally->late }} late
+        </span>
+    @endif
+
     {{-- Absent rather than nought while nobody is approved. A section showing
          0.00 reads as a failing one. --}}
     @if ($tally->average !== null)

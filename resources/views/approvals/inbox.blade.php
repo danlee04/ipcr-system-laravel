@@ -62,7 +62,10 @@
                     @foreach ($queue['items'] as $ipcr)
                         <tr>
                             <td class="px-6 py-4 text-sm">
-                                <span class="font-medium text-gray-900">{{ $ipcr->employee?->full_name }}</span>
+                                <span class="flex flex-wrap items-center gap-2">
+                                    <span class="font-medium text-gray-900">{{ $ipcr->employee?->full_name }}</span>
+                                    <x-ipcr.late-badge :ipcr="$ipcr" />
+                                </span>
                                 @if ($ipcr->position_title)
                                     <span class="block text-xs text-gray-500">{{ $ipcr->position_title }}</span>
                                 @endif

@@ -133,13 +133,17 @@
                                         <td class="px-6 py-3 text-sm text-gray-600">
                                             {{ $row->employee->position?->title ?? '—' }}</td>
                                         <td class="px-6 py-3 text-sm">
-                                            @if ($row->status())
-                                                <span
-                                                    class="{{ $chip }} {{ $row->status()->badgeClasses() }}">{{ $row->statusLabel() }}</span>
-                                            @else
-                                                <span
-                                                    class="{{ $chip }} bg-gray-100 text-gray-600 ring-gray-500/20">Not started</span>
-                                            @endif
+                                            <div class="flex flex-wrap items-center gap-1.5">
+                                                @if ($row->status())
+                                                    <span
+                                                        class="{{ $chip }} {{ $row->status()->badgeClasses() }}">{{ $row->statusLabel() }}</span>
+                                                @else
+                                                    <span
+                                                        class="{{ $chip }} bg-gray-100 text-gray-600 ring-gray-500/20">Not started</span>
+                                                @endif
+
+                                                <x-ipcr.late-badge :ipcr="$row->ipcr" />
+                                            </div>
                                         </td>
                                         <td class="px-6 py-3 text-right font-data text-sm text-gray-900">
                                             {{ $row->approvedRating() === null ? '—' : number_format($row->approvedRating(), 2) }}

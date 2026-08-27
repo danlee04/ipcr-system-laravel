@@ -23,6 +23,7 @@
                     </svg>
                     Print
                 </a>
+                <x-ipcr.late-badge :ipcr="$ipcr" />
                 <x-status-badge :status="$ipcr->status" />
             </div>
         </div>

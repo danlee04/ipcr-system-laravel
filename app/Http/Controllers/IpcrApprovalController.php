@@ -7,6 +7,9 @@ use App\Enums\ApprovalStage;
 use App\Enums\IpcrStatus;
 use App\Enums\RatingMeasure;
 use App\Models\Ipcr;
+use App\Notifications\IpcrApproved;
+use App\Notifications\IpcrAssessed;
+use App\Notifications\IpcrReturned;
 use App\Services\RatingCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -122,6 +125,10 @@ class IpcrApprovalController extends Controller
             $this->record($ipcr, $request, ApprovalStage::Assessment, ApprovalAction::Approved);
         });
 
+        // After the transaction, not inside it: a notification for a change
+        // that then rolls back is a lie nobody can take back.
+        $ipcr->finalApprover?->user?->notify(new IpcrAssessed($ipcr->fresh()));
+
         return redirect()->route('approvals.inbox')->with(
             'status',
             "Assessment complete for {$ipcr->employee->full_name}. Sent to {$ipcr->finalApprover?->full_name} for final approval."
@@ -150,6 +157,8 @@ class IpcrApprovalController extends Controller
             $this->record($ipcr, $request, ApprovalStage::FinalRating, ApprovalAction::Approved);
         });
 
+        $ipcr->employee?->user?->notify(new IpcrApproved($ipcr->fresh()));
+
         return redirect()->route('approvals.inbox')->with(
             'status',
             "Approved {$ipcr->employee->full_name}'s IPCR — {$breakdown->finalNumeric} ({$breakdown->finalAdjectival->value})."
@@ -174,6 +183,10 @@ class IpcrApprovalController extends Controller
 
             $this->record($ipcr, $request, $stage, ApprovalAction::Returned, $validated['remarks']);
         });
+
+        // The reason travels with it. Being told your work came back without
+        // being told why is the one thing worse than not being told.
+        $ipcr->employee?->user?->notify(new IpcrReturned($ipcr->fresh(), $validated['remarks']));
 
         return redirect()->route('approvals.inbox')
             ->with('status', "Returned {$ipcr->employee->full_name}'s IPCR for revision.");

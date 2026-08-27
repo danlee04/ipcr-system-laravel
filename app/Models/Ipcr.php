@@ -106,6 +106,38 @@ class Ipcr extends Model
         return $this->status->isEditableByOwner();
     }
 
+    /**
+     * Was this handed in after the period's deadline?
+     *
+     * Read against the deadline as it stands rather than stamped at
+     * submission. Extending a period is how an office forgives the people it
+     * was extended for, and a frozen mark would leave them late for a date
+     * that no longer exists.
+     *
+     * A deadline is a whole day: something handed in at half past eleven that
+     * night is on time.
+     */
+    public function isLate(): bool
+    {
+        $deadline = $this->period?->submission_deadline;
+
+        return $this->submitted_at !== null
+            && $deadline !== null
+            && $this->submitted_at->startOfDay()->greaterThan($deadline->startOfDay());
+    }
+
+    /** How many days past the deadline, or nought when it was not. */
+    public function daysLate(): int
+    {
+        if (! $this->isLate()) {
+            return 0;
+        }
+
+        return (int) $this->period->submission_deadline
+            ->startOfDay()
+            ->diffInDays($this->submitted_at->startOfDay());
+    }
+
     /** Does the Actual Accomplishment field appear on this IPCR's items? */
     public function showsAccomplishment(): bool
     {

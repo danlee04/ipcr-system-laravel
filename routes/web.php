@@ -16,6 +16,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\IpcrApprovalController;
 use App\Http\Controllers\IpcrController;
 use App\Http\Controllers\IpcrItemController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -30,6 +31,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    /*
+     * What the user has been told. Scoped to their own notifications inside
+     * the controller: nobody can name somebody else's.
+     */
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read', [NotificationController::class, 'readAll'])->name('notifications.read');
+    Route::get('/notifications/{notification}', [NotificationController::class, 'show'])->name('notifications.show');
 
     Route::get('/ipcrs', [IpcrController::class, 'index'])->name('ipcrs.index');
     Route::post('/ipcrs', [IpcrController::class, 'store'])->name('ipcrs.store');
