@@ -22,12 +22,10 @@ use Illuminate\View\View;
  * The master catalog of functions employees can pick from when building an
  * IPCR. Nothing here is ever added automatically - these are suggestions.
  *
- * How each category reaches an employee, per FunctionCatalogService:
- *   core      -> matched on the employee's single plantilla position
- *   strategic -> matched on their currently active designations
- *   support   -> matched on their currently active designations
- *   common    -> open to everyone, and carries the rated category it counts
- *                towards, because "common" is a pool, not a rating bucket
+ * Two things are asked of every entry, and they are separate questions:
+ *
+ *   category   -> what kind of work it is: core, support or strategic
+ *   applies to -> who it reaches: a position, a designation, or everyone
  */
 class FunctionController extends Controller
 {
@@ -64,13 +62,9 @@ class FunctionController extends Controller
         $divisions = Division::query()->orderBy('name')->get();
         $sections = Section::query()->with('division')->orderBy('name')->get();
 
-        // Counted against the table, not the page. A warning that only fires
-        // when the offending row happens to be on screen is worthless.
-        $unfiledCount = JobFunction::query()->needingRatingCategory()->count();
-
         return view('admin.functions.index', compact(
             'functions', 'positions', 'designations', 'divisions', 'sections',
-            'unfiledCount', 'search', 'category'
+            'search', 'category'
         ));
     }
 
@@ -79,7 +73,7 @@ class FunctionController extends Controller
      * that reach people some other way.
      *
      * A division or section is a fact about a position. A function that has no
-     * position - the common pool, or one attached to a designation - sits in
+     * position - one open to everyone, or one attached to a designation - sits in
      * no division at all, so narrowing by division cannot say anything about
      * it. Hiding those would make the filter look like it had found nothing
      * when it had simply asked the wrong question. The old Function Library
@@ -164,32 +158,25 @@ class FunctionController extends Controller
     // -----------------------------------------------------------------
 
     /**
-     * Clears the links that do not apply to the chosen category.
+     * Keeps only the link the chosen route actually uses.
      *
      * This is what makes the hidden Alpine branches harmless: they are still
-     * submitted, and whatever they carry is discarded here rather than saved
-     * against a category it means nothing to.
-     *
-     * Core takes either link - a position or a designation - because a
-     * designation carries core duties of its own. Strategic and support reach
-     * people through designations only; common reaches everyone and needs no
-     * link at all.
+     * submitted, and whatever they carry is discarded here rather than
+     * quietly handing the function to an audience nobody chose.
      */
     private function attributes(array $data): array
     {
-        $category = FunctionCategory::from($data['category']);
-
-        $position = $data['position_id'] ?? null;
-        $designation = $data['designation_id'] ?? null;
-
-        // Common reaches everyone and needs no link; every other category
-        // takes exactly one, and the validator has already insisted on that.
-        [$position, $designation] = $category === FunctionCategory::Common
-            ? [null, null]
-            : [$position ?: null, $position ? null : ($designation ?: null)];
+        // Only the branch the form was on survives. The other two are still
+        // submitted - a hidden field always is - and carrying a stale link
+        // through would hand the function to an audience nobody chose.
+        [$position, $designation] = match ($data['applies_to']) {
+            'position'    => [$data['position_id'] ?? null, null],
+            'designation' => [null, $data['designation_id'] ?? null],
+            'everyone'    => [null, null],
+        };
 
         return [
-            'category'          => $category,
+            'category'          => FunctionCategory::from($data['category']),
             'title'             => $data['title'],
             'success_indicator' => $data['success_indicator'] ?? null,
 
@@ -199,9 +186,6 @@ class FunctionController extends Controller
 
             'position_id'       => $position,
             'designation_id'    => $designation,
-            'rating_category'   => $category === FunctionCategory::Common
-                ? ($data['rating_category'] ?? null)
-                : null,
         ];
     }
 

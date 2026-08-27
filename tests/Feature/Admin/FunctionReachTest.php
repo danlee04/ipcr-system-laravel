@@ -17,10 +17,9 @@ use Tests\TestCase;
 /**
  * Two questions, not one.
  *
- *   Category   - what kind of function this is: strategic, core, support, or
- *                the common pool.
- *   Applies to - who it reaches: whoever holds a position, or whoever holds a
- *                designation.
+ *   Category   - what kind of function this is: strategic, core or support.
+ *   Applies to - who it reaches: everyone, whoever holds a position, or
+ *                whoever holds a designation.
  *
  * They used to be tangled. Choosing "strategic" forced a designation and
  * choosing "core" forced a position, as if the category decided the audience.
@@ -53,12 +52,13 @@ class FunctionReachTest extends TestCase
     {
         return array_merge([
             'category'          => FunctionCategory::Strategic->value,
+            'applies_to'        => 'position',
             'title'             => 'Leads the quality improvement programme',
             'success_indicator' => 'Two reviews completed each quarter',
         ], $overrides);
     }
 
-    /** The three categories that carry weight; common reaches everyone anyway. */
+    /** All three of them - there is no fourth. */
     public static function ratedCategories(): array
     {
         return [
@@ -97,6 +97,7 @@ class FunctionReachTest extends TestCase
         $this->actingAs($this->admin())
             ->post(route('admin.functions.store'), $this->payload([
                 'category'       => $category,
+                'applies_to'     => 'designation',
                 'designation_id' => $designation->id,
             ]))
             ->assertSessionHasNoErrors();
@@ -106,8 +107,9 @@ class FunctionReachTest extends TestCase
         ]);
     }
 
+    /** Whatever the category, the chosen route still needs its link. */
     #[DataProvider('ratedCategories')]
-    public function test_a_rated_category_needs_exactly_one_of_the_two(string $category): void
+    public function test_a_chosen_route_needs_its_link(string $category): void
     {
         $this->actingAs($this->admin())
             ->post(route('admin.functions.store'), $this->payload(['category' => $category]))
@@ -115,11 +117,10 @@ class FunctionReachTest extends TestCase
 
         $this->actingAs($this->admin())
             ->post(route('admin.functions.store'), $this->payload([
-                'category'       => $category,
-                'position_id'    => Position::factory()->create()->id,
-                'designation_id' => Designation::factory()->create()->id,
+                'category'   => $category,
+                'applies_to' => 'designation',
             ]))
-            ->assertSessionHasErrors('position_id');
+            ->assertSessionHasErrors('designation_id');
 
         $this->assertDatabaseCount('job_functions', 0);
     }
@@ -229,10 +230,11 @@ class FunctionReachTest extends TestCase
     }
 
     /**
-     * The choice belongs to every rated category, not to core alone. Showing
-     * it only under core is what tied the audience to the kind of work.
+     * The choice belongs to every category, not to one of them. It used to be
+     * shown only under Core, which is what tied the audience to the kind of
+     * work - and the whole question now stands outside the category entirely.
      */
-    public function test_the_choice_is_not_hidden_behind_one_category(): void
+    public function test_the_choice_is_not_hidden_behind_any_category(): void
     {
         Position::factory()->create();
 
@@ -242,6 +244,7 @@ class FunctionReachTest extends TestCase
             ->getContent();
 
         $this->assertStringNotContainsString("category === 'core'", $html);
-        $this->assertStringContainsString("category !== 'common'", $html);
+        $this->assertStringNotContainsString("category === 'common'", $html);
+        $this->assertStringNotContainsString("category !== 'common'", $html);
     }
 }

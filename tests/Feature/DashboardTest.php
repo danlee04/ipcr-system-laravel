@@ -170,17 +170,22 @@ class DashboardTest extends TestCase
             ->assertSee('without a head');
     }
 
-    public function test_an_admin_is_warned_about_common_functions_with_no_rating_category(): void
+    /**
+     * The dashboard used to warn about common functions with no rating
+     * category. There is no such state any more - every function carries a
+     * real category - so nothing is left for that check to find.
+     */
+    public function test_a_function_can_no_longer_be_half_filed(): void
     {
         $this->openPeriod();
         JobFunction::create([
-            'category' => FunctionCategory::Common, 'title' => 'Attends meetings', 'is_active' => true,
+            'category' => FunctionCategory::Support, 'title' => 'Attends meetings', 'is_active' => true,
         ]);
 
         $this->actingAs($this->adminUser())
             ->get('/dashboard')
             ->assertOk()
-            ->assertSee('no rating category');
+            ->assertDontSee('no rating category');
     }
 
     public function test_an_admin_sees_how_many_employees_have_submitted(): void

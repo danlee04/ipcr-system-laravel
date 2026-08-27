@@ -22,7 +22,7 @@
 <div class="space-y-3" x-data="functionRubric()">
     <div class="flex items-baseline justify-between gap-3">
         <h3 class="text-sm font-semibold text-gray-900">Description of Rating</h3>
-        <span class="text-xs text-gray-500">A measure left blank is n/a. Each one is graded its own way.</span>
+        <span class="text-xs text-gray-500">Blank = n/a</span>
     </div>
 
     @foreach (RatingMeasure::cases() as $measure)
@@ -71,7 +71,7 @@
                     </template>
 
                     <span class="text-xs italic text-gray-400" x-show="answer === 'count'" x-cloak>
-                        graded on the percentage the two numbers make — the bands below are in %
+                        bands below are in %
                     </span>
                 </div>
 
@@ -114,10 +114,11 @@
                     </table>
                 </div>
 
+                {{-- The two rules that are not guessable: an open end, and the
+                     order bands are read in. Everything else the grid shows. --}}
                 <p class="text-xs text-gray-500" x-show="answer !== 'descriptor'" x-cloak>
-                    A blank From means “anything below To”, a blank To means “anything above From”. Bands are read
-                    from 5 down, so a timeliness scale is written the other way round — level 5 up to 90 days,
-                    level 1 from 181 onwards.
+                    Blank From = anything below To. Read from 5 down, so a “fewer is better” scale is written
+                    upside down.
                 </p>
             </div>
         </details>
@@ -132,8 +133,8 @@
                 placeholder="{e}% of DTR with complete attachments are submitted every 5th day of the ensuing month">{{ old('accomplishment_template', $function?->accomplishment_template) }}</textarea>
         </label>
         <p class="mt-1 text-xs text-gray-500">
-            Copy the success indicator and replace each target figure with its placeholder. Available here:
-            <span class="font-data text-gray-700" x-text="placeholders.join('  ')"></span>
+            Use <span class="font-data text-gray-700" x-text="placeholders.join('  ')"></span>
+            where the reported figure goes.
         </p>
     </div>
 </div>

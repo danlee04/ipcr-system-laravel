@@ -10,17 +10,22 @@
     $currentSection = $function?->position?->section_id ?? '';
     $currentDivision = $function?->position?->section?->division_id ?? '';
 
-    // Which of the two routes this function takes. Not stored anywhere: the
+    // Which of the three routes this function takes. Not stored anywhere: the
     // link it carries is the route it took, so it is read back off the record.
-    $appliesTo = old('applies_to', $function?->designation_id ? 'designation' : 'position');
+    // A saved function carrying neither link reaches everyone.
+    $appliesTo = old('applies_to', match (true) {
+        $function?->designation_id !== null => 'designation',
+        $function?->position_id !== null    => 'position',
+        $function !== null                  => 'everyone',
+        default                             => 'position',
+    });
 @endphp
 
 {{-- Shared by the create and edit modals so the two forms cannot drift apart.
 
-     Two questions: what kind of work this is, and who it reaches. Only the
-     common pool skips the second - it reaches everyone - so the link fields
-     are shown and hidden by Alpine rather than all at once. --}}
-<div class="space-y-4" x-data="{ category: '{{ $current }}' }">
+     Two questions: what kind of work this is, and who it reaches. The link
+     fields are shown and hidden by Alpine rather than all at once. --}}
+<div class="space-y-4">
     {{-- No weight here. The category split is worked out from what an
          employee actually holds, and the weight of a line inside a category
          fills itself in from what that category has not spent - so a number
@@ -36,19 +41,20 @@
         </select>
     </label>
 
-    {{-- Who the function reaches, asked once for every rated category.
-
-         The category is what kind of work this is; it never decided the
-         audience. A Section Head's strategic commitments belong to their
-         post, and an OIC's core duties belong to their designation - so both
-         routes are open whatever the category. Only the common pool needs
-         neither, reaching everyone. --}}
-    <div x-show="category !== 'common'" x-cloak
-        x-data="{ via: '{{ $appliesTo }}', division: '{{ $currentDivision }}', section: '{{ $currentSection }}' }"
+    {{-- Who the function reaches. A separate question from what kind of work
+         it is: a Section Head's strategic commitments belong to their post, an
+         OIC's core duties to their designation, and the flag ceremony to
+         everybody - all three of those are still Core, Support or Strategic. --}}
+    <div x-data="{ via: '{{ $appliesTo }}', division: '{{ $currentDivision }}', section: '{{ $currentSection }}' }"
         class="space-y-4">
 
         <fieldset class="flex flex-wrap gap-4 rounded-md bg-gray-50 p-3 ring-1 ring-inset ring-gray-200">
             <legend class="mb-2 w-full text-sm font-medium text-gray-700">Applies to</legend>
+
+            <label class="flex items-center gap-2 text-sm">
+                <input type="radio" name="applies_to" value="everyone" x-model="via">
+                <span><strong>Everyone</strong></span>
+            </label>
 
             <label class="flex items-center gap-2 text-sm">
                 <input type="radio" name="applies_to" value="position" x-model="via">
@@ -66,7 +72,7 @@
         <label class="block" x-show="via === 'designation'" x-cloak>
             <span class="mb-1 block text-sm font-medium text-gray-700">Designation</span>
             <select name="designation_id" class="w-full rounded-md border-gray-300 text-sm"
-                :disabled="category === 'common' || via !== 'designation'">
+                :disabled="via !== 'designation'">
                 <option value="">— Choose a designation —</option>
                 @foreach ($designations as $designation)
                     <option value="{{ $designation->id }}" @selected(old('designation_id', $function?->designation_id) == $designation->id)>
@@ -74,8 +80,6 @@
                     </option>
                 @endforeach
             </select>
-            <span class="mt-1 block text-xs text-gray-500">Everyone currently holding this designation will see
-                it.</span>
         </label>
 
         <div x-show="via === 'position'" x-cloak class="space-y-4">
@@ -110,7 +114,7 @@
         <label class="block">
             <span class="mb-1 block text-sm font-medium text-gray-700">Position</span>
             <select name="position_id" class="w-full rounded-md border-gray-300 text-sm"
-                :disabled="category === 'common' || via !== 'position'">
+                :disabled="via !== 'position'">
                 <option value="">— Choose a position —</option>
                 @foreach ($positions as $position)
                     <option value="{{ $position->id }}" data-section="{{ $position->section_id }}"
@@ -124,30 +128,9 @@
                     </option>
                 @endforeach
             </select>
-            <span class="mt-1 block text-xs text-gray-500">Everyone holding this position will see this
-                function.</span>
         </label>
         </div>
     </div>
-
-    {{-- Common is a pool, not a rating bucket, so it needs to say which of the
-         three rated categories a line built from it counts towards. --}}
-    <label class="block" x-show="category === 'common'" x-cloak>
-        <span class="mb-1 block text-sm font-medium text-gray-700">Counts towards</span>
-        <select name="rating_category" class="w-full rounded-md border-gray-300 text-sm"
-            :disabled="category !== 'common'">
-            <option value="">— Not set —</option>
-            @foreach ([FunctionCategory::Strategic, FunctionCategory::Core, FunctionCategory::Support] as $rated)
-                <option value="{{ $rated->value }}" @selected(old('rating_category', $function?->rating_category?->value) === $rated->value)>
-                    {{ $rated->label() }}
-                </option>
-            @endforeach
-        </select>
-        <span class="mt-1 block text-xs text-gray-500">
-            Open to everyone, but the rating only knows Strategic, Core and Support. Until this is set, nobody can
-            add the function to an IPCR.
-        </span>
-    </label>
 
     <label class="block">
         <span class="mb-1 block text-sm font-medium text-gray-700">Output / objective</span>

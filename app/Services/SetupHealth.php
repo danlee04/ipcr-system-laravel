@@ -60,18 +60,9 @@ class SetupHealth
             ];
         }
 
-        $unfiled = JobFunction::query()
-            ->where('category', FunctionCategory::Common)
-            ->whereNull('rating_category')
-            ->count();
-
-        if ($unfiled > 0) {
-            $problems[] = [
-                'message' => $this->count($unfiled, 'common function', 'common functions')
-                    . ' with no rating category. They cannot be added to an IPCR.',
-                'route' => route('admin.functions.index'),
-            ];
-        }
+        // Nothing about functions can be half-set any more: every one carries
+        // a real category, so the "common function with no rating category"
+        // check that used to live here has nothing left to find.
 
         return $problems;
     }

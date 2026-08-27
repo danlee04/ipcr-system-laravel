@@ -28,10 +28,6 @@
                         <p class="text-2xl font-semibold text-gray-900">{{ $catalog->support->count() }}</p>
                         <p class="text-xs text-gray-500">Support</p>
                     </div>
-                    <div class="rounded-md bg-gray-50 p-3 text-center">
-                        <p class="text-2xl font-semibold text-gray-900">{{ $catalog->common->count() }}</p>
-                        <p class="text-xs text-gray-500">Common</p>
-                    </div>
                 </div>
 
                 <p class="text-sm text-gray-600">

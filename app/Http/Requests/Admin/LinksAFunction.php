@@ -46,23 +46,16 @@ trait LinksAFunction
             'designation_id' => ['nullable', 'integer', 'exists:designations,id'],
 
             /*
-             * Deliberately not `prohibited` outside the common pool.
+             * Who the function reaches. Required, and asked as plainly as the
+             * category is.
              *
-             * The category branches are shown and hidden by Alpine, and a
-             * hidden field is still submitted: someone who looks at Common
-             * first and then picks Core sends a leftover rating category. That
-             * used to fail the save and point at a field they could no longer
-             * see. The controller already discards the value, so refusing it
-             * only punishes the user for a quirk of the form.
+             * Not stored as a column - the link it carries is the answer - but
+             * the form has to say which branch it meant, because the inactive
+             * branches submit too. Left to be inferred, a request naming no
+             * link at all would quietly create a function for the whole
+             * hospital, which is the last thing anyone should get by accident.
              */
-            'rating_category' => [
-                'nullable',
-                Rule::in([
-                    FunctionCategory::Strategic->value,
-                    FunctionCategory::Core->value,
-                    FunctionCategory::Support->value,
-                ]),
-            ],
+            'applies_to' => ['required', Rule::in(['everyone', 'position', 'designation'])],
 
             'title'             => ['required', 'string', 'max:2000'],
             'success_indicator' => ['nullable', 'string', 'max:2000'],
@@ -217,34 +210,31 @@ trait LinksAFunction
                 return;
             }
 
-            $category = $this->category();
-            $position = $this->input('position_id');
-            $designation = $this->input('designation_id');
+            // The branch the form was on decides what is required. Everyone
+            // needs nothing; the other two each need their own link, and
+            // whatever the inactive branches submitted is discarded later.
+            match ($this->appliesTo()) {
+                'position' => $this->input('position_id')
+                    ?: $validator->errors()->add('position_id', 'Choose the position this function belongs to.'),
 
-            if ($category === FunctionCategory::Common) {
-                return;   // Open to everyone; any link submitted is discarded.
-            }
+                'designation' => $this->input('designation_id')
+                    ?: $validator->errors()->add('designation_id', 'Choose the designation this function belongs to.'),
 
-            // Exactly one link, whatever the category. What kind of work it is
-            // and who it reaches are separate questions.
-            if ($position && $designation) {
-                $validator->errors()->add(
-                    'position_id',
-                    'A function belongs to a position or to a designation, not to both.'
-                );
-            } elseif (! $position && ! $designation) {
-                $validator->errors()->add(
-                    'position_id',
-                    'Choose the position or the designation this function belongs to, or nobody will see it.'
-                );
-            }
+                default => null,   // Everyone: no link to choose.
+            };
         });
+    }
+
+    /** Which of the three routes the form was on. */
+    private function appliesTo(): string
+    {
+        return (string) $this->input('applies_to');
     }
 
     private function functionMessages(): array
     {
         return [
-            'rating_category.in' => 'Choose Strategic, Core or Support.',
+            'applies_to.required' => 'Say who this function reaches: everyone, a position, or a designation.',
         ];
     }
 }

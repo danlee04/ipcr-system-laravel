@@ -125,8 +125,8 @@ class DemoSeeder extends Seeder
         $this->jobFunction(null, $oicBudget->id, FunctionCategory::Strategic, 'Prepares the annual budget proposal', 'Budget proposal submitted before the DBM deadline', 20);
         $this->jobFunction(null, $oicBudget->id, FunctionCategory::Support, 'Reviews the monthly financial report', 'Report reviewed and submitted by the 5th of each month', 15);
 
-        $this->jobFunction(null, null, FunctionCategory::Common, 'Attends agency meetings and training', 'At least 80% attendance at scheduled meetings', 5);
-        $this->jobFunction(null, null, FunctionCategory::Common, 'Observes official working hours', 'No unauthorized absence or tardiness', 5);
+        $this->jobFunction(null, null, FunctionCategory::Support, 'Attends agency meetings and training', 'At least 80% attendance at scheduled meetings', 5);
+        $this->jobFunction(null, null, FunctionCategory::Support, 'Observes official working hours', 'No unauthorized absence or tardiness', 5);
 
         // --- Open rating period --------------------------------------
 

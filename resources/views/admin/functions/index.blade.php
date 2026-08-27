@@ -12,12 +12,9 @@
     <x-page-container class="space-y-6">
         <x-admin.flash />
 
-        <p class="max-w-3xl text-sm text-gray-600">
-            The catalog employees pick from when building an IPCR. Nothing here is added automatically — these are
-            suggestions. A <strong>core</strong> function reaches whoever holds its position;
-            <strong>strategic</strong> and <strong>support</strong> reach whoever holds its designation;
-            <strong>common</strong> reaches everyone.
-        </p>
+        {{-- No standing paragraph explaining the categories. The badges and
+             the "Applies to" column say the same thing on every row, and a
+             page you read daily should not re-teach itself every visit. --}}
 
         {{-- Division narrows Section, Section narrows Position: the three
              selects can never describe a combination that has no rows. --}}
@@ -76,19 +73,12 @@
             </div>
         </x-admin.filter-bar>
 
-        <p class="-mt-3 text-xs text-gray-500">
-            The filters narrow position functions. Common functions belong to everyone, so they are always listed.
-        </p>
-
-        @if ($unfiledCount > 0)
-            {{-- These fail only at the moment an employee tries to use them,
-                 which is far too late to be useful feedback. --}}
-            <div class="rounded-md bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-500/20">
-                <strong>{{ $unfiledCount }} common
-                    function{{ $unfiledCount === 1 ? '' : 's' }} cannot be added to an IPCR yet.</strong>
-                Common is a pool, not a rating category — each one needs to say whether it counts towards Strategic,
-                Core or Support. Edit it and set <em>Counts towards</em>.
-            </div>
+        {{-- Only while a filter is on. It answers a question nobody has until
+             they narrow the list and still see functions from elsewhere. --}}
+        @if (request()->hasAny(['division', 'section', 'position']))
+            <p class="-mt-3 text-xs text-gray-500">
+                Functions tied to no position — common, and those on a designation — are always listed.
+            </p>
         @endif
 
         <x-admin.table>
@@ -109,21 +99,16 @@
                             class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {{ $function->category->badgeClasses() }}">
                             {{ $function->category->label() }}
                         </span>
-                        @if ($function->category === \App\Enums\FunctionCategory::Common)
-                            @if ($function->rating_category)
-                                <span class="mt-1 block text-xs text-gray-500">
-                                    counts as {{ $function->rating_category->label() }}
-                                </span>
-                            @else
-                                <span class="mt-1 block text-xs font-medium text-amber-700">no rating category</span>
-                            @endif
-                        @endif
                     </td>
                     <td class="px-6 py-4 text-sm">
-                        <span class="block max-w-md text-gray-900">{{ $function->title }}</span>
+                        {{-- Clamped, not truncated in PHP: the full text is
+                             still there for anyone who needs it, and a success
+                             indicator two paragraphs long no longer sets the
+                             height of the row. --}}
+                        <span class="line-clamp-2 block max-w-md text-gray-900">{{ $function->title }}</span>
                         @if ($function->success_indicator)
-                            <span
-                                class="mt-1 block max-w-md text-xs text-gray-500">{{ $function->success_indicator }}</span>
+                            <span class="mt-0.5 line-clamp-1 block max-w-md text-xs text-gray-500"
+                                title="{{ $function->success_indicator }}">{{ $function->success_indicator }}</span>
                         @endif
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-700">
@@ -156,7 +141,7 @@
                     </td>
                 </tr>
 
-                <x-modal name="edit-function-{{ $function->id }}" focusable max-width="2xl">
+                <x-modal name="edit-function-{{ $function->id }}" focusable max-width="4xl">
                     <form method="POST" action="{{ route('admin.functions.update', $function) }}"
                         class="space-y-4 p-6">
                         @csrf
@@ -190,7 +175,7 @@
 
         {{ $functions->links() }}
 
-        <x-modal name="create-function" focusable max-width="2xl">
+        <x-modal name="create-function" focusable max-width="4xl">
             <form method="POST" action="{{ route('admin.functions.store') }}" class="space-y-4 p-6">
                 @csrf
                 <h2 class="text-lg font-semibold text-gray-900">New function</h2>

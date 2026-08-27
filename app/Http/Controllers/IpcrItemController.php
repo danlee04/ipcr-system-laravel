@@ -20,26 +20,6 @@ class IpcrItemController extends Controller
 
         $data = $request->validated();
 
-        // "Common" is a pool, not a rated category. A line picked from it is
-        // filed under whichever category HR assigned to the function; without
-        // one it cannot be rated at all, so it is refused here rather than
-        // landing in a bucket the calculator ignores.
-        if (($data['category'] ?? null) === FunctionCategory::Common->value) {
-            $function = isset($data['job_function_id'])
-                ? JobFunction::find($data['job_function_id'])
-                : null;
-
-            $resolved = $function?->ratingCategory();
-
-            if ($resolved === null) {
-                return back()->with('error', $function === null
-                    ? 'Pick a category of Strategic, Core or Support for this function.'
-                    : "\"{$function->title}\" has not been filed under a rated category yet. Ask HR to set one on the Functions screen.");
-            }
-
-            $data['category'] = $resolved->value;
-        }
-
         // Left blank, the weight takes whatever the category has not spent.
         // The first line takes all 100, and each one after takes the
         // remainder, so the total is right at every point rather than only

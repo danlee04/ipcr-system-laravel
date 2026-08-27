@@ -208,7 +208,7 @@ class PositionSectionScopeTest extends TestCase
         $position = Position::factory()->create(['section_id' => $this->sectionIn($division)->id]);
 
         JobFunction::create(['category' => FunctionCategory::Core, 'title' => 'A core one', 'position_id' => $position->id, 'is_active' => true]);
-        JobFunction::create(['category' => FunctionCategory::Common, 'title' => 'A common one', 'is_active' => true]);
+        JobFunction::create(['category' => FunctionCategory::Support, 'title' => 'A common one', 'is_active' => true]);
 
         $titles = $this->actingAs($this->admin())
             ->get(route('admin.functions.index', ['division' => $division->id]))

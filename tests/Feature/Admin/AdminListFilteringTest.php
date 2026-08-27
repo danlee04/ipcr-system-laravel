@@ -200,8 +200,8 @@ class AdminListFilteringTest extends TestCase
 
     public function test_job_functions_can_be_searched_by_title(): void
     {
-        JobFunction::create(['category' => FunctionCategory::Common, 'title' => 'Attends agency meetings', 'is_active' => true]);
-        JobFunction::create(['category' => FunctionCategory::Common, 'title' => 'Observes working hours', 'is_active' => true]);
+        JobFunction::create(['category' => FunctionCategory::Support, 'title' => 'Attends agency meetings', 'is_active' => true]);
+        JobFunction::create(['category' => FunctionCategory::Support, 'title' => 'Observes working hours', 'is_active' => true]);
 
         $response = $this->actingAs($this->admin())
             ->get(route('admin.functions.index', ['search' => 'meetings']))
@@ -214,36 +214,13 @@ class AdminListFilteringTest extends TestCase
     {
         $position = Position::factory()->create();
         JobFunction::create(['category' => FunctionCategory::Core, 'title' => 'A core one', 'position_id' => $position->id, 'is_active' => true]);
-        JobFunction::create(['category' => FunctionCategory::Common, 'title' => 'A common one', 'is_active' => true]);
+        JobFunction::create(['category' => FunctionCategory::Support, 'title' => 'A common one', 'is_active' => true]);
 
         $response = $this->actingAs($this->admin())
-            ->get(route('admin.functions.index', ['category' => 'common']))
+            ->get(route('admin.functions.index', ['category' => 'support']))
             ->assertOk();
 
         $this->assertSame(['A common one'], $response->viewData('functions')->pluck('title')->all());
-    }
-
-    /**
-     * The warning about unfiled common functions must count every one of them,
-     * not just those on the page being looked at.
-     */
-    public function test_the_unfiled_warning_counts_beyond_the_current_page(): void
-    {
-        $position = Position::factory()->create();
-
-        for ($i = 0; $i < self::PER_PAGE + 2; $i++) {
-            JobFunction::create([
-                'category' => FunctionCategory::Core, 'title' => "Filler {$i}",
-                'position_id' => $position->id, 'is_active' => true,
-            ]);
-        }
-
-        JobFunction::create(['category' => FunctionCategory::Common, 'title' => 'Zzz unfiled', 'is_active' => true]);
-
-        $response = $this->actingAs($this->admin())->get(route('admin.functions.index'))->assertOk();
-
-        $this->assertSame(1, $response->viewData('unfiledCount'));
-        $response->assertSee('cannot be added to an IPCR');
     }
 
     // -----------------------------------------------------------------

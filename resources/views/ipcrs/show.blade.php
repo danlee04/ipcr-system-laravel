@@ -214,7 +214,10 @@
                 <div class="space-y-6 bg-white shadow-sm sm:rounded-lg ring-1 ring-gray-950/5 p-6">
                     <h3 class="text-sm font-semibold text-gray-900">Add a Function</h3>
 
-                    @foreach (['core' => $catalog->core, 'strategic' => $catalog->strategic, 'support' => $catalog->support, 'common' => $catalog->common] as $key => $items)
+                    {{-- Three groups, matching the three kinds of work. A
+                         function open to everyone appears under its own
+                         category rather than in a pool of its own. --}}
+                    @foreach (['core' => $catalog->core, 'strategic' => $catalog->strategic, 'support' => $catalog->support] as $key => $items)
                         @if ($items->isNotEmpty())
                             <div>
                                 <p class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
@@ -254,14 +257,9 @@
 
                             <label class="sm:col-span-4">
                                 <span class="mb-1 block text-xs font-medium text-gray-600">Category</span>
-                                {{-- The three rated categories only. Common is a
-                                     pool in the catalog, not something a line
-                                     can be filed under, and offering it here
-                                     would be offering an option that always
-                                     fails validation. --}}
                                 <select name="category" class="w-full rounded-md border-gray-300 text-sm" required>
                                     <option value="">Select category…</option>
-                                    @foreach ([\App\Enums\FunctionCategory::Strategic, \App\Enums\FunctionCategory::Core, \App\Enums\FunctionCategory::Support] as $case)
+                                    @foreach (\App\Enums\FunctionCategory::cases() as $case)
                                         <option value="{{ $case->value }}">{{ $case->label() }}</option>
                                     @endforeach
                                 </select>

@@ -108,7 +108,7 @@
                         </div>
 
                         <div class="grid grid-cols-4 gap-2">
-                            @foreach (['Core' => $catalog->core, 'Strategic' => $catalog->strategic, 'Support' => $catalog->support, 'Common' => $catalog->common] as $label => $functions)
+                            @foreach (['Core' => $catalog->core, 'Strategic' => $catalog->strategic, 'Support' => $catalog->support] as $label => $functions)
                                 <div class="rounded-md bg-gray-50 p-2 text-center">
                                     <p class="text-lg font-semibold text-gray-900">{{ $functions->count() }}</p>
                                     <p class="text-xs text-gray-500">{{ $label }}</p>

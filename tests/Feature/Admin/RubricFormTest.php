@@ -50,6 +50,7 @@ class RubricFormTest extends TestCase
     {
         return array_merge([
             'category'    => FunctionCategory::Core->value,
+            'applies_to'  => 'position',
             'title'       => 'Complete DTR submitted',
             'position_id' => Position::factory()->create()->id,
         ], $overrides);
@@ -229,6 +230,21 @@ class RubricFormTest extends TestCase
         }
 
         $this->assertStringContainsString('name="accomplishment_template"', $html);
+    }
+
+    /**
+     * The rubric puts a four-column grid inside the modal, three times over.
+     * At Breeze's 2xl the From and To boxes are barely wide enough for a
+     * number.
+     */
+    public function test_the_form_opens_in_a_wide_modal(): void
+    {
+        Position::factory()->create();
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.functions.index'))
+            ->assertOk()
+            ->assertSee('sm:max-w-4xl', false);
     }
 
     /**

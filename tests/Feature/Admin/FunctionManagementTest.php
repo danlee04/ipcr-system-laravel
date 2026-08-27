@@ -33,6 +33,7 @@ class FunctionManagementTest extends TestCase
     {
         return array_merge([
             'category'          => FunctionCategory::Core->value,
+            'applies_to'        => 'position',
             'title'             => 'Provides direct patient care',
             'success_indicator' => 'Patients seen within 30 minutes',
 
@@ -63,6 +64,7 @@ class FunctionManagementTest extends TestCase
         $this->actingAs($this->admin())->post(route('admin.functions.store'), $this->payload([
             'category' => FunctionCategory::Strategic->value,
             'title' => 'Prepares the annual budget proposal',
+            'applies_to' => 'designation',
             'designation_id' => $designation->id,
         ]));
 
@@ -83,7 +85,9 @@ class FunctionManagementTest extends TestCase
         $designation = Designation::factory()->create();
 
         $this->actingAs($this->admin())
-            ->post(route('admin.functions.store'), $this->payload(['designation_id' => $designation->id]))
+            ->post(route('admin.functions.store'), $this->payload([
+                'applies_to' => 'designation', 'designation_id' => $designation->id,
+            ]))
             ->assertSessionHasNoErrors()
             ->assertRedirect(route('admin.functions.index'));
 
@@ -95,67 +99,58 @@ class FunctionManagementTest extends TestCase
         ]);
     }
 
-    public function test_a_core_function_names_a_position_or_a_designation_but_not_both(): void
+    /**
+     * The chosen branch decides which link is kept.
+     *
+     * Both used to be refused, because either could have been meant. Now the
+     * form states which one it was on, so a leftover from a branch nobody is
+     * looking at is discarded rather than treated as a second answer.
+     */
+    public function test_only_the_chosen_branch_keeps_its_link(): void
     {
         $this->actingAs($this->admin())
             ->post(route('admin.functions.store'), $this->payload([
+                'applies_to'     => 'position',
                 'position_id'    => Position::factory()->create()->id,
                 'designation_id' => Designation::factory()->create()->id,
             ]))
-            ->assertSessionHasErrors('position_id');
+            ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseCount('job_functions', 0);
+        $this->assertNull(JobFunction::first()->designation_id, 'The branch not chosen is discarded.');
     }
 
-    /**
-     * The category selects are shown and hidden by Alpine, and a hidden field
-     * is still submitted. Someone who looks at Common first and then switches
-     * to Core sends a leftover rating category with the form.
-     *
-     * That used to be fatal - "the rating category field is prohibited",
-     * pointing at a field they could no longer see. The controller already
-     * ignores the value; the validator has no business refusing it.
-     */
-    public function test_a_rating_category_left_over_from_another_choice_is_ignored(): void
+    /** Nobody is offered a route without saying which one they took. */
+    public function test_a_function_must_say_who_it_reaches(): void
     {
-        $position = Position::factory()->create();
+        $payload = $this->payload(['position_id' => Position::factory()->create()->id]);
+        unset($payload['applies_to']);
 
         $this->actingAs($this->admin())
-            ->post(route('admin.functions.store'), $this->payload([
-                'position_id'     => $position->id,
-                'rating_category' => FunctionCategory::Support->value,
-            ]))
-            ->assertSessionHasNoErrors()
-            ->assertRedirect(route('admin.functions.index'));
-
-        $this->assertDatabaseHas('job_functions', [
-            'position_id'     => $position->id,
-            'category'        => FunctionCategory::Core->value,
-            'rating_category' => null,
-        ]);
+            ->post(route('admin.functions.store'), $payload)
+            ->assertSessionHasErrors('applies_to');
     }
 
     /**
-     * A stale position on a designation function used to be discarded, because
-     * the category decided the audience and a support function could only ever
-     * be a designation's.
-     *
-     * Both links are legitimate now, so two of them is not a leftover to clean
-     * up - it is a question with two answers, and guessing would attach the
-     * function to an audience nobody asked for. It is refused instead, and the
-     * form's disabled branches are what stop it arising.
+     * The branches are shown and hidden by Alpine, and a hidden field is still
+     * submitted. A leftover from a branch nobody is on has to be harmless.
      */
-    public function test_naming_both_a_position_and_a_designation_is_refused(): void
+    public function test_a_leftover_from_another_branch_is_ignored(): void
     {
+        $designation = Designation::factory()->create();
+
         $this->actingAs($this->admin())
             ->post(route('admin.functions.store'), $this->payload([
                 'category'       => FunctionCategory::Support->value,
-                'designation_id' => Designation::factory()->create()->id,
+                'applies_to'     => 'designation',
+                'designation_id' => $designation->id,
                 'position_id'    => Position::factory()->create()->id,
             ]))
-            ->assertSessionHasErrors('position_id');
+            ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseCount('job_functions', 0);
+        $this->assertDatabaseHas('job_functions', [
+            'designation_id' => $designation->id,
+            'position_id'    => null,
+        ]);
     }
 
     public function test_the_form_offers_a_core_function_both_routes(): void
@@ -257,29 +252,6 @@ class FunctionManagementTest extends TestCase
         $this->assertDatabaseCount('job_functions', 0);
     }
 
-    public function test_a_common_function_needs_neither_and_takes_a_rating_category(): void
-    {
-        $this->actingAs($this->admin())->post(route('admin.functions.store'), $this->payload([
-            'category'        => FunctionCategory::Common->value,
-            'rating_category' => FunctionCategory::Support->value,
-            'title'           => 'Observes official working hours',
-        ]));
-
-        $function = JobFunction::where('title', 'Observes official working hours')->first();
-        $this->assertNotNull($function);
-        $this->assertSame(FunctionCategory::Support, $function->ratingCategory());
-    }
-
-    public function test_a_common_functions_rating_category_cannot_itself_be_common(): void
-    {
-        $this->actingAs($this->admin())
-            ->post(route('admin.functions.store'), $this->payload([
-                'category'        => FunctionCategory::Common->value,
-                'rating_category' => FunctionCategory::Common->value,
-            ]))
-            ->assertSessionHasErrors('rating_category');
-    }
-
     // -----------------------------------------------------------------
     // Updating, deactivating, deleting
     // -----------------------------------------------------------------
@@ -298,28 +270,10 @@ class FunctionManagementTest extends TestCase
         $this->assertSame('New', $function->fresh()->title);
     }
 
-    /** The screen exists largely to close this gap on the seeded data. */
-    public function test_an_admin_can_file_an_orphaned_common_function_under_a_category(): void
-    {
-        $function = JobFunction::create([
-            'category' => FunctionCategory::Common, 'title' => 'Attends meetings', 'is_active' => true,
-        ]);
-
-        $this->assertNull($function->ratingCategory());
-
-        $this->actingAs($this->admin())->put(route('admin.functions.update', $function), $this->payload([
-            'category' => FunctionCategory::Common->value,
-            'title' => 'Attends meetings',
-            'rating_category' => FunctionCategory::Core->value,
-        ]));
-
-        $this->assertSame(FunctionCategory::Core, $function->fresh()->ratingCategory());
-    }
-
     public function test_an_admin_can_deactivate_and_reactivate_a_function(): void
     {
         $function = JobFunction::create([
-            'category' => FunctionCategory::Common, 'title' => 'A function', 'is_active' => true,
+            'category' => FunctionCategory::Support, 'title' => 'A function', 'is_active' => true,
         ]);
 
         $this->actingAs($this->admin())->patch(route('admin.functions.active', $function), ['active' => false]);
@@ -332,7 +286,7 @@ class FunctionManagementTest extends TestCase
     public function test_an_admin_can_delete_a_function(): void
     {
         $function = JobFunction::create([
-            'category' => FunctionCategory::Common, 'title' => 'Disposable', 'is_active' => true,
+            'category' => FunctionCategory::Support, 'title' => 'Disposable', 'is_active' => true,
         ]);
 
         $this->actingAs($this->admin())->delete(route('admin.functions.destroy', $function));
@@ -356,31 +310,6 @@ class FunctionManagementTest extends TestCase
             ->get(route('admin.functions.index'))
             ->assertOk()
             ->assertSee('Provides direct patient care');
-    }
-
-    public function test_the_page_warns_about_common_functions_with_no_rating_category(): void
-    {
-        JobFunction::create([
-            'category' => FunctionCategory::Common, 'title' => 'Attends meetings', 'is_active' => true,
-        ]);
-
-        $this->actingAs($this->admin())
-            ->get(route('admin.functions.index'))
-            ->assertOk()
-            ->assertSee('cannot be added to an IPCR');
-    }
-
-    public function test_no_warning_when_every_common_function_is_filed(): void
-    {
-        JobFunction::create([
-            'category' => FunctionCategory::Common, 'rating_category' => FunctionCategory::Core,
-            'title' => 'Attends meetings', 'is_active' => true,
-        ]);
-
-        $this->actingAs($this->admin())
-            ->get(route('admin.functions.index'))
-            ->assertOk()
-            ->assertDontSee('cannot be added to an IPCR');
     }
 
     // -----------------------------------------------------------------
