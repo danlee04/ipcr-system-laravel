@@ -40,7 +40,7 @@ class IpcrController extends Controller
 
         $ipcrs = $employee->ipcrs()->with('period')->latest('id')->paginate(10);
 
-        $period = IpcrPeriod::open()->latest('start_date')->first();
+        $period = IpcrPeriod::active();
 
         $existingForPeriod = $period === null
             ? null
@@ -64,7 +64,7 @@ class IpcrController extends Controller
         $employee = $request->user()->employee;
         abort_unless($employee, 403, 'No employee record is linked to your account.');
 
-        $period = IpcrPeriod::open()->latest('start_date')->first();
+        $period = IpcrPeriod::active();
 
         if ($period === null) {
             return back()->with('error', 'There is no open rating period right now. Contact HR/Admin.');
@@ -98,7 +98,7 @@ class IpcrController extends Controller
 
         $mode = $validated['mode'] ?? IpcrMode::TargetsOnly->value;
 
-        $period = IpcrPeriod::open()->latest('start_date')->first();
+        $period = IpcrPeriod::active();
         abort_unless($period, 404, 'No open rating period found.');
 
         $ipcr = Ipcr::firstOrCreate(

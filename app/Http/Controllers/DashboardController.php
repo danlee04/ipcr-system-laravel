@@ -35,7 +35,7 @@ class DashboardController extends Controller
         $employee = $user->employee;
         $isAdmin = $user->hasAnyRole(['admin', 'hr']);
 
-        $period = IpcrPeriod::open()->latest('start_date')->first();
+        $period = IpcrPeriod::active();
 
         return view('dashboard', [
             'employee' => $employee,

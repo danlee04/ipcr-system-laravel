@@ -26,7 +26,7 @@ class SetupHealth
     {
         $problems = [];
 
-        if (! IpcrPeriod::open()->exists()) {
+        if (IpcrPeriod::active() === null) {
             $problems[] = [
                 'message' => 'No rating period is open, so nobody can start an IPCR.',
                 'route'   => route('admin.periods.index'),

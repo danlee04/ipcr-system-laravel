@@ -194,28 +194,20 @@ class PeriodManagementTest extends TestCase
     }
 
     /**
-     * IpcrController takes the LATEST open period. With two open at once that
-     * choice is invisible, so the page has to say which one employees get.
+     * The page used to warn that more than one period was open, because
+     * IpcrController silently took the latest. It cannot happen now - making
+     * one active closes the rest - so the page states the fact instead of
+     * apologising for a choice it made. See ActivePeriodTest for the rule.
      */
-    public function test_the_page_warns_when_more_than_one_period_is_open(): void
+    public function test_the_page_names_the_period_ipcrs_are_created_against(): void
     {
-        IpcrPeriod::factory()->create(['year' => 2040, 'type' => 'first_semester', 'start_date' => '2040-01-01']);
-        IpcrPeriod::factory()->create(['year' => 2040, 'type' => 'second_semester', 'start_date' => '2040-07-01']);
+        IpcrPeriod::factory()->create(['year' => 2040, 'type' => 'first_semester', 'name' => 'January - June 2040']);
 
         $this->actingAs($this->admin())
             ->get(route('admin.periods.index'))
             ->assertOk()
-            ->assertSee('More than one period is open');
-    }
-
-    public function test_a_single_open_period_produces_no_warning(): void
-    {
-        IpcrPeriod::factory()->create();
-
-        $this->actingAs($this->admin())
-            ->get(route('admin.periods.index'))
-            ->assertOk()
-            ->assertDontSee('More than one period is open');
+            ->assertSee('New IPCRs are created against')
+            ->assertSee('January - June 2040');
     }
 
     // -----------------------------------------------------------------

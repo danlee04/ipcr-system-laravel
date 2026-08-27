@@ -17,16 +17,17 @@
             being created once the cycle is over — it never touches the IPCRs already inside it.
         </p>
 
-        @if ($openPeriods->isEmpty())
+        {{-- One period is active and every IPCR is created against it. Making
+             one active closes whichever was, so the ambiguity this box used to
+             warn about can no longer be created. --}}
+        @if ($activePeriod === null)
             <div class="rounded-md bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-500/20">
-                No period is open. Nobody can start a new IPCR until one is.
+                <strong>No rating period is active.</strong> Nobody can start a new IPCR until you make one active.
             </div>
-        @elseif ($openPeriods->count() > 1)
-            {{-- IpcrController takes the latest open period. Left unsaid, that
-                 choice is invisible to whoever opened the second one. --}}
-            <div class="rounded-md bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-500/20">
-                <strong>More than one period is open.</strong> A new IPCR goes to the one that starts latest —
-                currently <strong>{{ $effectivePeriod?->name }}</strong>. Close the others to remove the ambiguity.
+        @else
+            <div class="rounded-md bg-emerald-50 p-4 text-sm text-emerald-900 ring-1 ring-emerald-500/20">
+                New IPCRs are created against <strong>{{ $activePeriod->name }}</strong>. Making another period
+                active closes this one.
             </div>
         @endif
 
@@ -47,9 +48,9 @@
                 <tr>
                     <td class="px-6 py-4 text-sm">
                         <span class="font-medium text-gray-900">{{ $period->name }}</span>
-                        @if ($effectivePeriod && $period->id === $effectivePeriod->id)
+                        @if ($activePeriod && $period->id === $activePeriod->id)
                             <span
-                                class="ms-2 inline-flex items-center rounded-full bg-seal/15 px-2 py-0.5 font-data text-[0.625rem] uppercase tracking-wide text-amber-800 ring-1 ring-inset ring-amber-500/30">Current</span>
+                                class="ms-2 inline-flex items-center rounded-full bg-seal/15 px-2 py-0.5 font-data text-[0.625rem] uppercase tracking-wide text-amber-800 ring-1 ring-inset ring-amber-500/30">Active</span>
                         @endif
                         <span class="block font-data text-xs text-gray-500">{{ $period->year }}</span>
                     </td>
@@ -64,7 +65,7 @@
                     <td class="px-6 py-4">
                         <span
                             class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {{ $period->status === 'open' ? 'bg-emerald-100 text-emerald-800 ring-emerald-500/20' : 'bg-gray-100 text-gray-600 ring-gray-500/20' }}">
-                            {{ $period->status === 'open' ? 'Open' : 'Closed' }}
+                            {{ $period->status === 'open' ? 'Active' : 'Closed' }}
                         </span>
                     </td>
                     <td class="px-6 py-4">
@@ -73,12 +74,17 @@
                                 x-on:click="$dispatch('open-modal', 'edit-period-{{ $period->id }}')"
                                 class="text-sm font-medium text-gray-900 hover:underline">Edit</button>
 
-                            <form method="POST" action="{{ route('admin.periods.status', $period) }}">
+                            {{-- Making one active closes whichever was, so the
+                                 button says so before it is pressed. --}}
+                            <form method="POST" action="{{ route('admin.periods.status', $period) }}"
+                                @if ($period->status !== 'open' && $activePeriod)
+                                    onsubmit="return confirm('Make this the active period? {{ addslashes($activePeriod->name) }} will be closed.');"
+                                @endif>
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="open" value="{{ $period->status === 'open' ? 0 : 1 }}">
                                 <button type="submit" class="text-sm font-medium text-gray-700 hover:underline">
-                                    {{ $period->status === 'open' ? 'Close' : 'Reopen' }}
+                                    {{ $period->status === 'open' ? 'Close' : 'Make active' }}
                                 </button>
                             </form>
 

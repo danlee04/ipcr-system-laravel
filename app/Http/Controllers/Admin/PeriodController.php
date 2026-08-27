@@ -9,6 +9,7 @@ use App\Models\IpcrPeriod;
 use App\Services\OrgDeletionGuard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /**
@@ -34,20 +35,25 @@ class PeriodController extends Controller
             fn (IpcrPeriod $period) => [$period->id => $this->guard->for($period)]
         );
 
-        // IpcrController takes the LATEST open period. With more than one open
-        // that choice is invisible to the administrator, so name it here.
-        $openPeriods = $periods->where('status', 'open');
-        $effectivePeriod = $openPeriods->sortByDesc('start_date')->first();
+        // The one every IPCR is created against. There is only ever one, so
+        // the screen can simply name it rather than explain a choice it made.
+        $activePeriod = IpcrPeriod::active();
 
-        return view('admin.periods.index', compact('periods', 'reports', 'openPeriods', 'effectivePeriod'));
+        return view('admin.periods.index', compact('periods', 'reports', 'activePeriod'));
     }
 
     public function store(StorePeriodRequest $request): RedirectResponse
     {
-        $period = IpcrPeriod::create($request->validated() + ['status' => 'open']);
+        $period = DB::transaction(function () use ($request): IpcrPeriod {
+            $period = IpcrPeriod::create($request->validated() + ['status' => 'open']);
+
+            $this->makeTheOnlyActiveOne($period);
+
+            return $period;
+        });
 
         return redirect()->route('admin.periods.index')
-            ->with('status', "Opened rating period \"{$period->name}\".");
+            ->with('status', "\"{$period->name}\" is now the active rating period.");
     }
 
     public function update(UpdatePeriodRequest $request, IpcrPeriod $period): RedirectResponse
@@ -64,12 +70,36 @@ class PeriodController extends Controller
         // current state would otherwise flip it the wrong way.
         $validated = $request->validate(['open' => ['required', 'boolean']]);
 
-        $period->update(['status' => $validated['open'] ? 'open' : 'closed']);
+        DB::transaction(function () use ($period, $validated): void {
+            $period->update(['status' => $validated['open'] ? 'open' : 'closed']);
+
+            if ($validated['open']) {
+                $this->makeTheOnlyActiveOne($period);
+            }
+        });
 
         return redirect()->route('admin.periods.index')->with(
             'status',
-            ($validated['open'] ? 'Reopened' : 'Closed') . " rating period \"{$period->name}\"."
+            $validated['open']
+                ? "\"{$period->name}\" is now the active rating period."
+                : "Closed \"{$period->name}\". No rating period is active until you choose one."
         );
+    }
+
+    /**
+     * Exactly one period is active.
+     *
+     * Every IPCR is created against it, and nothing named it before: any
+     * number could sit open and the code quietly took the latest by start
+     * date, which two periods starting on the same day turned into a coin
+     * toss. Choosing one now closes the rest.
+     */
+    private function makeTheOnlyActiveOne(IpcrPeriod $period): void
+    {
+        IpcrPeriod::query()
+            ->open()
+            ->whereKeyNot($period->id)
+            ->update(['status' => 'closed']);
     }
 
     public function destroy(IpcrPeriod $period): RedirectResponse

@@ -48,6 +48,24 @@ class IpcrPeriod extends Model
         return $query->where('status', 'open');
     }
 
+    /**
+     * The one period IPCRs are created against.
+     *
+     * There is exactly one, because opening a period closes whichever was
+     * open - see PeriodController. The ordering is a safety net for a row left
+     * open by a seeder or by hand, not the mechanism: without it the answer
+     * would depend on row order, and two periods starting on the same day
+     * would make it a coin toss.
+     */
+    public static function active(): ?self
+    {
+        return static::query()
+            ->open()
+            ->orderByDesc('start_date')
+            ->orderByDesc('id')
+            ->first();
+    }
+
     public function scopeForYear(Builder $query, int $year): Builder
     {
         return $query->where('year', $year);
