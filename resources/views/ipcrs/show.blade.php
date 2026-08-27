@@ -231,8 +231,6 @@
                                             <input type="hidden" name="output" value="{{ $jobFunction->title }}">
                                             <input type="hidden" name="success_indicator"
                                                 value="{{ $jobFunction->success_indicator }}">
-                                            <input type="hidden" name="weight"
-                                                value="{{ $jobFunction->default_weight }}">
                                             <span class="text-sm text-gray-700">{{ $jobFunction->title }}</span>
                                             <button type="submit"
                                                 class="shrink-0 rounded-md bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-900 hover:bg-gray-200">+

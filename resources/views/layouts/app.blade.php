@@ -78,5 +78,9 @@
                 {{ $slot }}
             </main>
         </div>
+
+        {{-- For components that need a script of their own. Pushed once,
+             after Alpine has been loaded by the bundle in the head. --}}
+        @stack('scripts')
     </body>
 </html>

@@ -35,7 +35,7 @@ class FunctionManagementTest extends TestCase
             'category'          => FunctionCategory::Core->value,
             'title'             => 'Provides direct patient care',
             'success_indicator' => 'Patients seen within 30 minutes',
-            'default_weight'    => 30,
+
         ], $overrides);
     }
 

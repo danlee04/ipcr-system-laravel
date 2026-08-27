@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class IpcrItem extends Model
 {
@@ -80,6 +81,17 @@ class IpcrItem extends Model
     public function jobFunction(): BelongsTo
     {
         return $this->belongsTo(JobFunction::class);
+    }
+
+    /**
+     * What the employee reported, per measure, for a function with a rubric.
+     *
+     * Empty on a line typed by hand: those carry their marks directly and
+     * have no figures behind them.
+     */
+    public function measures(): HasMany
+    {
+        return $this->hasMany(IpcrItemMeasure::class);
     }
 
     public function scopeOfCategory(Builder $query, FunctionCategory $category): Builder

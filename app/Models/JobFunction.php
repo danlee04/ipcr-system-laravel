@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use App\Enums\FunctionCategory;
+use App\Enums\MeasureAnswer;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Master catalog entry. This is NOT the IPCR line item - only a suggestion
@@ -20,6 +23,7 @@ class JobFunction extends Model
         'rating_category',
         'title',
         'success_indicator',
+        'accomplishment_template',
         'default_weight',
         'is_active',
     ];
@@ -49,6 +53,55 @@ class JobFunction extends Model
         }
 
         return $this->rating_category;
+    }
+
+    /**
+     * How this function is graded, one row per measure it is rated on.
+     *
+     * Empty means it has no rubric: the assessor picks the marks by hand, the
+     * way every function worked before rubrics existed.
+     */
+    public function measures(): HasMany
+    {
+        return $this->hasMany(FunctionMeasure::class);
+    }
+
+    /** Can this function grade itself from figures the employee reports? */
+    public function hasRubric(): bool
+    {
+        return $this->measures->isNotEmpty();
+    }
+
+    /** The measures whose mark is worked out from a figure. */
+    public function numericMeasures(): Collection
+    {
+        return $this->measures->filter(fn (FunctionMeasure $m): bool => $m->answer->isNumeric())->values();
+    }
+
+    /**
+     * Every placeholder a template may use.
+     *
+     * With exactly one numeric measure the unqualified {value} is offered too,
+     * because naming the measure in that case is ceremony - there is only one
+     * figure it could mean.
+     *
+     * @return list<string>
+     */
+    public function placeholders(): array
+    {
+        $numeric = $this->numericMeasures();
+
+        $tokens = $numeric->flatMap(fn (FunctionMeasure $m): array => $m->placeholders())->all();
+
+        if ($numeric->count() === 1) {
+            $tokens[] = '{value}';
+
+            if ($numeric->first()->answer === MeasureAnswer::Count) {
+                $tokens[] = '{ratio}';
+            }
+        }
+
+        return $tokens;
     }
 
     public function position(): BelongsTo

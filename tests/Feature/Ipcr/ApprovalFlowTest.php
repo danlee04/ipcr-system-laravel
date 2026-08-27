@@ -179,14 +179,18 @@ class ApprovalFlowTest extends TestCase
     // Assessment
     // -----------------------------------------------------------------
 
-    public function test_the_assessor_cannot_finish_while_an_item_is_unrated(): void
+    /**
+     * A line with no mark at all holds the assessment. A line missing only
+     * one measure does not - see NotApplicableMeasureTest.
+     */
+    public function test_the_assessor_cannot_finish_while_an_item_has_no_marks(): void
     {
         $ipcr = $this->submittedIpcr();
 
         $this->actingAs($this->assessor->user)->post(route('ipcrs.assess', $ipcr));
 
         $this->assertSame(IpcrStatus::Submitted, $ipcr->fresh()->status);
-        $this->assertStringContainsString('rated', (string) session('error'));
+        $this->assertStringContainsString('1 function', (string) session('error'));
     }
 
     public function test_completing_the_assessment_moves_the_ipcr_forward(): void

@@ -40,7 +40,15 @@ class IpcrItemController extends Controller
             $data['category'] = $resolved->value;
         }
 
-        if ($overflow = $this->weightOverflow($ipcr, $data['category'], (float) ($data['weight'] ?? 0))) {
+        // Left blank, the weight takes whatever the category has not spent.
+        // The first line takes all 100, and each one after takes the
+        // remainder, so the total is right at every point rather than only
+        // once somebody has done the arithmetic.
+        if (($data['weight'] ?? null) === null || $data['weight'] === '') {
+            $data['weight'] = $this->remainingWeight($ipcr, $data['category']);
+        }
+
+        if ($overflow = $this->weightOverflow($ipcr, $data['category'], (float) $data['weight'])) {
             return back()->with('error', $overflow);
         }
 
@@ -79,6 +87,21 @@ class IpcrItemController extends Controller
         $item->delete();
 
         return back()->with('status', 'Function removed.');
+    }
+
+    /**
+     * How much of this category's 100% is still unspent.
+     *
+     * Never negative: a category already full gives the next line nothing
+     * rather than a number that would fail the guard below.
+     */
+    private function remainingWeight(Ipcr $ipcr, FunctionCategory|string $category): float
+    {
+        $category = $category instanceof FunctionCategory ? $category : FunctionCategory::from($category);
+
+        $used = (float) $ipcr->items()->where('category', $category->value)->sum('weight');
+
+        return max(0, round(100 - $used, 2));
     }
 
     /**

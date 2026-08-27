@@ -21,28 +21,20 @@
      common pool skips the second - it reaches everyone - so the link fields
      are shown and hidden by Alpine rather than all at once. --}}
 <div class="space-y-4" x-data="{ category: '{{ $current }}' }">
-    <div class="grid gap-4 sm:grid-cols-2">
-        <label class="block">
-            <span class="mb-1 block text-sm font-medium text-gray-700">Category</span>
-            <select name="category" x-model="category" required class="w-full rounded-md border-gray-300 text-sm">
-                @foreach (FunctionCategory::cases() as $category)
-                    <option value="{{ $category->value }}" @selected($current === $category->value)>
-                        {{ $category->label() }}
-                    </option>
-                @endforeach
-            </select>
-        </label>
-
-        <label class="block">
-            <span class="mb-1 block text-sm font-medium text-gray-700">
-                Suggested weight
-                <span class="font-normal text-gray-500">— optional</span>
-            </span>
-            <input type="number" step="0.01" min="0" max="100" name="default_weight"
-                value="{{ old('default_weight', $function?->default_weight) }}"
-                class="w-full rounded-md border-gray-300 font-data text-sm">
-        </label>
-    </div>
+    {{-- No weight here. The category split is worked out from what an
+         employee actually holds, and the weight of a line inside a category
+         fills itself in from what that category has not spent - so a number
+         typed on the catalog entry would only ever be overruled. --}}
+    <label class="block sm:max-w-xs">
+        <span class="mb-1 block text-sm font-medium text-gray-700">Category</span>
+        <select name="category" x-model="category" required class="w-full rounded-md border-gray-300 text-sm">
+            @foreach (FunctionCategory::cases() as $category)
+                <option value="{{ $category->value }}" @selected($current === $category->value)>
+                    {{ $category->label() }}
+                </option>
+            @endforeach
+        </select>
+    </label>
 
     {{-- Who the function reaches, asked once for every rated category.
 
@@ -169,4 +161,8 @@
         </span>
         <textarea name="success_indicator" rows="2" class="w-full rounded-md border-gray-300 text-sm">{{ old('success_indicator', $function?->success_indicator) }}</textarea>
     </label>
+
+    <div class="border-t border-gray-200 pt-4">
+        <x-admin.function-rubric :function="$function" />
+    </div>
 </div>

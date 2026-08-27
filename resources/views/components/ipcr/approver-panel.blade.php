@@ -14,7 +14,7 @@
             </h3>
             <p class="mt-0.5 text-xs text-nav-300">
                 @if ($canAssess)
-                    Rate every function from 1 to 5 on quality, efficiency and timeliness. Save as often as you
+                    Rate every function from 1 to 5 on quality, efficiency and timeliness, leaving a measure blank where it does not apply. Save as often as you
                     like — the assessment is only complete when you say so.
                 @else
                     Every function has been rated at the assessment stage. Approving makes this rating permanent.

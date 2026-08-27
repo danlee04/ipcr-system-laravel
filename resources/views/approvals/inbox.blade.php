@@ -10,7 +10,7 @@
             $queues = [
                 [
                     'title' => 'For Assessment',
-                    'blurb' => 'You rate each function on quality, efficiency and timeliness, then complete the assessment.',
+                    'blurb' => 'You rate each function on quality, efficiency and timeliness, then complete the assessment. Leave a measure blank where it does not apply.',
                     'items' => $forAssessment,
                     'stamp' => 'submitted_at',
                     'stampLabel' => 'Submitted',

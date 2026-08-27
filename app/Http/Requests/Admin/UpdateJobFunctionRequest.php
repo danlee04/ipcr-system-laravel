@@ -27,5 +27,6 @@ class UpdateJobFunctionRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $this->validateTheLink($validator);
+        $this->validateTheRubric($validator);
     }
 }

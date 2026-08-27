@@ -98,7 +98,6 @@
                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Output</th>
                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Applies to
                 </th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Weight</th>
                 <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
                 <th class="px-6 py-3"></th>
             </x-slot:head>
@@ -129,9 +128,6 @@
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-700">
                         {{ $function->position?->title ?? $function->designation?->title ?? 'Everyone' }}
-                    </td>
-                    <td class="px-6 py-4 font-data text-sm text-gray-600">
-                        {{ $function->default_weight !== null ? rtrim(rtrim($function->default_weight, '0'), '.') . '%' : '—' }}
                     </td>
                     <td class="px-6 py-4"><x-admin.active-badge :active="$function->is_active" /></td>
                     <td class="px-6 py-4">

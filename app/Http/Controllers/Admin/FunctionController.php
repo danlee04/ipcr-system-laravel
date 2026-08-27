@@ -11,9 +11,11 @@ use App\Models\Division;
 use App\Models\JobFunction;
 use App\Models\Position;
 use App\Models\Section;
+use App\Services\RubricSync;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 /**
@@ -38,7 +40,7 @@ class FunctionController extends Controller
         $category = FunctionCategory::tryFrom((string) $request->query('category'));
 
         $functions = JobFunction::query()
-            ->with(['position.section.division', 'designation'])
+            ->with(['position.section.division', 'designation', 'measures.bands'])
             ->when($search, function (Builder $query, string $term): void {
                 $like = '%' . $term . '%';
                 $query->where(fn (Builder $inner) => $inner->where('title', 'like', $like)
@@ -95,9 +97,19 @@ class FunctionController extends Controller
         });
     }
 
+    public function __construct(private readonly RubricSync $rubric) {}
+
     public function store(StoreJobFunctionRequest $request): RedirectResponse
     {
-        $function = JobFunction::create($this->attributes($request->validated()) + ['is_active' => true]);
+        $data = $request->validated();
+
+        $function = DB::transaction(function () use ($data): JobFunction {
+            $function = JobFunction::create($this->attributes($data) + ['is_active' => true]);
+
+            $this->rubric->apply($function, $data['rubric'] ?? []);
+
+            return $function;
+        });
 
         return redirect()->route('admin.functions.index')
             ->with('status', 'Added function "' . $this->shorten($function->title) . '".');
@@ -105,7 +117,13 @@ class FunctionController extends Controller
 
     public function update(UpdateJobFunctionRequest $request, JobFunction $jobFunction): RedirectResponse
     {
-        $jobFunction->update($this->attributes($request->validated()));
+        $data = $request->validated();
+
+        DB::transaction(function () use ($data, $jobFunction): void {
+            $jobFunction->update($this->attributes($data));
+
+            $this->rubric->apply($jobFunction, $data['rubric'] ?? []);
+        });
 
         return redirect()->route('admin.functions.index')
             ->with('status', 'Updated function "' . $this->shorten($jobFunction->title) . '".');
@@ -174,7 +192,11 @@ class FunctionController extends Controller
             'category'          => $category,
             'title'             => $data['title'],
             'success_indicator' => $data['success_indicator'] ?? null,
-            'default_weight'    => $data['default_weight'] ?? null,
+
+            // The sentence the reported figure fills in. Null clears it,
+            // which is how a function goes back to being written by hand.
+            'accomplishment_template' => $data['accomplishment_template'] ?? null,
+
             'position_id'       => $position,
             'designation_id'    => $designation,
             'rating_category'   => $category === FunctionCategory::Common

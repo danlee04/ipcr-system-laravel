@@ -141,18 +141,44 @@ class RatingCalculator
         return $this->round($weighted / $totalWeight);
     }
 
+    /**
+     * The mean of the marks that apply, not of three.
+     *
+     * Plenty of outputs have no Timeliness dimension at all. Dividing by three
+     * regardless would score the missing one as a zero, which is not what an
+     * n/a means - and IpcrItem::computeAverage() has always said so. This is
+     * the same sum, so a line's stored average and the number the rating is
+     * built from cannot disagree.
+     */
     private function itemAverage(IpcrItem $item): float
     {
-        return ((float) $item->quality_rating
-            + (float) $item->efficiency_rating
-            + (float) $item->timeliness_rating) / 3;
+        $marks = $this->marksOf($item);
+
+        return array_sum($marks) / count($marks);
     }
 
+    /**
+     * A line is rated once any one measure has a mark.
+     *
+     * Demanding all three made a legitimate n/a look like unfinished work and
+     * held up the whole IPCR - nobody could assess it, and nothing on screen
+     * explained why.
+     */
     private function isRated(IpcrItem $item): bool
     {
-        return $item->quality_rating !== null
-            && $item->efficiency_rating !== null
-            && $item->timeliness_rating !== null;
+        return $this->marksOf($item) !== [];
+    }
+
+    /** @return list<float> the marks actually given on this line */
+    private function marksOf(IpcrItem $item): array
+    {
+        return array_values(array_map(
+            fn ($mark): float => (float) $mark,
+            array_filter(
+                [$item->quality_rating, $item->efficiency_rating, $item->timeliness_rating],
+                fn ($mark): bool => $mark !== null && $mark !== ''
+            )
+        ));
     }
 
     /** The category column accepts an enum or a plain string depending on the cast. */

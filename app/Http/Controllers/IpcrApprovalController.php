@@ -99,7 +99,7 @@ class IpcrApprovalController extends Controller
         if (! $breakdown->complete) {
             return back()->with('error', $ipcr->items()->doesntExist()
                 ? 'This IPCR has no functions to rate.'
-                : "{$breakdown->unratedItemCount} function(s) are not fully rated yet. Every line needs quality, efficiency and timeliness.");
+                : "{$breakdown->unratedItemCount} function(s) have no mark at all. Each line needs at least one of quality, efficiency or timeliness - leave a measure blank where it does not apply.");
         }
 
         DB::transaction(function () use ($ipcr, $breakdown, $request): void {
