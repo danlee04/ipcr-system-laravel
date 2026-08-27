@@ -164,42 +164,46 @@
                                                 {{ $item->actual_accomplishment }}
                                             </p>
                                         @endif
+
+                                        {{-- The figures behind the marks. Shown
+                                             after submission too, when the
+                                             editor is gone and this is the only
+                                             place they appear. --}}
+                                        @if ($item->measures->isNotEmpty())
+                                            <div class="mt-1.5 flex flex-wrap gap-1.5">
+                                                @foreach ($item->measures as $reported)
+                                                    <span
+                                                        class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                                                        {{ $reported->measure->label() }}
+                                                        <span
+                                                            class="font-data">{{ rtrim(rtrim($reported->value, '0'), '.') }}</span>
+                                                        →
+                                                        <span
+                                                            class="font-data font-medium">{{ rtrim(rtrim($item->{$reported->measure->column()} ?? '', '0'), '.') ?: 'n/a' }}</span>
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-600">{{ $item->weight ?? '—' }}%</td>
                                     <td class="px-6 py-4 text-sm text-gray-600">{{ $item->average_rating ?? '—' }}</td>
                                     @if ($canEdit)
-                                        <td class="space-y-1 px-6 py-4 text-right text-sm">
-                                            <details class="inline-block text-left">
-                                                <summary class="cursor-pointer text-gray-900 hover:underline">Edit
-                                                </summary>
+                                        <td class="px-6 py-4 text-right text-sm">
+                                            <div class="flex items-center justify-end gap-3">
+                                                <button type="button"
+                                                    x-on:click="$dispatch('open-modal', 'edit-item-{{ $item->id }}')"
+                                                    class="font-medium text-gray-900 hover:underline">
+                                                    {{ $ipcr->showsAccomplishment() && $item->jobFunction?->measures->isNotEmpty() ? 'Report' : 'Edit' }}
+                                                </button>
                                                 <form method="POST"
-                                                    action="{{ route('ipcrs.items.update', [$ipcr, $item]) }}"
-                                                    class="mt-2 w-72 space-y-2">
+                                                    action="{{ route('ipcrs.items.destroy', [$ipcr, $item]) }}"
+                                                    onsubmit="return confirm('Remove this function?');">
                                                     @csrf
-                                                    @method('PUT')
-                                                    <textarea name="output" rows="2" class="w-full rounded-md border-gray-300 text-sm" required>{{ $item->output }}</textarea>
-                                                    <textarea name="success_indicator" rows="2" class="w-full rounded-md border-gray-300 text-sm"
-                                                        placeholder="Success indicator">{{ $item->success_indicator }}</textarea>
-                                                    <input type="number" step="0.01" min="0" max="100"
-                                                        name="weight" value="{{ $item->weight }}"
-                                                        placeholder="Weight %"
-                                                        class="w-full rounded-md border-gray-300 text-sm">
-                                                    @if ($ipcr->showsAccomplishment())
-                                                        <textarea name="actual_accomplishment" rows="2" class="w-full rounded-md border-gray-300 text-sm"
-                                                            placeholder="Actual accomplishment">{{ $item->actual_accomplishment }}</textarea>
-                                                    @endif
+                                                    @method('DELETE')
                                                     <button type="submit"
-                                                        class="rounded-md bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-gray-700">Save</button>
+                                                        class="text-red-600 hover:underline">Remove</button>
                                                 </form>
-                                            </details>
-                                            <form method="POST"
-                                                action="{{ route('ipcrs.items.destroy', [$ipcr, $item]) }}"
-                                                onsubmit="return confirm('Remove this function?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                    class="text-red-600 hover:underline">Remove</button>
-                                            </form>
+                                            </div>
                                         </td>
                                     @endif
                                 </tr>
@@ -208,6 +212,14 @@
                     </table>
                 @endif
             </div>
+
+            {{-- One editor per line, kept outside the table: a fixed overlay
+                 has no business being a table cell's child. --}}
+            @if ($canEdit)
+                @foreach ($ipcr->items as $item)
+                    <x-ipcr.item-editor :ipcr="$ipcr" :item="$item" />
+                @endforeach
+            @endif
 
             {{-- Add function --}}
             @if ($canEdit)

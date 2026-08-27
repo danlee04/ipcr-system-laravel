@@ -8,7 +8,9 @@ use App\Http\Requests\UpdateIpcrItemRequest;
 use App\Models\Ipcr;
 use App\Models\IpcrItem;
 use App\Models\JobFunction;
+use App\Services\AccomplishmentWriter;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 
 class IpcrItemController extends Controller
 {
@@ -39,20 +41,47 @@ class IpcrItemController extends Controller
         return back()->with('status', 'Function added.');
     }
 
-    /** Edit an existing line - output, indicator, weight, actual accomplishment. */
-    public function update(UpdateIpcrItemRequest $request, Ipcr $ipcr, IpcrItem $item): RedirectResponse
-    {
+    /**
+     * Edit an existing line - output, indicator, weight, accomplishment.
+     *
+     * On a line that came from a graded catalog function the employee reports
+     * figures instead of writing a sentence: the rubric turns those into the
+     * accomplishment and the marks, so the same performance reads and scores
+     * the same way whoever reports it.
+     */
+    public function update(
+        UpdateIpcrItemRequest $request,
+        Ipcr $ipcr,
+        IpcrItem $item,
+        AccomplishmentWriter $writer,
+    ): RedirectResponse {
         $this->authorize('update', $ipcr);
         abort_unless($ipcr->isEditableByOwner(), 403, 'This IPCR can no longer be edited.');
         abort_if($item->ipcr_id !== $ipcr->id, 404);
 
         $data = $request->validated();
+        $reported = $data['reported'] ?? [];
+        unset($data['reported']);
+
+        $rubric = $reported === [] ? null : $this->rubricOf($item);
+
+        // Checked before anything is written, so a figure the rubric cannot
+        // grade leaves the line exactly as it was rather than half saved.
+        if ($rubric !== null && ($refused = $writer->ungradable($rubric, $reported)) !== []) {
+            return back()->with('error', $this->ungradableMessage($refused));
+        }
 
         if ($overflow = $this->weightOverflow($ipcr, $item->category, (float) ($data['weight'] ?? 0), $item->id)) {
             return back()->with('error', $overflow);
         }
 
-        $item->update($data);
+        DB::transaction(function () use ($item, $data, $rubric, $reported, $writer): void {
+            $item->update($data);
+
+            if ($rubric !== null) {
+                $writer->apply($item, $rubric, $reported);
+            }
+        });
 
         return back()->with('status', 'Function updated.');
     }
@@ -67,6 +96,36 @@ class IpcrItemController extends Controller
         $item->delete();
 
         return back()->with('status', 'Function removed.');
+    }
+
+    /**
+     * The catalog function that grades this line, if one does.
+     *
+     * Null for a line typed by hand and for a catalog function nobody wrote a
+     * rubric for: both of those are marked by the assessor, the way every
+     * function worked before rubrics existed.
+     */
+    private function rubricOf(IpcrItem $item): ?JobFunction
+    {
+        $function = $item->jobFunction;
+
+        if ($function === null) {
+            return null;
+        }
+
+        $function->loadMissing('measures.bands');
+
+        return $function->hasRubric() ? $function : null;
+    }
+
+    /** @param  list<string>  $measures */
+    private function ungradableMessage(array $measures): string
+    {
+        $named = implode(' and ', $measures);
+        $verb = count($measures) === 1 ? 'falls' : 'fall';
+
+        return "The figure you reported for {$named} {$verb} outside every level of this function's rubric. "
+            . 'Check it against the levels shown beside the field. Nothing was saved.';
     }
 
     /**

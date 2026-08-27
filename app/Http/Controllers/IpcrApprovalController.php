@@ -5,13 +5,12 @@ namespace App\Http\Controllers;
 use App\Enums\ApprovalAction;
 use App\Enums\ApprovalStage;
 use App\Enums\IpcrStatus;
+use App\Enums\RatingMeasure;
 use App\Models\Ipcr;
-use App\Models\IpcrItem;
 use App\Services\RatingCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -52,6 +51,10 @@ class IpcrApprovalController extends Controller
      * Partial saves are allowed on purpose: an assessor rating twenty lines
      * should not lose the work because they have not finished. The check that
      * every line is rated happens at assess(), not here.
+     *
+     * A measure the catalog rubric grades is skipped: it belongs to the figure
+     * the employee reported, not to whoever is looking at the form. An
+     * assessor who disagrees with a figure returns the IPCR for revision.
      */
     public function updateRatings(Request $request, Ipcr $ipcr): RedirectResponse
     {
@@ -71,18 +74,26 @@ class IpcrApprovalController extends Controller
 
         DB::transaction(function () use ($validated, $ipcr): void {
             foreach ($validated['ratings'] as $itemId => $marks) {
-                $item = $ipcr->items()->find($itemId);
+                $item = $ipcr->items()->with('jobFunction.measures')->find($itemId);
 
                 if ($item === null) {
                     continue;
                 }
 
-                $item->update([
-                    'quality_rating'    => $marks['quality'] ?? null,
-                    'efficiency_rating' => $marks['efficiency'] ?? null,
-                    'timeliness_rating' => $marks['timeliness'] ?? null,
-                    'average_rating'    => $this->averageOf($marks),
-                ]);
+                $graded = $item->rubricMeasures();
+                $fields = [];
+
+                foreach (RatingMeasure::cases() as $measure) {
+                    if (in_array($measure, $graded, true)) {
+                        continue;
+                    }
+
+                    $fields[$measure->column()] = $marks[$measure->value] ?? null;
+                }
+
+                // The average follows from the marks, and IpcrItem recomputes
+                // it on every save - including the ones the rubric set.
+                $item->update($fields);
             }
         });
 
@@ -192,17 +203,6 @@ class IpcrApprovalController extends Controller
                 $fail('One of the lines being rated does not belong to this IPCR.');
             }
         };
-    }
-
-    private function averageOf(array $marks): ?float
-    {
-        foreach (['quality', 'efficiency', 'timeliness'] as $key) {
-            if (! isset($marks[$key]) || $marks[$key] === null || $marks[$key] === '') {
-                return null;
-            }
-        }
-
-        return round(((float) $marks['quality'] + (float) $marks['efficiency'] + (float) $marks['timeliness']) / 3, 3);
     }
 
     private function record(Ipcr $ipcr, Request $request, ApprovalStage $stage, ApprovalAction $action, ?string $remarks = null): void

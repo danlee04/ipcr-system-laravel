@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\FunctionCategory;
+use App\Enums\RatingMeasure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -92,6 +93,28 @@ class IpcrItem extends Model
     public function measures(): HasMany
     {
         return $this->hasMany(IpcrItemMeasure::class);
+    }
+
+    /**
+     * The measures whose mark the catalog rubric decides.
+     *
+     * These are not the assessor's to type. The figure the employee reported
+     * earns the mark, and a mark typed over one would contradict the sentence
+     * printed beside it on the same form.
+     *
+     * @return list<RatingMeasure>
+     */
+    public function rubricMeasures(): array
+    {
+        return $this->jobFunction?->measures
+            ->map(fn (FunctionMeasure $measure): RatingMeasure => $measure->measure)
+            ->all() ?? [];
+    }
+
+    /** What the employee reported for one measure, or null when they did not. */
+    public function reportedFor(RatingMeasure $measure): ?IpcrItemMeasure
+    {
+        return $this->measures->firstWhere('measure', $measure);
     }
 
     public function scopeOfCategory(Builder $query, FunctionCategory $category): Builder

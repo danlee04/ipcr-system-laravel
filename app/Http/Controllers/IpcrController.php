@@ -140,7 +140,14 @@ class IpcrController extends Controller
     {
         $this->authorize('view', $ipcr);
 
-        $ipcr->load(['items', 'period', 'employee', 'assessor', 'finalApprover', 'approvals.approver', 'approvals.actedBy']);
+        // The rubric comes with each line: it is what the report form asks
+        // for, and loading it here keeps twenty lines from being twenty
+        // queries deep.
+        $ipcr->load([
+            'items.measures', 'items.jobFunction.measures.bands',
+            'period', 'employee', 'assessor', 'finalApprover',
+            'approvals.approver', 'approvals.actedBy',
+        ]);
         $catalog = $this->functionCatalog->availableFor($ipcr->employee);
 
         return view('ipcrs.show', compact('ipcr', 'catalog'));

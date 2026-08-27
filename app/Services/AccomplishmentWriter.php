@@ -69,6 +69,44 @@ class AccomplishmentWriter
     }
 
     /**
+     * The measures whose reported figure falls in no level at all.
+     *
+     * Asked before anything is written. A figure nothing accepts would be
+     * stored with no mark against it, and the gap would surface only much
+     * later - when the assessor cannot complete the assessment and nothing on
+     * the screen says why.
+     *
+     * @param  array<string, array{value?: mixed, count?: mixed, total?: mixed}>  $reported
+     * @return list<string> the names of the measures that cannot be graded
+     */
+    public function ungradable(JobFunction $function, array $reported): array
+    {
+        $function->loadMissing('measures.bands');
+
+        $refused = [];
+
+        foreach ($function->measures as $measure) {
+            $figures = $this->figuresFor($measure->answer, $reported[$measure->measure->value] ?? []);
+
+            if ($figures === null) {
+                continue;   // nothing reported is n/a, not an error
+            }
+
+            // A descriptor is picked, not computed, so what has to hold is
+            // that the pick is one of the levels actually written down.
+            $graded = $measure->answer->isNumeric()
+                ? $measure->levelFor($figures['value']) !== null
+                : $measure->bands->contains('level', (int) $figures['value']);
+
+            if (! $graded) {
+                $refused[] = $measure->measure->label();
+            }
+        }
+
+        return $refused;
+    }
+
+    /**
      * The sentence, with every placeholder replaced.
      *
      * Null when there is no template to fill, so the caller keeps whatever the

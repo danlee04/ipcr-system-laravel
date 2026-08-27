@@ -4,6 +4,13 @@
     $user = auth()->user();
     $canAssess = $user?->can('assess', $ipcr) ?? false;
     $canFinalize = $user?->can('finalize', $ipcr) ?? false;
+
+    // A measure the catalog rubric grades is not typed here. When every line
+    // is graded that way there is nothing left to save, and a Save button that
+    // submits an empty form would only produce a validation error.
+    $anyTyped = $ipcr->items->contains(
+        fn($item) => count($item->rubricMeasures()) < count(\App\Enums\RatingMeasure::cases()),
+    );
 @endphp
 
 @if ($canAssess || $canFinalize)
@@ -64,13 +71,32 @@
                                     <td class="px-3 py-3 text-center font-data text-sm text-gray-600">
                                         {{ $item->weight ? rtrim(rtrim($item->weight, '0'), '.') . '%' : '—' }}
                                     </td>
-                                    @foreach (['quality' => $item->quality_rating, 'efficiency' => $item->efficiency_rating, 'timeliness' => $item->timeliness_rating] as $mark => $current)
+                                    @php $graded = $item->rubricMeasures(); @endphp
+                                    @foreach (\App\Enums\RatingMeasure::cases() as $measure)
+                                        @php
+                                            $current = $item->{$measure->column()};
+                                            $shown = $current !== null ? rtrim(rtrim($current, '0'), '.') : '';
+                                        @endphp
                                         <td class="px-3 py-3 text-center">
-                                            <input type="number" step="0.01" min="1" max="5"
-                                                name="ratings[{{ $item->id }}][{{ $mark }}]"
-                                                value="{{ $current !== null ? rtrim(rtrim($current, '0'), '.') : '' }}"
-                                                aria-label="{{ ucfirst($mark) }} for {{ $item->output }}"
-                                                class="w-20 rounded-md border-gray-300 text-center font-data text-sm">
+                                            @if (in_array($measure, $graded, true))
+                                                {{-- Set by the figure the employee
+                                                     reported. Typing over it would
+                                                     contradict the sentence beside
+                                                     it, so it is shown, not asked
+                                                     for. Return the IPCR if the
+                                                     figure is wrong. --}}
+                                                <span
+                                                    class="inline-flex w-20 items-center justify-center rounded-md bg-gray-100 px-2 py-1.5 font-data text-sm text-gray-700 ring-1 ring-inset ring-gray-200"
+                                                    title="From the reported figure">
+                                                    {{ $shown ?: 'n/a' }}
+                                                </span>
+                                            @else
+                                                <input type="number" step="0.01" min="1" max="5"
+                                                    name="ratings[{{ $item->id }}][{{ $measure->value }}]"
+                                                    value="{{ $shown }}"
+                                                    aria-label="{{ $measure->label() }} for {{ $item->output }}"
+                                                    class="w-20 rounded-md border-gray-300 text-center font-data text-sm">
+                                            @endif
                                         </td>
                                     @endforeach
                                     <td class="px-3 py-3 text-center font-data text-sm font-medium text-gray-900">
@@ -82,12 +108,19 @@
                     </table>
                 </div>
 
-                <div class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
-                    <button type="submit"
-                        class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                        Save ratings
-                    </button>
-                </div>
+                @if ($anyTyped)
+                    <div class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+                        <button type="submit"
+                            class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                            Save ratings
+                        </button>
+                    </div>
+                @else
+                    <p class="border-t border-gray-200 bg-gray-50 px-6 py-4 text-sm text-gray-600">
+                        Every mark here came from the figures the employee reported. There is nothing to type — if a
+                        figure is wrong, return the IPCR for revision.
+                    </p>
+                @endif
             </form>
         @endif
 
