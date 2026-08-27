@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\RendersLiveLists;
 use App\Http\Controllers\Controller;
 use App\Models\Designation;
 use App\Models\Division;
@@ -23,6 +24,8 @@ use Illuminate\View\View;
  */
 class PositionPageController extends Controller
 {
+    use RendersLiveLists;
+
     public function __construct(private readonly OrgDeletionGuard $guard) {}
 
     /** Rows per page, matching the other admin lists. */
@@ -76,7 +79,7 @@ class PositionPageController extends Controller
             fn (Designation $designation) => [$designation->id => $this->guard->for($designation)]
         );
 
-        return view('admin.positions.index', compact(
+        return $this->liveList($request, 'admin.positions.index', 'admin.positions.rows', compact(
             'tab', 'positions', 'designations', 'positionReports', 'designationReports',
             'positionCount', 'designationCount', 'search'
         ) + [

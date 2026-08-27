@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\IpcrStatus;
+use App\Http\Controllers\Concerns\RendersLiveLists;
 use App\Http\Controllers\Controller;
 use App\Models\Division;
 use App\Models\Employee;
@@ -25,6 +26,8 @@ use Illuminate\View\View;
  */
 class IpcrController extends Controller
 {
+    use RendersLiveLists;
+
     /** Rows per page, matching the other admin lists. */
     private const PER_PAGE = 20;
 
@@ -49,7 +52,7 @@ class IpcrController extends Controller
             ->paginate(self::PER_PAGE)
             ->withQueryString();
 
-        return view('admin.ipcrs.index', [
+        return $this->liveList($request, 'admin.ipcrs.index', 'admin.ipcrs.rows', [
             'ipcrs'      => $ipcrs,
             'periods'    => IpcrPeriod::query()->orderByDesc('start_date')->get(),
             'divisions'  => Division::query()->orderBy('name')->get(),

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\IpcrStatus;
 use App\Models\Division;
 use App\Models\Employee;
 use App\Models\Ipcr;
@@ -88,15 +87,6 @@ class DashboardController extends Controller
             'periodStats'   => $this->stats->byPeriod($scope),
             'recent'        => $this->stats->recentActivity($scope),
             'notSubmitted'  => $scope->isFiltered() ? $this->stats->notSubmitted($scope) : collect(),
-
-            // Submission progress against the currently open period, which is
-            // what HR chases regardless of what the filters are showing.
-            'submitted' => $period === null ? 0 : Ipcr::query()
-                ->where('ipcr_period_id', $period->id)
-                ->whereIn('status', [IpcrStatus::Submitted, IpcrStatus::Assessed, IpcrStatus::Approved])
-                ->distinct()
-                ->count('employee_id'),
-            'expected' => Employee::query()->active()->count(),
 
             // Filter options.
             'periods'    => IpcrPeriod::query()->orderByDesc('start_date')->get(),

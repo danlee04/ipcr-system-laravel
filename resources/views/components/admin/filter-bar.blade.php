@@ -2,8 +2,11 @@
 
 {{-- Search and filters for an admin list.
      A plain GET form: the query string is the only state, so a filtered list
-     can be bookmarked, shared, and survives paging without any JavaScript. --}}
-<form method="GET" action="{{ $action }}" class="flex flex-wrap items-end gap-2">
+     can be bookmarked, shared, and survives paging without any JavaScript.
+
+     Inside an x-admin.live-list the same form answers as you type - see
+     `data-live-form`, which is the only thing that marks it as such. --}}
+<form method="GET" action="{{ $action }}" data-live-form class="flex flex-wrap items-end gap-2">
     @foreach ($hidden as $name => $value)
         <input type="hidden" name="{{ $name }}" value="{{ $value }}">
     @endforeach

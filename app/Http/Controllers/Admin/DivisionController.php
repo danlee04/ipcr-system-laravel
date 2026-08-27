@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\RendersLiveLists;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreDivisionRequest;
 use App\Http\Requests\Admin\UpdateDivisionRequest;
@@ -23,6 +24,8 @@ use Illuminate\View\View;
  */
 class DivisionController extends Controller
 {
+    use RendersLiveLists;
+
     public function __construct(private readonly OrgDeletionGuard $guard) {}
 
     /**
@@ -72,7 +75,7 @@ class DivisionController extends Controller
             ->orderBy('first_name')
             ->get();
 
-        return view('admin.divisions.index', compact('divisions', 'reports', 'sectionReports', 'employees') + [
+        return $this->liveList($request, 'admin.divisions.index', 'admin.divisions.rows', compact('divisions', 'reports', 'sectionReports', 'employees') + [
             // The whole hospital, for the filter dropdowns and the New Section
             // form. Feeding those the paged list would shrink them to whatever
             // happened to be on screen, so a division on page 2 could never be

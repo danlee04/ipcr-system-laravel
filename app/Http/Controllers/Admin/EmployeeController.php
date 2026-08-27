@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\OrgPost;
+use App\Http\Controllers\Concerns\RendersLiveLists;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreEmployeeRequest;
 use App\Http\Requests\Admin\UpdateEmployeeRequest;
@@ -30,6 +31,8 @@ use Illuminate\View\View;
  */
 class EmployeeController extends Controller
 {
+    use RendersLiveLists;
+
     /** Rows per page on every admin list. */
     private const PER_PAGE = 20;
 
@@ -56,11 +59,12 @@ class EmployeeController extends Controller
         // describe a combination that does not exist.
         $positions = Position::query()->with('section')->orderBy('title')->get();
 
-        return view('admin.employees.index', compact('employees', 'divisions', 'sections', 'positions') + [
-            // A designation can sit anywhere in the hospital, so the whole
-            // list is offered rather than one narrowed by the placement.
-            'designations' => Designation::query()->active()->orderBy('title')->get(),
-        ]);
+        return $this->liveList($request, 'admin.employees.index', 'admin.employees.rows',
+            compact('employees', 'divisions', 'sections', 'positions') + [
+                // A designation can sit anywhere in the hospital, so the whole
+                // list is offered rather than one narrowed by the placement.
+                'designations' => Designation::query()->active()->orderBy('title')->get(),
+            ]);
     }
 
     public function store(StoreEmployeeRequest $request): RedirectResponse

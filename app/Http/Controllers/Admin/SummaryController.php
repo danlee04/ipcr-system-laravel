@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\RendersLiveLists;
 use App\Http\Controllers\Controller;
 use App\Models\Division;
 use App\Models\IpcrPeriod;
@@ -23,6 +24,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class SummaryController extends Controller
 {
+    use RendersLiveLists;
+
     public function __construct(private readonly PeriodSummaryService $summary) {}
 
     public function index(Request $request): View
@@ -33,7 +36,7 @@ class SummaryController extends Controller
             ? collect()
             : $this->summary->rows($period, $request->integer('division') ?: null, $request->integer('section') ?: null);
 
-        return view('admin.summary.index', [
+        return $this->liveList($request, 'admin.summary.index', 'admin.summary.rows', [
             'period'    => $period,
             'periods'   => IpcrPeriod::query()->orderByDesc('start_date')->get(),
             'divisions' => Division::query()->orderBy('name')->get(),

@@ -37,111 +37,88 @@
             </div>
         @endif
 
-        <div class="grid gap-6 lg:grid-cols-3">
-            {{-- The employee's own IPCR. Absent for accounts with no employee
-                 record, such as the system administrator. --}}
-            @if ($employee)
-                <div class="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-950/5 lg:col-span-2">
-                    <div class="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-900">My IPCR</h3>
-                            <p class="mt-0.5 text-sm text-gray-500">
-                                {{ $period?->name ?? 'No rating period is open right now.' }}
-                            </p>
+        {{-- Nothing at all when neither part applies, rather than an empty
+             grid or a card explaining what is not here. An administrator
+             account has no IPCR of its own, and saying so on every visit tells
+             them something they already know. --}}
+        @if ($employee || $pending['total'] > 0)
+            <div class="grid gap-6 lg:grid-cols-3">
+                {{-- The employee's own IPCR. --}}
+                @if ($employee)
+                    <div class="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-950/5 lg:col-span-2">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-900">My IPCR</h3>
+                                <p class="mt-0.5 text-sm text-gray-500">
+                                    {{ $period?->name ?? 'No rating period is open right now.' }}
+                                </p>
+                            </div>
+
+                            @if ($myIpcr)
+                                <x-status-badge :status="$myIpcr->status" />
+                            @elseif ($period)
+                                <span
+                                    class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-500/20">
+                                    Not started
+                                </span>
+                            @endif
                         </div>
 
-                        @if ($myIpcr)
-                            <x-status-badge :status="$myIpcr->status" />
-                        @elseif ($period)
-                            <span
-                                class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 ring-1 ring-inset ring-gray-500/20">
-                                Not started
-                            </span>
+                        @if ($period?->submission_deadline)
+                            @php
+                                $daysLeft = (int) now()->startOfDay()->diffInDays($period->submission_deadline, false);
+                            @endphp
+                            <p
+                                class="mt-4 text-sm {{ $daysLeft < 0 ? 'text-red-700' : ($daysLeft <= 7 ? 'text-amber-800' : 'text-gray-600') }}">
+                                Deadline {{ $period->submission_deadline->format('d M Y') }}
+                                @if ($daysLeft < 0)
+                                    — <strong>{{ abs($daysLeft) }} day{{ abs($daysLeft) === 1 ? '' : 's' }}
+                                        overdue</strong>
+                                @elseif ($daysLeft === 0)
+                                    — <strong>today</strong>
+                                @else
+                                    — {{ $daysLeft }} day{{ $daysLeft === 1 ? '' : 's' }} left
+                                @endif
+                            </p>
                         @endif
-                    </div>
 
-                    @if ($period?->submission_deadline)
-                        @php
-                            $daysLeft = (int) now()->startOfDay()->diffInDays($period->submission_deadline, false);
-                        @endphp
-                        <p class="mt-4 text-sm {{ $daysLeft < 0 ? 'text-red-700' : ($daysLeft <= 7 ? 'text-amber-800' : 'text-gray-600') }}">
-                            Deadline {{ $period->submission_deadline->format('d M Y') }}
-                            @if ($daysLeft < 0)
-                                — <strong>{{ abs($daysLeft) }} day{{ abs($daysLeft) === 1 ? '' : 's' }} overdue</strong>
-                            @elseif ($daysLeft === 0)
-                                — <strong>today</strong>
+                        <div class="mt-5">
+                            @if ($myIpcr)
+                                <a href="{{ route('ipcrs.show', $myIpcr) }}"
+                                    class="inline-flex items-center rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800">
+                                    Open my IPCR
+                                </a>
                             @else
-                                — {{ $daysLeft }} day{{ $daysLeft === 1 ? '' : 's' }} left
+                                <a href="{{ route('ipcrs.index') }}"
+                                    class="inline-flex items-center rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800">
+                                    {{ $period ? 'Start my IPCR' : 'Go to my IPCRs' }}
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Only for people something is actually routed to. --}}
+                @if ($pending['total'] > 0)
+                    <a href="{{ route('approvals.inbox') }}"
+                        class="block rounded-lg bg-nav-900 p-6 text-white shadow-sm transition-colors hover:bg-nav-800">
+                        <h3 class="text-sm font-semibold">Waiting for you</h3>
+                        <p class="mt-2 font-data text-4xl font-semibold">{{ $pending['total'] }}</p>
+                        <p class="mt-2 text-sm text-nav-300">
+                            @if ($pending['assessment'] > 0)
+                                {{ $pending['assessment'] }} to assess
+                            @endif
+                            @if ($pending['assessment'] > 0 && $pending['final'] > 0)
+                                ·
+                            @endif
+                            @if ($pending['final'] > 0)
+                                {{ $pending['final'] }} awaiting your final approval
                             @endif
                         </p>
-                    @endif
-
-                    <div class="mt-5">
-                        @if ($myIpcr)
-                            <a href="{{ route('ipcrs.show', $myIpcr) }}"
-                                class="inline-flex items-center rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800">
-                                Open my IPCR
-                            </a>
-                        @else
-                            <a href="{{ route('ipcrs.index') }}"
-                                class="inline-flex items-center rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800">
-                                {{ $period ? 'Start my IPCR' : 'Go to my IPCRs' }}
-                            </a>
-                        @endif
-                    </div>
-                </div>
-            @else
-                <div class="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-950/5 lg:col-span-2">
-                    <h3 class="text-sm font-semibold text-gray-900">No IPCR of your own</h3>
-                    <p class="mt-1 text-sm text-gray-600">
-                        This account has no employee record, so it cannot create an IPCR. That is normal for an
-                        administrator account.
-                    </p>
-                </div>
-            @endif
-
-            {{-- Only for people something is actually routed to. --}}
-            @if ($pending['total'] > 0)
-                <a href="{{ route('approvals.inbox') }}"
-                    class="block rounded-lg bg-nav-900 p-6 text-white shadow-sm transition-colors hover:bg-nav-800">
-                    <h3 class="text-sm font-semibold">Waiting for you</h3>
-                    <p class="mt-2 font-data text-4xl font-semibold">{{ $pending['total'] }}</p>
-                    <p class="mt-2 text-sm text-nav-300">
-                        @if ($pending['assessment'] > 0)
-                            {{ $pending['assessment'] }} to assess
-                        @endif
-                        @if ($pending['assessment'] > 0 && $pending['final'] > 0)
-                            ·
-                        @endif
-                        @if ($pending['final'] > 0)
-                            {{ $pending['final'] }} awaiting your final approval
-                        @endif
-                    </p>
-                </a>
-            @endif
-
-            {{-- HR and admin: how far along the current cycle is. --}}
-            @if ($admin)
-                <div class="rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-950/5">
-                    <h3 class="text-sm font-semibold text-gray-900">Submitted this period</h3>
-                    <p class="mt-2 font-data text-4xl font-semibold text-gray-900">
-                        {{ $admin['submitted'] }} of {{ $admin['expected'] }}
-                    </p>
-                    <p class="mt-2 text-sm text-gray-500">
-                        Active employees who have sent their IPCR for assessment. Drafts do not count.
-                    </p>
-
-                    @if ($admin['expected'] > 0)
-                        @php
-                            $percent = (int) round($admin['submitted'] / $admin['expected'] * 100);
-                        @endphp
-                        <div class="mt-4 h-2 overflow-hidden rounded-full bg-gray-100">
-                            <div class="h-full rounded-full bg-nav-900" style="width: {{ $percent }}%"></div>
-                        </div>
-                    @endif
-                </div>
-            @endif
-        </div>
+                    </a>
+                @endif
+            </div>
+        @endif
 
         {{-- Everything below is the hospital-wide picture, for HR and
              administrators only. --}}

@@ -188,12 +188,18 @@ class DashboardTest extends TestCase
             ->assertDontSee('no rating category');
     }
 
-    public function test_an_admin_sees_how_many_employees_have_submitted(): void
+    /**
+     * The bare "1 of 3" card is gone.
+     *
+     * It said how many had submitted and nothing about who, so the only thing
+     * to do with it was go and look somewhere else. The Period Summary answers
+     * the same question by name, division and section.
+     */
+    public function test_the_submission_count_card_is_gone(): void
     {
         $period = $this->openPeriod();
 
         $submitted = $this->employeeUser();
-        $this->employeeUser();
         $this->employeeUser();
 
         Ipcr::factory()->submitted()->create([
@@ -203,24 +209,8 @@ class DashboardTest extends TestCase
         $this->actingAs($this->adminUser())
             ->get('/dashboard')
             ->assertOk()
-            ->assertSee('1 of 3');
-    }
-
-    /** A draft is not a submission - counting it would overstate progress. */
-    public function test_a_draft_does_not_count_as_submitted(): void
-    {
-        $period = $this->openPeriod();
-        $user = $this->employeeUser();
-
-        Ipcr::factory()->create([
-            'employee_id' => $user->employee->id, 'ipcr_period_id' => $period->id,
-            'status' => IpcrStatus::Draft,
-        ]);
-
-        $this->actingAs($this->adminUser())
-            ->get('/dashboard')
-            ->assertOk()
-            ->assertSee('0 of 1');
+            ->assertDontSee('Submitted this period')
+            ->assertDontSee('1 of 2');
     }
 
     // -----------------------------------------------------------------
@@ -240,12 +230,21 @@ class DashboardTest extends TestCase
             ->assertDontSee('Not started');
     }
 
+    /**
+     * And is not told about it.
+     *
+     * The card used to explain that this account has no employee record and
+     * that this is normal for an administrator. Whoever set the account up
+     * already knows, and it took the widest slot on the page to say it every
+     * single visit.
+     */
     public function test_a_plain_user_with_no_employee_record_still_gets_a_page(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['name' => 'Ana Cruz']))
             ->get('/dashboard')
             ->assertOk()
-            ->assertSee('no employee record');
+            ->assertSee('Ana')
+            ->assertDontSee('no employee record');
     }
 
     public function test_a_guest_is_sent_to_login(): void

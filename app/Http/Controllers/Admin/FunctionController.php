@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\FunctionCategory;
+use App\Http\Controllers\Concerns\RendersLiveLists;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreJobFunctionRequest;
 use App\Http\Requests\Admin\UpdateJobFunctionRequest;
@@ -29,6 +30,8 @@ use Illuminate\View\View;
  */
 class FunctionController extends Controller
 {
+    use RendersLiveLists;
+
     /** Rows per page, matching the other admin lists. */
     private const PER_PAGE = 20;
 
@@ -62,7 +65,7 @@ class FunctionController extends Controller
         $divisions = Division::query()->orderBy('name')->get();
         $sections = Section::query()->with('division')->orderBy('name')->get();
 
-        return view('admin.functions.index', compact(
+        return $this->liveList($request, 'admin.functions.index', 'admin.functions.rows', compact(
             'functions', 'positions', 'designations', 'divisions', 'sections',
             'search', 'category'
         ));
