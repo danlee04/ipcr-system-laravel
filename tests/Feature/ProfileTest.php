@@ -61,39 +61,36 @@ class ProfileTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
-    public function test_user_can_delete_their_account(): void
+    /**
+     * Nobody closes their own account.
+     *
+     * An account is the way into an employee's IPCR history, and the history
+     * has to outlive the person's interest in keeping it. Removing staff is
+     * HR's job, and admin.employees.destroy does it the way this system needs:
+     * a soft delete that leaves every sheet they ever signed intact.
+     *
+     * The route is gone rather than guarded. A form nobody can see is not a
+     * defence - the request still reaches the router.
+     */
+    public function test_an_employee_cannot_delete_their_own_account(): void
     {
         $user = User::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
-            ->delete('/profile', [
-                'password' => 'password',
-            ]);
-
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/');
-
-        $this->assertGuest();
-        $this->assertNull($user->fresh());
-    }
-
-    public function test_correct_password_must_be_provided_to_delete_account(): void
-    {
-        $user = User::factory()->create();
-
-        $response = $this
-            ->actingAs($user)
-            ->from('/profile')
-            ->delete('/profile', [
-                'password' => 'wrong-password',
-            ]);
-
-        $response
-            ->assertSessionHasErrorsIn('userDeletion', 'password')
-            ->assertRedirect('/profile');
+        $this->actingAs($user)
+            ->delete('/profile', ['password' => 'password'])
+            ->assertStatus(405);
 
         $this->assertNotNull($user->fresh());
+    }
+
+    public function test_the_profile_page_offers_no_way_to_delete_the_account(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get('/profile')
+            ->assertOk()
+            ->assertDontSee('Delete Account')
+            ->assertDontSee('delete your account', false);
     }
 }
