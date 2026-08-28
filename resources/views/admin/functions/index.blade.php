@@ -23,8 +23,13 @@
             placeholder="Search by output or success indicator">
             <label class="block">
                 <span class="sr-only">Category</span>
-                <select name="category" class="w-40 rounded-lg border-gray-300 text-sm">
+                <select name="category" class="w-44 rounded-lg border-gray-300 text-sm">
                     <option value="">All categories</option>
+
+                    {{-- Not a category, and first, because it is the block
+                         at the top of the list. --}}
+                    <option value="common" @selected(request('category') === 'common')>Common Function</option>
+
                     @foreach (\App\Enums\FunctionCategory::cases() as $option)
                         <option value="{{ $option->value }}" @selected(request('category') === $option->value)>
                             {{ $option->label() }}</option>

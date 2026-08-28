@@ -121,6 +121,20 @@ class JobFunction extends Model
         return $query->whereNull('position_id')->whereNull('designation_id');
     }
 
+    /**
+     * The other side of forEveryone: the work of a post or an appointment.
+     *
+     * What the three category blocks hold. A common function has a category
+     * like any other, but nobody looks for it that way - they look for one of
+     * the ones everybody carries - so it is taken out of its category's block
+     * and given the one at the top.
+     */
+    public function scopeTiedToSomeone(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $inner) => $inner->whereNotNull('position_id')
+            ->orWhereNotNull('designation_id'));
+    }
+
     /** Does this reach the whole hospital? */
     public function reachesEveryone(): bool
     {

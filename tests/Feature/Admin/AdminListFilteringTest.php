@@ -27,6 +27,14 @@ class AdminListFilteringTest extends TestCase
 
     private const PER_PAGE = 20;
 
+    /**
+     * The Functions list is shorter than the rest.
+     *
+     * It is read in four named blocks - common, core, support, strategic -
+     * and twenty rows put three of the four headings off the screen.
+     */
+    private const FUNCTIONS_PER_PAGE = 5;
+
     private function admin(): User
     {
         $this->seed(RoleSeeder::class);
@@ -186,7 +194,7 @@ class AdminListFilteringTest extends TestCase
     {
         $position = Position::factory()->create();
 
-        for ($i = 0; $i < self::PER_PAGE + 4; $i++) {
+        for ($i = 0; $i < self::FUNCTIONS_PER_PAGE + 4; $i++) {
             JobFunction::create([
                 'category' => FunctionCategory::Core, 'title' => "Function {$i}",
                 'position_id' => $position->id, 'is_active' => true,
@@ -195,7 +203,7 @@ class AdminListFilteringTest extends TestCase
 
         $response = $this->actingAs($this->admin())->get(route('admin.functions.index'))->assertOk();
 
-        $this->assertCount(self::PER_PAGE, $response->viewData('functions'));
+        $this->assertCount(self::FUNCTIONS_PER_PAGE, $response->viewData('functions'));
     }
 
     public function test_job_functions_can_be_searched_by_title(): void

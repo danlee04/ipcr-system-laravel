@@ -228,6 +228,7 @@ class ThreeCategoriesTest extends TestCase
             ->assertSee('name="applies_to" value="designation"', false);
     }
 
+    /** "Common function" everywhere now - it used to be "Everyone" here. */
     public function test_the_list_says_a_function_reaches_everyone(): void
     {
         $this->actingAs($this->admin())->post(route('admin.functions.store'), $this->payload());
@@ -235,6 +236,6 @@ class ThreeCategoriesTest extends TestCase
         $this->actingAs($this->admin())
             ->get(route('admin.functions.index'))
             ->assertOk()
-            ->assertSee('Everyone');
+            ->assertSee('Common function');
     }
 }

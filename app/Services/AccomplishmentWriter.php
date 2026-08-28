@@ -248,8 +248,8 @@ class AccomplishmentWriter
         $noun = abs($days) === 1.0 ? 'day' : 'days';
 
         return $days < 0
-            ? "{$count} {$noun} before the deadline"
-            : "{$count} {$noun} after the deadline";
+            ? "{$count} {$noun} before"
+            : "{$count} {$noun} after";
     }
 
     /** 100 rather than 100.00, but 99.5 kept as 99.5. */

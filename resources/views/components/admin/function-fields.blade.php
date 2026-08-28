@@ -64,7 +64,7 @@
 
             <label class="flex items-center gap-2 text-sm">
                 <input type="radio" name="applies_to" value="everyone" x-model="via">
-                <span><strong>Everyone</strong></span>
+                <span><strong>Common function</strong> — reaches everyone</span>
             </label>
 
             <label class="flex items-center gap-2 text-sm">

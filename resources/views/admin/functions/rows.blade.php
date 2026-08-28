@@ -2,7 +2,7 @@
      they narrow the list and still see functions from elsewhere. --}}
 @if (request()->hasAny(['division', 'section', 'position']))
     <p class="-mt-3 text-xs text-gray-500">
-        Functions tied to no position — common, and those on a designation — are always listed.
+        Common functions and those on a designation sit in no division, so they are always listed.
     </p>
 @endif
 
@@ -17,7 +17,29 @@
         <th class="px-6 py-3"></th>
     </x-slot:head>
 
-    @forelse ($functions as $function)
+    {{-- Four blocks, each holding its own five rows and its own page number.
+
+         They are counted separately on purpose: how much core work the
+         hospital has written down says nothing about how many lines everybody
+         carries, and one shared page number would have paged them together
+         and buried whichever block came second. --}}
+    @foreach ($groups as $label => $page)
+        @continue($page->isEmpty())
+
+        {{-- The block named once, over its own rows. A th with
+             scope="colgroup" is what heads a group of rows - a screen reader
+             announces it before each one. --}}
+        <tr class="bg-gray-50">
+            <th scope="colgroup" colspan="6"
+                class="px-6 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                {{ $label }}
+                <span class="ms-2 font-data text-[0.625rem] font-normal normal-case tracking-normal text-gray-400">
+                    {{ $page->total() }}
+                </span>
+            </th>
+        </tr>
+
+        @foreach ($page as $function)
         <tr>
             {{-- Clamped, not truncated in PHP: the full text is still there
                  for anyone who needs it, and an output two paragraphs long no
@@ -29,7 +51,7 @@
                      position, and a filtered list that will not say what each
                      row is tied to is hard to read. --}}
                 <span class="mt-0.5 block text-xs text-gray-500">
-                    {{ $function->position?->title ?? $function->designation?->title ?? 'Everyone' }}
+                    {{ $function->position?->title ?? $function->designation?->title ?? 'Common function' }}
                 </span>
             </td>
             {{-- One line, and given the room to be worth reading. A success
@@ -94,8 +116,18 @@
                 </div>
             </td>
         </tr>
+        @endforeach
 
-    @empty
+        @if ($page->hasPages())
+            <tr>
+                <td colspan="6" class="border-t border-gray-100 bg-gray-50/60 px-6 py-2">
+                    {{ $page->links() }}
+                </td>
+            </tr>
+        @endif
+    @endforeach
+
+    @if ($functions->isEmpty())
         <tr>
             <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">
                 @if (request()->hasAny(['search', 'category']))
@@ -105,7 +137,7 @@
                 @endif
             </td>
         </tr>
-    @endforelse
+    @endif
 </x-admin.table>
 
 {{-- The editors, kept outside the table. A modal is a <div>, and a <div> inside <tbody> is not
@@ -133,4 +165,3 @@
     </x-modal>
 @endforeach
 
-{{ $functions->links() }}

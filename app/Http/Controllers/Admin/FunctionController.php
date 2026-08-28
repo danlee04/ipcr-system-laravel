@@ -16,6 +16,7 @@ use App\Services\RubricSync;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -32,33 +33,38 @@ class FunctionController extends Controller
 {
     use RendersLiveLists;
 
-    /** Rows per page, matching the other admin lists. */
-    private const PER_PAGE = 20;
+    /**
+     * Rows per page. Shorter than the other admin lists on purpose: this
+     * one is read in four named blocks, and twenty rows put three of the
+     * four headings off the bottom of the screen.
+     */
+    private const PER_PAGE = 5;
+
+    /**
+     * The filter's fourth choice, which is not a category.
+     *
+     * Who a function reaches, asked in the same select as what kind of work
+     * it is. The two are different questions, but they are the only two ways
+     * anyone narrows this list, and one select is what people reach for.
+     */
+    private const COMMON = 'common';
 
     public function index(Request $request): View
     {
         $search = $request->string('search')->trim()->value();
-        $category = FunctionCategory::tryFrom((string) $request->query('category'));
+        $narrow = (string) $request->query('category');
+        $category = FunctionCategory::tryFrom($narrow);
 
-        $functions = JobFunction::query()
-            ->with(['position.section.division', 'designation', 'measures.bands'])
-            ->when($search, function (Builder $query, string $term): void {
-                $like = '%' . $term . '%';
-                $query->where(fn (Builder $inner) => $inner->where('title', 'like', $like)
-                    ->orWhere('success_indicator', 'like', $like));
-            })
-            ->when($category, fn (Builder $query) => $query->where('category', $category))
-            ->when($request->integer('position'), $this->throughPosition(...))
-            ->when($request->integer('section'), fn (Builder $q, int $id) => $this->throughPosition(
-                $q, null, fn (Builder $p) => $p->where('section_id', $id)
-            ))
-            ->when($request->integer('division'), fn (Builder $q, int $id) => $this->throughPosition(
-                $q, null, fn (Builder $p) => $p->whereHas('section', fn (Builder $s) => $s->where('division_id', $id))
-            ))
-            ->orderBy('category')
-            ->orderBy('title')
-            ->paginate(self::PER_PAGE)
-            ->withQueryString();
+        $groups = $this->blocks($narrow, $category)
+            ->map(fn (array $block) => $this->catalog($request, $search)
+                ->tap($block['narrow'])
+                ->orderBy('title')
+                ->paginate(self::PER_PAGE, ['*'], $block['slug'] . '_page')
+                ->withQueryString());
+
+        // Every row on the page, whichever block it landed in. The editors are
+        // rendered from this, and it is what the filter tests read.
+        $functions = $groups->flatMap(fn ($page) => $page->items());
 
         $positions = Position::query()->with('section')->orderBy('title')->get();
         $designations = Designation::query()->orderBy('title')->get();
@@ -66,9 +72,68 @@ class FunctionController extends Controller
         $sections = Section::query()->with('division')->orderBy('name')->get();
 
         return $this->liveList($request, 'admin.functions.index', 'admin.functions.rows', compact(
-            'functions', 'positions', 'designations', 'divisions', 'sections',
+            'groups', 'functions', 'positions', 'designations', 'divisions', 'sections',
             'search', 'category'
         ));
+    }
+
+    /**
+     * The blocks the list is read in, and what narrows each one.
+     *
+     * Four, and they page separately: how much core work a hospital has
+     * written down says nothing about how many lines everybody carries, so
+     * one shared page number would have paged them together and buried
+     * whichever block came second.
+     *
+     * The common block leads. It is also kept when a category is chosen,
+     * because a common function has a category like any other and asking for
+     * "support" should still find it - it simply stays in its own block.
+     *
+     * @return \Illuminate\Support\Collection<string, array{slug: string, narrow: \Closure}>
+     */
+    private function blocks(string $narrow, ?FunctionCategory $category): Collection
+    {
+        $blocks = collect();
+
+        if ($narrow === '' || $narrow === self::COMMON || $category !== null) {
+            $blocks->put('Common Function', [
+                'slug'   => self::COMMON,
+                'narrow' => fn (Builder $query) => $query->forEveryone()
+                    ->when($category, fn (Builder $inner) => $inner->where('category', $category)),
+            ]);
+        }
+
+        foreach (FunctionCategory::cases() as $case) {
+            if ($narrow !== '' && $narrow !== $case->value) {
+                continue;
+            }
+
+            $blocks->put($case->label(), [
+                'slug'   => $case->value,
+                'narrow' => fn (Builder $query) => $query->tiedToSomeone()->where('category', $case),
+            ]);
+        }
+
+        return $blocks;
+    }
+
+    /** Everything the filter bar asks, before a block narrows it further. */
+    private function catalog(Request $request, string $search): Builder
+    {
+        return JobFunction::query()
+            ->with(['position.section.division', 'designation', 'measures.bands'])
+            ->when($search, function (Builder $query, string $term): void {
+                $like = '%' . $term . '%';
+                $query->where(fn (Builder $inner) => $inner->where('title', 'like', $like)
+                    ->orWhere('success_indicator', 'like', $like));
+            })
+            ->when($request->integer('position'), $this->throughPosition(...))
+            ->when($request->integer('section'), fn (Builder $q, int $id) => $this->throughPosition(
+                $q, null, fn (Builder $p) => $p->where('section_id', $id)
+            ))
+            ->when($request->integer('division'), fn (Builder $q, int $id) => $this->throughPosition(
+                $q, null, fn (Builder $p) => $p->whereHas('section', fn (Builder $s) => $s->where('division_id', $id))
+            ));
     }
 
     /**
