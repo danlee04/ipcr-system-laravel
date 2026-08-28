@@ -81,7 +81,7 @@ class IpcrChainOverrideTest extends TestCase
         // Accomplished, and weighted to a full 100: the submit guards must not
         // be what stops these IPCRs, or a routing test would pass without ever
         // reaching the routing.
-        IpcrItem::factory()->accomplished()->create([
+        IpcrItem::factory()->accomplished()->rated()->create([
             'ipcr_id'  => $ipcr->id,
             'category' => FunctionCategory::Core,
             'weight'   => 100,

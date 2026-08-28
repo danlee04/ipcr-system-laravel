@@ -6,6 +6,10 @@
     $function = $item->jobFunction;
     $rubric = $function?->measures ?? collect();
 
+    // What the rubric decides is shown, not asked for; everything else is the
+    // employee's own mark to give.
+    $graded = $rubric->map(fn($measure) => $measure->measure);
+
     $reports = $ipcr->showsAccomplishment();
 
     // With a template the sentence is written from the figures, so there is
@@ -59,15 +63,17 @@
             <div class="space-y-4 border-t border-gray-200 pt-6">
                 <div>
                     <h3 class="text-sm font-semibold text-gray-900">What you accomplished</h3>
-                    @if ($rubric->isNotEmpty())
-                        <p class="mt-0.5 text-sm text-gray-600">
+                    <p class="mt-0.5 text-sm text-gray-600">
+                        @if ($rubric->isNotEmpty())
                             Type the figures. The mark comes from the levels below
                             @if ($writesItself)
                                 , and the sentence on the form is written from them
                             @endif
-                            . Leave a measure blank if it does not apply.
-                        </p>
-                    @endif
+                            .
+                        @endif
+                        You give your own marks; your Section Head and Division Head approve them or send this back.
+                        Leave a measure blank where it does not apply.
+                    </p>
                 </div>
 
                 @foreach ($rubric as $measure)
@@ -141,6 +147,33 @@
                         </div>
                     </div>
                 @endforeach
+
+                {{-- Everything the rubric says nothing about. Blank is n/a and
+                     stays n/a: a measure that does not apply is not a nought,
+                     and averaging one in would drag the line down for a
+                     dimension the output never had. --}}
+                @php $ungraded = collect(\App\Enums\RatingMeasure::cases())->reject(fn($case) => $graded->contains($case)); @endphp
+
+                @if ($ungraded->isNotEmpty())
+                    <div class="rounded-lg p-4 ring-1 ring-gray-200">
+                        <p class="text-sm font-semibold text-gray-900">Your marks</p>
+                        <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                            @foreach ($ungraded as $case)
+                                <label class="block">
+                                    <span class="mb-1 block text-xs font-medium text-gray-600">{{ $case->label() }}</span>
+                                    <select name="marks[{{ $case->value }}]"
+                                        class="w-full rounded-md border-gray-300 text-sm">
+                                        <option value="">Not applicable</option>
+                                        @foreach ([5, 4, 3, 2, 1] as $level)
+                                            <option value="{{ $level }}"
+                                                @selected((int) $item->{$case->column()} === $level)>{{ $level }}</option>
+                                        @endforeach
+                                    </select>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
                 @unless ($writesItself)
                     <label class="block">

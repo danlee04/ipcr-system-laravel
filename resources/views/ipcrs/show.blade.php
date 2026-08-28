@@ -59,43 +59,35 @@
                 </div>
             @endif
 
-            {{-- Header info --}}
-            <div class="bg-white shadow-sm sm:rounded-lg ring-1 ring-gray-950/5 p-6">
-                <dl class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Employee</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $ipcr->employee->full_name }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Position</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $ipcr->position_title ?? '—' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Office</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $ipcr->office_name ?? '—' }}</dd>
-                    </div>
-                    {{-- Named by the stage, not by a job title the hospital
-                         does not use. Who takes each one follows from the org
-                         chart: the Section Head assesses, the Division Head
-                         gives the final approval - so the post is shown beside
-                         the name, which is what tells you the routing is
-                         right. --}}
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">For Assessment</dt>
-                        <dd class="mt-1 text-sm text-gray-900">
-                            {{ $ipcr->assessor?->nameWithPost() ?? 'Not yet routed' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">For Final Approval</dt>
-                        <dd class="mt-1 text-sm text-gray-900">
-                            {{ $ipcr->finalApprover?->nameWithPost() ?? 'Not yet routed' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-gray-500">Final Rating</dt>
-                        <dd class="mt-1 text-sm text-gray-900">{{ $ipcr->final_adjectival_rating ?? '—' }}</dd>
-                    </div>
-                </dl>
+            {{-- Where this IPCR goes, and nothing about who owns it - they are
+                 reading their own page. The stage names are what tell them the
+                 routing is right, and the post beside each name is what shows
+                 it came from the org chart rather than somebody's choice. --}}
+            <div
+                class="flex flex-wrap items-center gap-x-8 gap-y-2 rounded-lg bg-white px-6 py-4 text-sm shadow-sm ring-1 ring-gray-950/5">
+                <span>
+                    <span class="text-xs font-medium uppercase tracking-wide text-gray-500">For Assessment</span>
+                    <span class="ms-2 text-gray-900">{{ $ipcr->assessor?->nameWithPost() ?? 'Not yet routed' }}</span>
+                </span>
+                <span>
+                    <span class="text-xs font-medium uppercase tracking-wide text-gray-500">For Final Approval</span>
+                    <span
+                        class="ms-2 text-gray-900">{{ $ipcr->finalApprover?->nameWithPost() ?? 'Not yet routed' }}</span>
+                </span>
+                @if ($ipcr->final_adjectival_rating)
+                    <span>
+                        <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Final Rating</span>
+                        <span class="ms-2 font-medium text-gray-900">{{ $ipcr->final_adjectival_rating }}</span>
+                    </span>
+                @endif
             </div>
+
+            {{-- Adding comes before the list: an IPCR is built by
+                 picking, and the table below is what has been picked so
+                 far. --}}
+            @if ($canEdit)
+                <x-ipcr.function-picker :ipcr="$ipcr" :catalog="$catalog" />
+            @endif
 
             {{-- Items --}}
             <div class="bg-white shadow-sm sm:rounded-lg ring-1 ring-gray-950/5">
@@ -233,119 +225,7 @@
                 @endforeach
             @endif
 
-            {{-- Add function --}}
             @if ($canEdit)
-                <div class="space-y-6 bg-white shadow-sm sm:rounded-lg ring-1 ring-gray-950/5 p-6">
-                    <h3 class="text-sm font-semibold text-gray-900">Add a Function</h3>
-
-                    {{-- One list, one button. Every function used to be its own
-                         form with its own button, so twelve functions meant
-                         twelve clicks and twelve page loads to build one
-                         IPCR. --}}
-                    @php
-                        $alreadyAdded = $ipcr->items->pluck('job_function_id')->filter()->all();
-                        $groups = collect([
-                            'Core Function' => $catalog->core,
-                            'Strategic Function' => $catalog->strategic,
-                            'Support Function' => $catalog->support,
-                        ])->filter(fn($items) => $items->isNotEmpty());
-                    @endphp
-
-                    @if ($groups->isNotEmpty())
-                        <form method="POST" action="{{ route('ipcrs.items.catalog', $ipcr) }}" class="space-y-5"
-                            x-data="{ picked: 0 }">
-                            @csrf
-
-                            @foreach ($groups as $label => $items)
-                                <fieldset>
-                                    <legend class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-                                        {{ $label }}
-                                    </legend>
-
-                                    <div class="grid gap-2 lg:grid-cols-2 2xl:grid-cols-3">
-                                        @foreach ($items as $jobFunction)
-                                            @php $added = in_array($jobFunction->id, $alreadyAdded); @endphp
-
-                                            <label
-                                                class="flex items-start gap-3 rounded-md border px-3 py-2 {{ $added ? 'border-gray-200 bg-gray-50' : 'cursor-pointer border-gray-200 hover:border-nav-900/30 hover:bg-gray-50' }}">
-                                                {{-- Already on the IPCR: ticked, fixed,
-                                                     and carrying no value, so a second
-                                                     copy cannot be asked for. --}}
-                                                <input type="checkbox" name="job_function_ids[]"
-                                                    value="{{ $jobFunction->id }}" @disabled($added) @checked($added)
-                                                    x-on:change="picked += $event.target.checked ? 1 : -1"
-                                                    class="mt-0.5 rounded border-gray-300 text-nav-900 focus:ring-seal">
-
-                                                <span class="min-w-0 flex-1">
-                                                    <span
-                                                        class="block text-sm {{ $added ? 'text-gray-500' : 'text-gray-800' }}">{{ $jobFunction->title }}</span>
-                                                    @if ($jobFunction->success_indicator)
-                                                        <span
-                                                            class="mt-0.5 block text-xs text-gray-500">{{ $jobFunction->success_indicator }}</span>
-                                                    @endif
-                                                </span>
-
-                                                @if ($added)
-                                                    <span
-                                                        class="shrink-0 self-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800 ring-1 ring-inset ring-emerald-500/20">Added</span>
-                                                @endif
-                                            </label>
-                                        @endforeach
-                                    </div>
-                                </fieldset>
-                            @endforeach
-
-                            <button type="submit" x-bind:disabled="picked === 0"
-                                class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 disabled:cursor-not-allowed disabled:bg-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2">
-                                <span x-show="picked === 0">Select the functions to add</span>
-                                <span x-show="picked > 0" x-cloak>
-                                    Add <span x-text="picked"></span>
-                                    <span x-text="picked === 1 ? 'function' : 'functions'"></span>
-                                </span>
-                            </button>
-                        </form>
-                    @endif
-
-                    <div>
-                        <p class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Custom function (not
-                            from catalog)</p>
-                        {{-- Laid out as a grid rather than a stack: full-width
-                             single-column inputs look stretched on a wide screen,
-                             and the short fields do not need the whole span. --}}
-                        <form method="POST" action="{{ route('ipcrs.items.store', $ipcr) }}"
-                            class="grid gap-3 sm:grid-cols-6">
-                            @csrf
-
-                            <label class="sm:col-span-6">
-                                <span class="mb-1 block text-xs font-medium text-gray-600">Category</span>
-                                <select name="category" class="w-full rounded-md border-gray-300 text-sm" required>
-                                    <option value="">Select category…</option>
-                                    @foreach (\App\Enums\FunctionCategory::cases() as $case)
-                                        <option value="{{ $case->value }}">{{ $case->label() }}</option>
-                                    @endforeach
-                                </select>
-                            </label>
-
-                            <label class="sm:col-span-3">
-                                <span class="mb-1 block text-xs font-medium text-gray-600">Output / objective</span>
-                                <textarea name="output" rows="3" class="w-full rounded-md border-gray-300 text-sm" required></textarea>
-                            </label>
-
-                            <label class="sm:col-span-3">
-                                <span class="mb-1 block text-xs font-medium text-gray-600">Success indicator</span>
-                                <textarea name="success_indicator" rows="3" class="w-full rounded-md border-gray-300 text-sm"></textarea>
-                            </label>
-
-                            <div class="sm:col-span-6">
-                                <button type="submit"
-                                    class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2">
-                                    Add Custom Function
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
                 <form method="POST" action="{{ route('ipcrs.submit', $ipcr) }}"
                     onsubmit="return confirm('Submit this IPCR for assessment? You will not be able to edit it after submitting.');">
                     @csrf

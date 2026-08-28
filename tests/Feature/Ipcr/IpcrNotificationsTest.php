@@ -77,7 +77,7 @@ class IpcrNotificationsTest extends TestCase
             'mode'           => \App\Enums\IpcrMode::TargetsOnly,
         ]);
 
-        IpcrItem::factory()->create(['ipcr_id' => $ipcr->id, 'weight' => 100]);
+        IpcrItem::factory()->rated()->create(['ipcr_id' => $ipcr->id, 'weight' => 100]);
 
         return $ipcr;
     }
@@ -126,9 +126,6 @@ class IpcrNotificationsTest extends TestCase
     {
         $ipcr = $this->submitted();
 
-        $this->actingAs($this->sectionHead)->put(route('ipcrs.ratings.update', $ipcr), [
-            'ratings' => [$ipcr->items->first()->id => ['quality' => 4, 'efficiency' => 4, 'timeliness' => 4]],
-        ]);
         $this->actingAs($this->sectionHead)->post(route('ipcrs.assess', $ipcr));
 
         $this->assertCount(1, $this->messagesFor($this->divisionHead));
@@ -152,9 +149,6 @@ class IpcrNotificationsTest extends TestCase
     {
         $ipcr = $this->submitted();
 
-        $this->actingAs($this->sectionHead)->put(route('ipcrs.ratings.update', $ipcr), [
-            'ratings' => [$ipcr->items->first()->id => ['quality' => 4, 'efficiency' => 4, 'timeliness' => 4]],
-        ]);
         $this->actingAs($this->sectionHead)->post(route('ipcrs.assess', $ipcr));
         $this->actingAs($this->divisionHead)->post(route('ipcrs.approve', $ipcr));
 

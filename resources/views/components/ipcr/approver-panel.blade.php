@@ -4,13 +4,6 @@
     $user = auth()->user();
     $canAssess = $user?->can('assess', $ipcr) ?? false;
     $canFinalize = $user?->can('finalize', $ipcr) ?? false;
-
-    // A measure the catalog rubric grades is not typed here. When every line
-    // is graded that way there is nothing left to save, and a Save button that
-    // submits an empty form would only produce a validation error.
-    $anyTyped = $ipcr->items->contains(
-        fn($item) => count($item->rubricMeasures()) < count(\App\Enums\RatingMeasure::cases()),
-    );
 @endphp
 
 @if ($canAssess || $canFinalize)
@@ -21,108 +14,62 @@
             </h3>
             <p class="mt-0.5 text-xs text-nav-300">
                 @if ($canAssess)
-                    Rate every function from 1 to 5 on quality, efficiency and timeliness, leaving a measure blank where it does not apply. Save as often as you
-                    like — the assessment is only complete when you say so.
+                    {{ $ipcr->employee?->full_name }} rated this themselves. Read it, then complete the assessment —
+                    or return it if something is wrong.
                 @else
-                    Every function has been rated at the assessment stage. Approving makes this rating permanent.
+                    Read the rating and approve it. Approving makes it permanent.
                 @endif
             </p>
         </div>
 
-        @if ($canAssess)
-            <form method="POST" action="{{ route('ipcrs.ratings.update', $ipcr) }}">
-                @csrf
-                @method('PUT')
-
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th
-                                    class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Function</th>
-                                <th
-                                    class="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Weight</th>
-                                <th
-                                    class="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Q</th>
-                                <th
-                                    class="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    E</th>
-                                <th
-                                    class="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    T</th>
-                                <th
-                                    class="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
-                                    Average</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white">
-                            @foreach ($ipcr->items as $item)
-                                <tr>
-                                    <td class="px-6 py-3 text-sm">
-                                        <span
-                                            class="inline-flex items-center rounded-full px-2 py-0.5 text-[0.625rem] font-medium uppercase tracking-wide ring-1 ring-inset {{ $item->category->badgeClasses() }}">
-                                            {{ $item->category->label() }}
-                                        </span>
-                                        <span class="mt-1 block text-gray-900">{{ $item->output }}</span>
-                                    </td>
-                                    <td class="px-3 py-3 text-center font-data text-sm text-gray-600">
-                                        {{ $item->weight ? rtrim(rtrim($item->weight, '0'), '.') . '%' : '—' }}
-                                    </td>
-                                    @php $graded = $item->rubricMeasures(); @endphp
-                                    @foreach (\App\Enums\RatingMeasure::cases() as $measure)
-                                        @php
-                                            $current = $item->{$measure->column()};
-                                            $shown = $current !== null ? rtrim(rtrim($current, '0'), '.') : '';
-                                        @endphp
-                                        <td class="px-3 py-3 text-center">
-                                            @if (in_array($measure, $graded, true))
-                                                {{-- Set by the figure the employee
-                                                     reported. Typing over it would
-                                                     contradict the sentence beside
-                                                     it, so it is shown, not asked
-                                                     for. Return the IPCR if the
-                                                     figure is wrong. --}}
-                                                <span
-                                                    class="inline-flex w-20 items-center justify-center rounded-md bg-gray-100 px-2 py-1.5 font-data text-sm text-gray-700 ring-1 ring-inset ring-gray-200"
-                                                    title="From the reported figure">
-                                                    {{ $shown ?: 'n/a' }}
-                                                </span>
-                                            @else
-                                                <input type="number" step="0.01" min="1" max="5"
-                                                    name="ratings[{{ $item->id }}][{{ $measure->value }}]"
-                                                    value="{{ $shown }}"
-                                                    aria-label="{{ $measure->label() }} for {{ $item->output }}"
-                                                    class="w-20 rounded-md border-gray-300 text-center font-data text-sm">
-                                            @endif
-                                        </td>
-                                    @endforeach
-                                    <td class="px-3 py-3 text-center font-data text-sm font-medium text-gray-900">
-                                        {{ $item->average_rating !== null ? number_format((float) $item->average_rating, 2) : '—' }}
-                                    </td>
-                                </tr>
+        {{-- Read, not typed. The employee marked their own IPCR; this is the
+             sheet being agreed to. Disagreeing is a return, not an edit. --}}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                            Function</th>
+                        <th class="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
+                            Weight</th>
+                        @foreach (\App\Enums\RatingMeasure::cases() as $measure)
+                            <th class="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
+                                {{ strtoupper($measure->key()) }}</th>
+                        @endforeach
+                        <th class="px-3 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">
+                            Average</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    @foreach ($ipcr->items as $item)
+                        <tr>
+                            <td class="px-6 py-3 text-sm">
+                                <span
+                                    class="inline-flex items-center rounded-full px-2 py-0.5 text-[0.625rem] font-medium uppercase tracking-wide ring-1 ring-inset {{ $item->category->badgeClasses() }}">
+                                    {{ $item->category->label() }}
+                                </span>
+                                <span class="mt-1 block text-gray-900">{{ $item->output }}</span>
+                                @if ($item->actual_accomplishment)
+                                    <span class="mt-0.5 block text-xs text-gray-500">{{ $item->actual_accomplishment }}</span>
+                                @endif
+                            </td>
+                            <td class="px-3 py-3 text-center font-data text-sm text-gray-600">
+                                {{ $item->weight ? rtrim(rtrim($item->weight, '0'), '.') . '%' : '—' }}
+                            </td>
+                            @foreach (\App\Enums\RatingMeasure::cases() as $measure)
+                                @php $mark = $item->{$measure->column()}; @endphp
+                                <td class="px-3 py-3 text-center font-data text-sm text-gray-700">
+                                    {{ $mark === null ? 'n/a' : rtrim(rtrim($mark, '0'), '.') }}
+                                </td>
                             @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                @if ($anyTyped)
-                    <div class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
-                        <button type="submit"
-                            class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                            Save ratings
-                        </button>
-                    </div>
-                @else
-                    <p class="border-t border-gray-200 bg-gray-50 px-6 py-4 text-sm text-gray-600">
-                        Every mark here came from the figures the employee reported. There is nothing to type — if a
-                        figure is wrong, return the IPCR for revision.
-                    </p>
-                @endif
-            </form>
-        @endif
+                            <td class="px-3 py-3 text-center font-data text-sm font-medium text-gray-900">
+                                {{ $item->average_rating !== null ? number_format((float) $item->average_rating, 2) : '—' }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
             <button type="button" x-data x-on:click="$dispatch('open-modal', 'return-ipcr')"

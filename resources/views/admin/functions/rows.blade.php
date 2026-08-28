@@ -32,8 +32,12 @@
                     {{ $function->position?->title ?? $function->designation?->title ?? 'Everyone' }}
                 </span>
             </td>
+            {{-- One line, and given the room to be worth reading. A success
+                 indicator is a sentence with numbers in it; two clamped lines
+                 of it told you less than one wide one, and set the height of
+                 every row while doing it. The whole text is on hover. --}}
             <td class="px-6 py-4 text-sm">
-                <span class="line-clamp-2 block max-w-sm text-gray-600"
+                <span class="line-clamp-1 block max-w-xl text-gray-600"
                     title="{{ $function->success_indicator }}">{{ $function->success_indicator ?: '—' }}</span>
             </td>
             <td class="px-6 py-4">

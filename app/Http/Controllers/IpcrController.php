@@ -191,6 +191,22 @@ class IpcrController extends Controller
                 : "{$missing} functions still have no actual accomplishment. Fill them in, or switch to \"Targets only\".");
         }
 
+        // The marks are the employee's to give, so the last moment anyone can
+        // give them is here. An approver who received an unmarked line could
+        // neither mark it nor return it to any purpose - there is no form on
+        // their side to fix it with.
+        if ($ipcr->showsAccomplishment()) {
+            $unmarked = $ipcr->load('items')->items
+                ->filter(fn ($item): bool => $item->average_rating === null)
+                ->count();
+
+            if ($unmarked > 0) {
+                return back()->with('error', $unmarked === 1
+                    ? 'One function still has no rating. Open it and give yourself a mark on at least one measure.'
+                    : "{$unmarked} functions still have no rating. Open each one and give yourself a mark on at least one measure.");
+            }
+        }
+
         // Settled rather than checked. The weights are shared out by the
         // system, so a category that does not total a hundred is this app's
         // mistake and not the employee's - and refusing to submit over one

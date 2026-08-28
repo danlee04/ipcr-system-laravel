@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\FunctionCategory;
-use App\Http\Requests\StoreIpcrItemRequest;
+use App\Enums\RatingMeasure;
 use App\Http\Requests\UpdateIpcrItemRequest;
 use App\Models\Ipcr;
 use App\Models\IpcrItem;
@@ -17,25 +16,6 @@ use Illuminate\Support\Facades\DB;
 
 class IpcrItemController extends Controller
 {
-    /** Add one function/output line to a draft or returned IPCR. */
-    public function store(StoreIpcrItemRequest $request, Ipcr $ipcr, ItemWeights $weights): RedirectResponse
-    {
-        $this->authorize('update', $ipcr);
-        abort_unless($ipcr->isEditableByOwner(), 403, 'This IPCR can no longer be edited.');
-
-        $data = $request->validated();
-        $data['sort_order'] = ((int) $ipcr->items()->max('sort_order')) + 1;
-
-        $ipcr->items()->create($data);
-
-        // The category's hundred is shared again across everything in it, this
-        // new line included. Nobody types a weight, so nothing here can be
-        // left over or spent twice.
-        $weights->share($ipcr, FunctionCategory::from($data['category']));
-
-        return back()->with('status', 'Function added.');
-    }
-
     /**
      * Add every function ticked off the catalog, in one go.
      *
@@ -123,8 +103,10 @@ class IpcrItemController extends Controller
 
         $data = $request->validated();
         $reported = $data['reported'] ?? [];
-        unset($data['reported']);
+        $marks = $data['marks'] ?? [];
+        unset($data['reported'], $data['marks']);
 
+        $item->loadMissing('jobFunction.measures.bands');
         $rubric = $reported === [] ? null : $this->rubricOf($item);
 
         // Checked before anything is written, so a figure the rubric cannot
@@ -133,8 +115,10 @@ class IpcrItemController extends Controller
             return back()->with('error', $this->ungradableMessage($refused));
         }
 
-        DB::transaction(function () use ($item, $data, $rubric, $reported, $writer): void {
-            $item->update($data);
+        DB::transaction(function () use ($item, $data, $marks, $rubric, $reported, $writer): void {
+            $item->fill($data);
+            $this->markByHand($item, $marks);
+            $item->save();
 
             if ($rubric !== null) {
                 $writer->apply($item, $rubric, $reported);
@@ -142,6 +126,31 @@ class IpcrItemController extends Controller
         });
 
         return back()->with('status', 'Function updated.');
+    }
+
+    /**
+     * The marks the owner gave themselves.
+     *
+     * A measure the catalog rubric grades is skipped: the figure decides that
+     * one, and a mark typed over it would contradict the sentence printed
+     * beside it. Blank is n/a, which is a real answer - plenty of outputs have
+     * no timeliness at all - and not the same as a zero.
+     *
+     * @param  array<string, mixed>  $marks
+     */
+    private function markByHand(IpcrItem $item, array $marks): void
+    {
+        $graded = $item->rubricMeasures();
+
+        foreach (RatingMeasure::cases() as $measure) {
+            if (in_array($measure, $graded, true) || ! array_key_exists($measure->value, $marks)) {
+                continue;
+            }
+
+            $given = $marks[$measure->value];
+
+            $item->{$measure->column()} = ($given === null || $given === '') ? null : $given;
+        }
     }
 
     /** Remove a line before submission. */

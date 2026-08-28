@@ -101,7 +101,7 @@ class IpcrOversightTest extends TestCase
             ->assertOk();
 
         $response->assertDontSee('Submit for Assessment');
-        $response->assertDontSee(route('ipcrs.items.store', $ipcr), false);
+        $response->assertDontSee(route('ipcrs.items.catalog', $ipcr), false);
     }
 
     public function test_the_owner_still_gets_them(): void
@@ -119,8 +119,8 @@ class IpcrOversightTest extends TestCase
         $ipcr = $this->someoneElsesIpcr();
 
         $this->actingAs($this->userWithRole('admin'))
-            ->post(route('ipcrs.items.store', $ipcr), [
-                'category' => 'core', 'output' => 'Sneaking this in', 'weight' => 100,
+            ->post(route('ipcrs.items.catalog', $ipcr), [
+                'job_function_ids' => [1],
             ])
             ->assertForbidden();
     }

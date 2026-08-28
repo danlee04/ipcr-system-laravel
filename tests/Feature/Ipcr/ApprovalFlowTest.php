@@ -114,68 +114,6 @@ class ApprovalFlowTest extends TestCase
     }
 
     // -----------------------------------------------------------------
-    // Entering the ratings
-    // -----------------------------------------------------------------
-
-    public function test_the_assessor_can_record_quality_efficiency_and_timeliness(): void
-    {
-        $ipcr = $this->submittedIpcr();
-        $item = $ipcr->items->first();
-
-        $this->actingAs($this->assessor->user)
-            ->put(route('ipcrs.ratings.update', $ipcr), [
-                'ratings' => [
-                    $item->id => ['quality' => 5, 'efficiency' => 4, 'timeliness' => 3],
-                ],
-            ])
-            ->assertRedirect(route('ipcrs.show', $ipcr));
-
-        $item->refresh();
-        $this->assertSame('5.00', $item->quality_rating);
-        $this->assertSame('4.00', $item->efficiency_rating);
-        $this->assertSame('3.00', $item->timeliness_rating);
-        $this->assertSame('4.000', $item->average_rating, 'The item average must be stored, not only derived.');
-    }
-
-    public function test_the_owner_cannot_rate_their_own_ipcr(): void
-    {
-        $ipcr = $this->submittedIpcr();
-        $item = $ipcr->items->first();
-
-        $this->actingAs($this->owner->user)
-            ->put(route('ipcrs.ratings.update', $ipcr), [
-                'ratings' => [$item->id => ['quality' => 5, 'efficiency' => 5, 'timeliness' => 5]],
-            ])
-            ->assertForbidden();
-    }
-
-    public function test_a_rating_outside_one_to_five_is_rejected(): void
-    {
-        $ipcr = $this->submittedIpcr();
-        $item = $ipcr->items->first();
-
-        $this->actingAs($this->assessor->user)
-            ->put(route('ipcrs.ratings.update', $ipcr), [
-                'ratings' => [$item->id => ['quality' => 9, 'efficiency' => 5, 'timeliness' => 5]],
-            ])
-            ->assertSessionHasErrors('ratings.' . $item->id . '.quality');
-    }
-
-    public function test_ratings_cannot_be_written_onto_an_item_from_another_ipcr(): void
-    {
-        $ipcr = $this->submittedIpcr();
-        $foreign = IpcrItem::factory()->create();
-
-        $this->actingAs($this->assessor->user)
-            ->put(route('ipcrs.ratings.update', $ipcr), [
-                'ratings' => [$foreign->id => ['quality' => 1, 'efficiency' => 1, 'timeliness' => 1]],
-            ])
-            ->assertSessionHasErrors();
-
-        $this->assertNull($foreign->fresh()->quality_rating);
-    }
-
-    // -----------------------------------------------------------------
     // Assessment
     // -----------------------------------------------------------------
 
@@ -344,16 +282,17 @@ class ApprovalFlowTest extends TestCase
     // What each person sees on the IPCR page
     // -----------------------------------------------------------------
 
-    public function test_the_assessor_sees_rating_inputs_on_the_ipcr_page(): void
+    /** They read the marks the employee gave themselves, and agree or return. */
+    public function test_the_assessor_sees_the_marks_and_the_two_buttons(): void
     {
         $ipcr = $this->submittedIpcr();
-        $item = $ipcr->items->first();
 
         $this->actingAs($this->assessor->user)
             ->get(route('ipcrs.show', $ipcr))
             ->assertOk()
-            ->assertSee('name="ratings[' . $item->id . '][quality]"', false)
-            ->assertSee('Complete assessment');
+            ->assertDontSee('name="ratings', false)
+            ->assertSee('Complete assessment')
+            ->assertSee('Return for revision');
     }
 
     public function test_the_owner_never_sees_rating_inputs_on_their_own_ipcr(): void
@@ -515,12 +454,9 @@ class ApprovalFlowTest extends TestCase
             'ipcr_id' => $ipcr->id, 'category' => FunctionCategory::Support, 'weight' => 100,
         ]);
 
-        $this->actingAs($this->assessor->user)->put(route('ipcrs.ratings.update', $ipcr), [
-            'ratings' => [
-                $core->id    => ['quality' => 5, 'efficiency' => 5, 'timeliness' => 5],
-                $support->id => ['quality' => 3, 'efficiency' => 3, 'timeliness' => 3],
-            ],
-        ]);
+        // Marked by the owner before it ever reached them.
+        $core->update(['quality_rating' => 5, 'efficiency_rating' => 5, 'timeliness_rating' => 5]);
+        $support->update(['quality_rating' => 3, 'efficiency_rating' => 3, 'timeliness_rating' => 3]);
 
         $this->actingAs($this->assessor->user)->post(route('ipcrs.assess', $ipcr));
         $this->actingAs($this->finalApprover->user)->post(route('ipcrs.approve', $ipcr));

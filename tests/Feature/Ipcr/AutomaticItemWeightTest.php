@@ -7,6 +7,8 @@ use App\Enums\IpcrStatus;
 use App\Models\Employee;
 use App\Models\Ipcr;
 use App\Models\IpcrPeriod;
+use App\Models\JobFunction;
+use App\Models\Position;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -28,12 +30,18 @@ class AutomaticItemWeightTest extends TestCase
 
     private Ipcr $ipcr;
 
+    private Position $position;
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->position = Position::factory()->create();
+
         $this->owner = User::factory()->create();
-        $employee = Employee::factory()->create(['user_id' => $this->owner->id]);
+        $employee = Employee::factory()->create([
+            'user_id' => $this->owner->id, 'position_id' => $this->position->id,
+        ]);
 
         $this->ipcr = Ipcr::factory()->create([
             'employee_id'    => $employee->id,
@@ -44,12 +52,22 @@ class AutomaticItemWeightTest extends TestCase
         $this->owner = $this->owner->fresh();
     }
 
+    /**
+     * Everything comes off the catalog now - there is no hand-typed line - so
+     * a function has to exist and reach this employee before it can be added.
+     */
     private function add(string $output, FunctionCategory $category = FunctionCategory::Core, array $extra = []): void
     {
+        $function = JobFunction::create([
+            'category'    => $category,
+            'position_id' => $this->position->id,
+            'title'       => $output,
+            'is_active'   => true,
+        ]);
+
         $this->actingAs($this->owner)
-            ->post(route('ipcrs.items.store', $this->ipcr), array_merge([
-                'category' => $category->value,
-                'output'   => $output,
+            ->post(route('ipcrs.items.catalog', $this->ipcr), array_merge([
+                'job_function_ids' => [$function->id],
             ], $extra))
             ->assertSessionHasNoErrors();
     }

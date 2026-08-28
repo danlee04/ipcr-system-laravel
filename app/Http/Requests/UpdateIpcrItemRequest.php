@@ -35,6 +35,10 @@ class UpdateIpcrItemRequest extends FormRequest
         if ($ipcr instanceof Ipcr && ! $ipcr->showsAccomplishment()) {
             $this->request->remove('actual_accomplishment');
             $this->request->remove('reported');
+
+            // Targets only is a commitment made before the work. There is
+            // nothing yet to rate.
+            $this->request->remove('marks');
         }
     }
 
@@ -53,17 +57,25 @@ class UpdateIpcrItemRequest extends FormRequest
             'reported.*.value'      => ['nullable', 'numeric'],
             'reported.*.count'      => ['nullable', 'numeric', 'min:0'],
             'reported.*.total'      => ['nullable', 'numeric', 'min:0'],
+
+            // The marks the employee gives themselves, on the measures no
+            // rubric decides. Whoever wrote the IPCR rates it; the approvers
+            // agree or send it back.
+            'marks'                 => ['nullable', 'array'],
+            'marks.*'               => ['nullable', 'numeric', 'min:1', 'max:5'],
         ];
     }
 
-    /** Only the three CSC measures can be reported on. */
+    /** Only the three CSC measures can be reported on, or marked. */
     public function after(): array
     {
         return [
             function (\Illuminate\Validation\Validator $validator): void {
-                foreach (array_keys((array) $this->input('reported', [])) as $key) {
-                    if (! in_array($key, RatingMeasure::values(), true)) {
-                        $validator->errors()->add('reported', 'That is not a measure this form rates on.');
+                foreach (['reported', 'marks'] as $field) {
+                    foreach (array_keys((array) $this->input($field, [])) as $key) {
+                        if (! in_array($key, RatingMeasure::values(), true)) {
+                            $validator->errors()->add($field, 'That is not a measure this form rates on.');
+                        }
                     }
                 }
             },
@@ -77,6 +89,7 @@ class UpdateIpcrItemRequest extends FormRequest
                 "reported.{$measure->value}.value" => strtolower($measure->label()),
                 "reported.{$measure->value}.count" => strtolower($measure->label()) . ' count',
                 "reported.{$measure->value}.total" => strtolower($measure->label()) . ' total',
+                "marks.{$measure->value}"          => strtolower($measure->label()) . ' mark',
             ])
             ->all();
     }

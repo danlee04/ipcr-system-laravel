@@ -146,7 +146,7 @@ class CrossDivisionHeadTest extends TestCase
 
         $ipcr = $owner->ipcrs()->latest('id')->firstOrFail();
 
-        IpcrItem::factory()->accomplished()->create([
+        IpcrItem::factory()->accomplished()->rated()->create([
             'ipcr_id' => $ipcr->id, 'category' => FunctionCategory::Core, 'weight' => 100,
         ]);
 

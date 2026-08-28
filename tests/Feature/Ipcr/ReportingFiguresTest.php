@@ -263,43 +263,11 @@ class ReportingFiguresTest extends TestCase
     // -----------------------------------------------------------------
 
     /**
-     * The whole point of a rubric is that the figure decides the mark. If the
-     * assessor could type over it the two would disagree and the form would
-     * say one thing while the sentence beside it said another.
+     * The mark stays the rubric's, and the approver is shown it rather than
+     * asked for it. Nobody types over a figure - see SelfRatingTest for the
+     * owner's side of the same rule.
      */
-    public function test_the_assessor_cannot_type_over_a_mark_the_rubric_produced(): void
-    {
-        $assessor = $this->assessorFor($this->ipcr);
-        $item = $this->line($this->graded());
-        $this->report($item, ['efficiency' => ['value' => 95]]);
-
-        $this->ipcr->update(['status' => IpcrStatus::Submitted, 'submitted_at' => now()]);
-
-        $this->actingAs($assessor)->put(route('ipcrs.ratings.update', $this->ipcr), [
-            'ratings' => [$item->id => ['efficiency' => 1]],
-        ]);
-
-        $this->assertSame('4.00', $item->fresh()->efficiency_rating);
-    }
-
-    /** A measure the rubric says nothing about is still the assessor's. */
-    public function test_the_assessor_still_marks_the_measures_the_rubric_leaves_out(): void
-    {
-        $assessor = $this->assessorFor($this->ipcr);
-        $item = $this->line($this->graded());
-        $this->report($item, ['efficiency' => ['value' => 95]]);
-
-        $this->ipcr->update(['status' => IpcrStatus::Submitted, 'submitted_at' => now()]);
-
-        $this->actingAs($assessor)->put(route('ipcrs.ratings.update', $this->ipcr), [
-            'ratings' => [$item->id => ['quality' => 5, 'efficiency' => 1]],
-        ]);
-
-        $this->assertSame('5.00', $item->fresh()->quality_rating);
-    }
-
-    /** Nor is the assessor shown a box that would do nothing if they used it. */
-    public function test_the_assessor_is_shown_the_mark_rather_than_a_box(): void
+    public function test_the_approver_is_shown_the_mark_rather_than_a_box(): void
     {
         $assessor = $this->assessorFor($this->ipcr);
         $item = $this->line($this->graded());
@@ -312,10 +280,9 @@ class ReportingFiguresTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        $this->assertStringNotContainsString("ratings[{$item->id}][efficiency]", $html);
-        $this->assertStringContainsString("ratings[{$item->id}][quality]", $html);
+        $this->assertStringNotContainsString('name="ratings', $html);
+        $this->assertSame('4.00', $item->fresh()->efficiency_rating);
     }
-
     private function assessorFor(Ipcr $ipcr): User
     {
         $division = Division::factory()->create();
