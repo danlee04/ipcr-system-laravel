@@ -49,6 +49,19 @@ class FunctionMeasure extends Model
     }
 
     /**
+     * Is a mark worked out from this figure, or is it only printed?
+     *
+     * No levels means nothing to grade against. Plenty of wordings carry a
+     * number nobody rates - "100% of reports within 12 days" is one sentence
+     * with two figures and one mark - and inventing five levels for the other
+     * one only to ignore them would be a lie in the catalog.
+     */
+    public function isGraded(): bool
+    {
+        return $this->bands->isNotEmpty();
+    }
+
+    /**
      * The mark this figure earns, or null when nothing accepts it.
      *
      * Tried from 5 down so the highest band that accepts the figure wins,

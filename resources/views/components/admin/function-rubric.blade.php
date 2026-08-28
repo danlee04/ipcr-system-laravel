@@ -34,16 +34,31 @@
             $bands = $rubric?->bands->keyBy('level') ?? collect();
             $answer = old("rubric.{$measure->value}.answer", $rubric?->answer?->value ?? MeasureAnswer::Descriptor->value);
             $unit = old("rubric.{$measure->value}.unit", $rubric?->unit ?? '%');
+
+            // No levels behind a saved measure means it was never graded: the
+            // figure is printed and nothing marks it.
+            $reportedOnly = (bool) old(
+                "rubric.{$measure->value}.reported_only",
+                $rubric && $rubric->bands->isEmpty(),
+            );
         @endphp
 
         <details class="rounded-lg ring-1 ring-inset ring-gray-200" @if ($rubric) open @endif
-            x-data="{ answer: '{{ $answer }}' }"
+            x-data="{ answer: '{{ $answer }}', reportedOnly: {{ $reportedOnly ? 'true' : 'false' }} }"
             x-bind:data-numeric="answer !== 'descriptor'">
             <summary class="flex cursor-pointer items-baseline justify-between gap-3 px-4 py-2.5 text-sm hover:bg-gray-50">
                 <span class="font-medium text-gray-800">
                     {{ $measure->label() }} <span class="font-data text-xs text-gray-400">({{ strtoupper($measure->key()) }})</span>
                 </span>
-                <span class="text-xs text-gray-400">{{ $rubric ? 'rated' : 'n/a — click to use' }}</span>
+                <span class="text-xs text-gray-400">
+                    @if (!$rubric)
+                        n/a — click to use
+                    @elseif ($reportedOnly)
+                        reported, not rated
+                    @else
+                        rated
+                    @endif
+                </span>
             </summary>
 
             <div class="space-y-3 border-t border-gray-200 p-4">
@@ -73,12 +88,28 @@
                         </span>
                     </template>
 
-                    <span class="text-xs italic text-gray-400" x-show="answer === 'count'" x-cloak>
+                    <span class="text-xs italic text-gray-400" x-show="answer === 'count' && !reportedOnly" x-cloak>
                         bands below are in %
                     </span>
                 </div>
 
-                <div class="overflow-x-auto">
+                {{-- A figure that is printed and never graded. Real wordings
+                     carry one all the time - "100% of reports within 12 days"
+                     is one sentence with two figures and one mark - and the
+                     only way to name the other in the wording used to be to
+                     invent five levels for it and then ignore them. --}}
+                <label class="flex items-start gap-2 rounded-md bg-gray-50 p-2.5 ring-1 ring-inset ring-gray-200">
+                    <input type="checkbox" name="rubric[{{ $measure->value }}][reported_only]" value="1"
+                        x-model="reportedOnly" class="mt-0.5 rounded border-gray-300 text-nav-900 focus:ring-seal">
+                    <span class="text-xs text-gray-600">
+                        <span class="font-medium text-gray-800">Report this figure without rating it.</span>
+                        The employee still types it and it still goes into the wording, but it earns no mark and
+                        stays out of the average.
+                    </span>
+                </label>
+
+                <div class="overflow-x-auto" x-show="!reportedOnly" x-cloak>
+
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="text-left text-[0.625rem] font-bold uppercase tracking-wider text-gray-400">

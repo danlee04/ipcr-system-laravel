@@ -92,6 +92,10 @@ class AccomplishmentWriter
                 continue;   // nothing reported is n/a, not an error
             }
 
+            if ($measure->bands->isEmpty()) {
+                continue;   // reported only: printed, never graded
+            }
+
             // A descriptor is picked, not computed, so what has to hold is
             // that the pick is one of the levels actually written down.
             $graded = $measure->answer->isNumeric()

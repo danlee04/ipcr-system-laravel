@@ -35,11 +35,12 @@ class RubricSync
     private function applyMeasure(JobFunction $function, RatingMeasure $measure, array $input): void
     {
         $answer = MeasureAnswer::tryFrom((string) ($input['answer'] ?? '')) ?? MeasureAnswer::Descriptor;
-        $bands = $this->bandsFrom($input, $answer);
+        $reportedOnly = filter_var($input['reported_only'] ?? false, FILTER_VALIDATE_BOOL);
+        $bands = $reportedOnly ? [] : $this->bandsFrom($input, $answer);
 
         $existing = $function->measures()->where('measure', $measure->value)->first();
 
-        if ($bands === []) {
+        if ($bands === [] && ! $reportedOnly) {
             // Nothing typed: the measure does not apply to this function.
             $existing?->delete();
 
@@ -57,8 +58,12 @@ class RubricSync
 
         // Replaced rather than merged: the five levels are one statement, and
         // a level dropped from the form has to disappear from the rubric too.
+        // Reported only leaves none at all, which is what says it is not graded.
         $rubric->bands()->delete();
-        $rubric->bands()->createMany($bands);
+
+        if ($bands !== []) {
+            $rubric->bands()->createMany($bands);
+        }
     }
 
     /**

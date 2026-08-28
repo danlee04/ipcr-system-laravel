@@ -66,6 +66,7 @@ trait LinksAFunction
             'accomplishment_template' => ['nullable', 'string', 'max:2000'],
             'rubric'                  => ['nullable', 'array'],
             'rubric.*.answer'         => ['nullable', Rule::in(MeasureAnswer::values())],
+            'rubric.*.reported_only'  => ['nullable', 'boolean'],
             'rubric.*.unit'           => ['nullable', Rule::in(FunctionMeasure::UNITS)],
 
             /*
@@ -83,11 +84,12 @@ trait LinksAFunction
     }
 
     /**
-     * A measure is all or nothing.
+     * A measure is all or nothing - unless it is not being graded at all.
      *
-     * Left blank it is n/a, which is allowed and common. Once anything is
-     * typed into it, all five levels have to be there - a scale with a hole in
-     * it would silently refuse to grade whatever falls in the gap.
+     * Left blank it is n/a, which is allowed and common. Reported only, it
+     * carries a figure into the wording and earns no mark, so it has no levels
+     * to be missing. Otherwise all five have to be there: a scale with a hole
+     * in it would silently refuse to grade whatever falls in the gap.
      */
     private function validateTheRubric(Validator $validator): void
     {
@@ -102,6 +104,7 @@ trait LinksAFunction
                 $this->validateMeasure($validator, $measure, $rubric[$measure->value] ?? []);
             }
 
+            $this->somethingMustBeGraded($validator);
             $this->templateMustNameAFigure($validator);
         });
     }
@@ -109,6 +112,12 @@ trait LinksAFunction
     private function validateMeasure(Validator $validator, RatingMeasure $measure, mixed $input): void
     {
         if (! is_array($input)) {
+            return;
+        }
+
+        // Reported only: the figure appears in the wording and nothing
+        // grades it, so there are no levels to insist on.
+        if (filter_var($input['reported_only'] ?? false, FILTER_VALIDATE_BOOL)) {
             return;
         }
 
@@ -161,6 +170,60 @@ trait LinksAFunction
     }
 
     /**
+     * A rubric that grades nothing is not a rubric.
+     *
+     * Reported-only measures print a figure and earn no mark. If every measure
+     * is one of those, the line can never be rated: the rubric will not give a
+     * mark and the employee is not offered the box for a measure the catalog
+     * has claimed. It could then be neither finished nor submitted.
+     */
+    private function somethingMustBeGraded(Validator $validator): void
+    {
+        $rubric = (array) $this->input('rubric', []);
+
+        $used = collect(RatingMeasure::cases())
+            ->map(fn (RatingMeasure $m): array => (array) ($rubric[$m->value] ?? []))
+            ->filter(fn (array $input): bool => $this->measureIsUsed($input));
+
+        if ($used->isEmpty()) {
+            return;   // no rubric at all, which is allowed
+        }
+
+        $graded = $used->reject(fn (array $input): bool => filter_var(
+            $input['reported_only'] ?? false,
+            FILTER_VALIDATE_BOOL
+        ));
+
+        if ($graded->isEmpty()) {
+            $validator->errors()->add(
+                'rubric',
+                'At least one measure has to be graded. Reported-only measures print a figure and earn no mark, '
+                    . 'so a rubric made only of those leaves the line with no rating at all.'
+            );
+        }
+    }
+
+    /** Has anything been said about this measure at all? */
+    private function measureIsUsed(array $input): bool
+    {
+        if (filter_var($input['reported_only'] ?? false, FILTER_VALIDATE_BOOL)) {
+            return true;
+        }
+
+        foreach (FunctionMeasure::LEVELS as $level) {
+            $row = is_array($input[$level] ?? null) ? $input[$level] : [];
+
+            if (trim((string) ($row['description'] ?? '')) !== ''
+                || ($row['min'] ?? '') !== ''
+                || ($row['max'] ?? '') !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Every placeholder in the template has to be one this rubric can fill,
      * and there has to be at least one.
      *
@@ -180,6 +243,18 @@ trait LinksAFunction
         }
 
         $allowed = $this->fillablePlaceholders();
+
+        // A brace that never closes, or closes with the wrong bracket. Caught
+        // by name, because "there is no placeholder here" is a baffling thing
+        // to be told about a line you can plainly see one on.
+        if (preg_match('/\{[^{}]*(?:$|[^}])(?=[^{}]*(?:\{|$))/', $template, $broken)) {
+            $validator->errors()->add('accomplishment_template', sprintf(
+                '"%s" is missing its closing brace. A placeholder is written {t}, with braces at both ends.',
+                trim(mb_substr($broken[0], 0, 20)),
+            ));
+
+            return;
+        }
 
         preg_match_all('/\{[^}]*\}/', $template, $found);
         $used = array_unique($found[0]);
