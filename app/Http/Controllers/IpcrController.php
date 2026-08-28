@@ -150,11 +150,13 @@ class IpcrController extends Controller
 
         $ipcr->load(['items', 'period', 'employee.position', 'assessor', 'finalApprover']);
 
-        // Grouped in reading order, which is the order the CSC form uses.
+        // Core, then Support, then Strategic - the same order as the screen.
+        // A printed sheet that reads in a different order from the one it was
+        // built in is a sheet nobody can check line by line.
         $grouped = collect([
-            FunctionCategory::Strategic,
             FunctionCategory::Core,
             FunctionCategory::Support,
+            FunctionCategory::Strategic,
         ])->mapWithKeys(fn (FunctionCategory $category): array => [
             $category->value => $ipcr->items->where('category', $category)->sortBy('sort_order')->values(),
         ])->filter(fn ($items) => $items->isNotEmpty());

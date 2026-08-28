@@ -89,49 +89,30 @@
                 <x-ipcr.function-picker :ipcr="$ipcr" :catalog="$catalog" />
             @endif
 
-            {{-- Items --}}
-            <div class="bg-white shadow-sm sm:rounded-lg ring-1 ring-gray-950/5">
+            {{-- Items, in category order: Core, then Support, then Strategic.
+                 Always that order, wherever the sheet appears. --}}
+            @php
+                $order = [
+                    \App\Enums\FunctionCategory::Core,
+                    \App\Enums\FunctionCategory::Support,
+                    \App\Enums\FunctionCategory::Strategic,
+                ];
+
+                // What each category is worth in the final rating. Not typed
+                // anywhere: it follows from what the employee actually holds,
+                // and one strategic function changes the whole split.
+                $present = $ipcr->items->map(fn($line) => $line->category->value)->unique()->values()->all();
+                $split = app(\App\Services\RatingCalculator::class)->weightsFor($present);
+            @endphp
+
+            <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg ring-1 ring-gray-950/5">
                 <div class="border-b border-gray-200 px-6 py-4">
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                        <h3 class="text-sm font-semibold text-gray-900">Functions &amp; Outputs</h3>
-
-                        {{-- What each category is worth in the final rating.
-                             It is not typed anywhere: it follows from what the
-                             employee actually holds, and adding a strategic
-                             function changes the whole split. The old chips
-                             counted the weights up to 100 instead, which can no
-                             longer be anything else. --}}
-                        @php
-                            $present = $ipcr->items
-                                ->map(fn($line) => $line->category->value)
-                                ->unique()
-                                ->values()
-                                ->all();
-                            $split = app(\App\Services\RatingCalculator::class)->weightsFor($present);
-                        @endphp
-
-                        @if ($split !== [])
-                            <div class="flex flex-wrap items-center gap-2">
-                                @foreach ($split as $category => $share)
-                                    @php
-                                        $count = $ipcr->items->filter(fn($line) => $line->category->value === $category)->count();
-                                        $short = rtrim(rtrim(number_format($share, 2, '.', ''), '0'), '.');
-                                    @endphp
-                                    <span
-                                        class="inline-flex items-center gap-1.5 rounded-full bg-nav-900/5 px-2.5 py-1 font-data text-xs text-nav-900 ring-1 ring-inset ring-nav-900/10">
-                                        <span
-                                            class="font-sans font-medium">{{ \App\Enums\FunctionCategory::from($category)->label() }}</span>
-                                        {{ $short }}% · {{ $count }}
-                                    </span>
-                                @endforeach
-                            </div>
-                        @endif
-                    </div>
+                    <h3 class="text-sm font-semibold text-gray-900">Functions &amp; Outputs</h3>
 
                     @if ($canEdit && $ipcr->items->isNotEmpty())
-                        <p class="mt-2 text-xs text-gray-500">
-                            Each category is worth that much of the final rating, and its functions share it equally.
-                            Add or remove one and the shares are worked out again.
+                        <p class="mt-1 text-xs text-gray-500">
+                            Each category is worth a share of the final rating, and its functions split that share
+                            equally. Add or remove one and the shares are worked out again.
                         </p>
                     @endif
                 </div>
@@ -139,81 +120,121 @@
                 @if ($ipcr->items->isEmpty())
                     <p class="px-6 py-8 text-center text-sm text-gray-500">No functions added yet.</p>
                 @else
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Category
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Output</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Weight</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Avg. Rating
-                                </th>
-                                @if ($canEdit)
-                                    <th class="px-6 py-3"></th>
-                                @endif
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 bg-white">
-                            @foreach ($ipcr->items as $item)
-                                <tr>
-                                    <td class="px-6 py-4 text-sm text-gray-600">{{ $item->category->label() }}</td>
-                                    <td class="max-w-md px-6 py-4 text-sm text-gray-900">
-                                        <p class="font-medium">{{ $item->output }}</p>
-                                        @if ($item->success_indicator)
-                                            <p class="mt-1 text-xs text-gray-500">{{ $item->success_indicator }}</p>
-                                        @endif
-                                        @if ($ipcr->showsAccomplishment() && $item->actual_accomplishment)
-                                            <p class="mt-1 text-xs text-gray-700">
-                                                <span class="font-medium">Accomplishment:</span>
-                                                {{ $item->actual_accomplishment }}
-                                            </p>
-                                        @endif
+                    @foreach ($order as $category)
+                        @php
+                            $lines = $ipcr->items->filter(fn($line) => $line->category === $category);
+                            $share = $split[$category->value] ?? null;
+                        @endphp
 
-                                        {{-- The figures behind the marks. Shown
-                                             after submission too, when the
-                                             editor is gone and this is the only
-                                             place they appear. --}}
-                                        @if ($item->measures->isNotEmpty())
-                                            <div class="mt-1.5 flex flex-wrap gap-1.5">
-                                                @foreach ($item->measures as $reported)
-                                                    <span
-                                                        class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
-                                                        {{ $reported->measure->label() }}
-                                                        <span
-                                                            class="font-data">{{ rtrim(rtrim($reported->value, '0'), '.') }}</span>
-                                                        →
-                                                        <span
-                                                            class="font-data font-medium">{{ rtrim(rtrim($item->{$reported->measure->column()} ?? '', '0'), '.') ?: 'n/a' }}</span>
-                                                    </span>
-                                                @endforeach
-                                            </div>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">{{ $item->weight ?? '—' }}%</td>
-                                    <td class="px-6 py-4 text-sm text-gray-600">{{ $item->average_rating ?? '—' }}</td>
+                        @continue($lines->isEmpty())
+
+                        {{-- The category is said once, over its own block,
+                             rather than repeated down a column of its own. --}}
+                        <div
+                            class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-6 py-3">
+                            <span
+                                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {{ $category->badgeClasses() }}">
+                                {{ $category->label() }}
+                            </span>
+                            <span class="font-data text-xs text-gray-500">
+                                @if ($share !== null)
+                                    {{ rtrim(rtrim(number_format($share, 2, '.', ''), '0'), '.') }}% of the final
+                                    rating &middot;
+                                @endif
+                                {{ $lines->count() }} {{ \Illuminate\Support\Str::plural('function', $lines->count()) }}
+                            </span>
+                        </div>
+
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-2 text-left text-xs font-medium uppercase text-gray-400">Output
+                                    </th>
+                                    <th class="px-6 py-2 text-left text-xs font-medium uppercase text-gray-400">Success
+                                        Indicator</th>
+                                    <th class="px-6 py-2 text-left text-xs font-medium uppercase text-gray-400">Actual
+                                        Accomplishment</th>
+                                    <th class="px-6 py-2 text-left text-xs font-medium uppercase text-gray-400">Avg.
+                                        Rating</th>
                                     @if ($canEdit)
-                                        <td class="px-6 py-4 text-right text-sm">
-                                            <div class="flex items-center justify-end gap-3">
-                                                <button type="button"
-                                                    x-on:click="$dispatch('open-modal', 'edit-item-{{ $item->id }}')"
-                                                    class="font-medium text-gray-900 hover:underline">
-                                                    {{ $ipcr->showsAccomplishment() && $item->jobFunction?->measures->isNotEmpty() ? 'Report' : 'Edit' }}
-                                                </button>
-                                                <form method="POST"
-                                                    action="{{ route('ipcrs.items.destroy', [$ipcr, $item]) }}"
-                                                    onsubmit="return confirm('Remove this function?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                        class="text-red-600 hover:underline">Remove</button>
-                                                </form>
-                                            </div>
-                                        </td>
+                                        <th class="px-6 py-2"></th>
                                     @endif
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                @foreach ($lines as $item)
+                                    <tr>
+                                        {{-- Three long sentences, three columns,
+                                             each cut to two lines with the rest on
+                                             hover. Whole, they set the height of
+                                             the row to the longest thing anybody
+                                             ever wrote. --}}
+                                        <td class="px-6 py-4 text-sm">
+                                            <p class="line-clamp-2 max-w-xs font-medium text-gray-900"
+                                                title="{{ $item->output }}">{{ $item->output }}</p>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">
+                                            <p class="line-clamp-2 max-w-xs text-gray-600"
+                                                title="{{ $item->success_indicator }}">
+                                                {{ $item->success_indicator ?: '—' }}</p>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm">
+                                            @if ($ipcr->showsAccomplishment())
+                                                <p class="line-clamp-2 max-w-xs text-gray-700"
+                                                    title="{{ $item->actual_accomplishment }}">
+                                                    {{ $item->actual_accomplishment ?: '—' }}</p>
+
+                                                {{-- The figures behind the marks.
+                                                     Shown after submission too,
+                                                     when the editor is gone and
+                                                     this is the only place they
+                                                     appear. --}}
+                                                @if ($item->measures->isNotEmpty())
+                                                    <div class="mt-1.5 flex flex-wrap gap-1.5">
+                                                        @foreach ($item->measures as $reported)
+                                                            <span
+                                                                class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                                                                {{ strtoupper($reported->measure->key()) }}
+                                                                <span
+                                                                    class="font-data">{{ rtrim(rtrim($reported->value, '0'), '.') }}</span>
+                                                                &rarr;
+                                                                <span
+                                                                    class="font-data font-medium">{{ rtrim(rtrim($item->{$reported->measure->column()} ?? '', '0'), '.') ?: 'n/a' }}</span>
+                                                            </span>
+                                                        @endforeach
+                                                    </div>
+                                                @endif
+                                            @else
+                                                <span class="text-gray-400">&mdash;</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4 font-data text-sm text-gray-900">
+                                            {{ $item->average_rating !== null ? number_format((float) $item->average_rating, 2) : '—' }}
+                                        </td>
+                                        @if ($canEdit)
+                                            <td class="px-6 py-4 text-right text-sm">
+                                                <div class="flex items-center justify-end gap-3">
+                                                    <button type="button"
+                                                        x-on:click="$dispatch('open-modal', 'edit-item-{{ $item->id }}')"
+                                                        class="font-medium text-gray-900 hover:underline">
+                                                        {{ $ipcr->showsAccomplishment() && $item->jobFunction?->measures->isNotEmpty() ? 'Report' : 'Edit' }}
+                                                    </button>
+                                                    <form method="POST"
+                                                        action="{{ route('ipcrs.items.destroy', [$ipcr, $item]) }}"
+                                                        onsubmit="return confirm('Remove this function?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit"
+                                                            class="text-red-600 hover:underline">Remove</button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        @endif
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endforeach
                 @endif
             </div>
 

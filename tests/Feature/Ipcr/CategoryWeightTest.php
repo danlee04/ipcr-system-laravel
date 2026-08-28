@@ -93,9 +93,12 @@ class CategoryWeightTest extends TestCase
     // -----------------------------------------------------------------
 
     /**
-     * The header used to count the item weights up to 100, which can no longer
-     * be anything else. This is the number that still varies, and the only one
-     * the employee can move - by adding or removing a function.
+     * Said once over each category's own block of lines.
+     *
+     * This is the number that still varies, and the only weight the employee
+     * can move - by adding or removing a function. The item weights it
+     * replaced count to 100 by construction and can no longer be anything
+     * else.
      */
     public function test_the_ipcr_page_shows_what_each_category_is_worth(): void
     {
@@ -116,10 +119,51 @@ class CategoryWeightTest extends TestCase
             ->assertOk()
             ->getContent();
 
-        $this->assertStringContainsString('Core Function</span>', $html);
-        $this->assertStringContainsString('80%', $html);
-        $this->assertStringContainsString('20%', $html);
+        $this->assertStringContainsString('Core Function', $html);
+        $this->assertStringContainsString('Support Function', $html);
+        $this->assertStringContainsString('80% of the final', $html);
+        $this->assertStringContainsString('20% of the final', $html);
 
         $this->assertStringNotContainsString('of 100%', $html, 'The old running total is gone.');
+    }
+
+    /**
+     * Core, then Support, then Strategic. Always, and everywhere.
+     *
+     * A printed sheet that reads in a different order from the screen it was
+     * built on is a sheet nobody can check line by line.
+     */
+    public function test_the_categories_are_always_in_the_same_order(): void
+    {
+        $user = User::factory()->create();
+        $employee = Employee::factory()->create(['user_id' => $user->id]);
+
+        $ipcr = Ipcr::factory()->create([
+            'employee_id'    => $employee->id,
+            'ipcr_period_id' => IpcrPeriod::factory()->create(['status' => 'open'])->id,
+            'status'         => IpcrStatus::Draft,
+        ]);
+
+        // Created in the wrong order on purpose: what decides the reading
+        // order must not be the order they happened to be added in.
+        $this->rated($ipcr, FunctionCategory::Strategic, 4)->update(['output' => 'A strategic line']);
+        $this->rated($ipcr, FunctionCategory::Support, 3)->update(['output' => 'A support line']);
+        $this->rated($ipcr, FunctionCategory::Core, 5)->update(['output' => 'A core line']);
+
+        foreach (['ipcrs.show', 'ipcrs.print'] as $screen) {
+            $html = $this->actingAs($user->fresh())->get(route($screen, $ipcr))->assertOk()->getContent();
+
+            $this->assertLessThan(
+                strpos($html, 'A support line'),
+                strpos($html, 'A core line'),
+                "Core comes before Support on {$screen}."
+            );
+
+            $this->assertLessThan(
+                strpos($html, 'A strategic line'),
+                strpos($html, 'A support line'),
+                "Support comes before Strategic on {$screen}."
+            );
+        }
     }
 }
