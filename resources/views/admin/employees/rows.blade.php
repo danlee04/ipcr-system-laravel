@@ -67,26 +67,6 @@
             </td>
         </tr>
 
-        <x-modal name="edit-employee-{{ $employee->id }}" focusable max-width="4xl">
-            <form method="POST" action="{{ route('admin.employees.update', $employee) }}"
-                class="space-y-4 p-6">
-                @csrf
-                @method('PUT')
-                <h2 class="text-lg font-semibold text-gray-900">Edit employee</h2>
-
-                <x-admin.employee-fields :employee="$employee" :divisions="$divisions" :sections="$sections"
-                    :positions="$positions" :designations="$designations" />
-
-                <div class="flex justify-end gap-3 pt-2">
-                    <button type="button"
-                        x-on:click="$dispatch('close-modal', 'edit-employee-{{ $employee->id }}')"
-                        class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</button>
-                    <button type="submit"
-                        class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">Save
-                        changes</button>
-                </div>
-            </form>
-        </x-modal>
     @empty
         <tr>
             <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-500">
@@ -99,5 +79,31 @@
         </tr>
     @endforelse
 </x-admin.table>
+
+{{-- Kept outside the table. A modal is a <div>, and a <div> inside
+     <tbody> is not valid HTML: the parser throws it out of the table,
+     and what was meant to stay hidden leaks onto the page. --}}
+@foreach ($employees as $employee)
+    <x-modal name="edit-employee-{{ $employee->id }}" focusable max-width="4xl">
+    <form method="POST" action="{{ route('admin.employees.update', $employee) }}"
+    class="space-y-4 p-6">
+    @csrf
+    @method('PUT')
+    <h2 class="text-lg font-semibold text-gray-900">Edit employee</h2>
+
+    <x-admin.employee-fields :employee="$employee" :divisions="$divisions" :sections="$sections"
+    :positions="$positions" :designations="$designations" />
+
+    <div class="flex justify-end gap-3 pt-2">
+    <button type="button"
+    x-on:click="$dispatch('close-modal', 'edit-employee-{{ $employee->id }}')"
+    class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</button>
+    <button type="submit"
+    class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">Save
+    changes</button>
+    </div>
+    </form>
+    </x-modal>
+@endforeach
 
 {{ $employees->links() }}

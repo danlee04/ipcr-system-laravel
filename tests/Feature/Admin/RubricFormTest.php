@@ -399,6 +399,42 @@ class RubricFormTest extends TestCase
         $this->assertStringContainsString('is not answered by a number in days.', $html);
     }
 
+    /**
+     * The list says which measures are graded, and nothing about how.
+     *
+     * Three five-level scales flattened into a table cell are unreadable, and
+     * unreadable in every row at once. The levels live in the editor.
+     */
+    public function test_the_list_names_the_measures_without_their_levels(): void
+    {
+        $this->store([
+            'title'  => 'Complete DTR submitted',
+            'rubric' => ['efficiency' => $this->numericBands([5 => ['description' => 'Perfect score', 'min' => 100, 'max' => '']])],
+        ])->assertSessionHasNoErrors();
+
+        $html = $this->actingAs($this->admin())
+            ->get(route('admin.functions.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('Rated On', $html);
+        $this->assertStringContainsString('Efficiency — typing a number in %', $html);
+
+        // The band's own words appear once, inside the editor - not in the row.
+        $this->assertSame(1, substr_count($html, 'Perfect score'));
+    }
+
+    /** A function nobody wrote a rubric for says so, rather than sitting blank. */
+    public function test_a_function_with_no_rubric_is_marked_as_graded_by_hand(): void
+    {
+        $this->store(['title' => 'Attends meetings'])->assertSessionHasNoErrors();
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.functions.index'))
+            ->assertOk()
+            ->assertSee('By hand');
+    }
+
     /** The wording already saved has to survive being bound to Alpine. */
     public function test_an_existing_template_is_still_in_the_box(): void
     {

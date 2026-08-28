@@ -37,54 +37,6 @@
                 </td>
             </tr>
 
-            <x-modal name="edit-position-{{ $position->id }}" focusable max-width="lg">
-                <form method="POST" action="{{ route('admin.positions.update', $position) }}"
-                    class="space-y-4 p-6">
-                    @csrf
-                    @method('PUT')
-                    <h2 class="text-lg font-semibold text-gray-900">Edit position</h2>
-
-                    <label class="block">
-                        <span class="mb-1 block text-sm font-medium text-gray-700">Title</span>
-                        <input type="text" name="title" value="{{ $position->title }}" required
-                            class="w-full rounded-md border-gray-300 text-sm">
-                    </label>
-
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <x-admin.section-picker :divisions="$divisions" :sections="$sections"
-                            :selected="$position->section_id"
-                            hint="Leave empty for an office-wide post." />
-                    </div>
-
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <label class="block">
-                            <span class="mb-1 block text-sm font-medium text-gray-700">Item number</span>
-                            <input type="text" name="item_number" value="{{ $position->item_number }}"
-                                maxlength="50" class="w-full rounded-md border-gray-300 text-sm">
-                        </label>
-
-                        <label class="block">
-                            <span class="mb-1 block text-sm font-medium text-gray-700">Salary grade</span>
-                            <input type="number" name="salary_grade" value="{{ $position->salary_grade }}"
-                                min="1" max="33" class="w-full rounded-md border-gray-300 text-sm">
-                        </label>
-                    </div>
-
-                    <label class="block">
-                        <span class="mb-1 block text-sm font-medium text-gray-700">Description</span>
-                        <textarea name="description" rows="3" class="w-full rounded-md border-gray-300 text-sm">{{ $position->description }}</textarea>
-                    </label>
-
-                    <div class="flex justify-end gap-3 pt-2">
-                        <button type="button"
-                            x-on:click="$dispatch('close-modal', 'edit-position-{{ $position->id }}')"
-                            class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</button>
-                        <button type="submit"
-                            class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">Save
-                            changes</button>
-                    </div>
-                </form>
-            </x-modal>
         @empty
             <tr>
                 <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">
@@ -93,6 +45,60 @@
             </tr>
         @endforelse
     </x-admin.table>
+
+    {{-- Kept outside the table. A modal is a <div>, and a <div> inside
+         <tbody> is not valid HTML: the parser throws it out of the table,
+         and what was meant to stay hidden leaks onto the page. --}}
+    @foreach ($positions as $position)
+        <x-modal name="edit-position-{{ $position->id }}" focusable max-width="lg">
+        <form method="POST" action="{{ route('admin.positions.update', $position) }}"
+        class="space-y-4 p-6">
+        @csrf
+        @method('PUT')
+        <h2 class="text-lg font-semibold text-gray-900">Edit position</h2>
+
+        <label class="block">
+        <span class="mb-1 block text-sm font-medium text-gray-700">Title</span>
+        <input type="text" name="title" value="{{ $position->title }}" required
+        class="w-full rounded-md border-gray-300 text-sm">
+        </label>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+        <x-admin.section-picker :divisions="$divisions" :sections="$sections"
+        :selected="$position->section_id"
+        hint="Leave empty for an office-wide post." />
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+        <label class="block">
+        <span class="mb-1 block text-sm font-medium text-gray-700">Item number</span>
+        <input type="text" name="item_number" value="{{ $position->item_number }}"
+        maxlength="50" class="w-full rounded-md border-gray-300 text-sm">
+        </label>
+
+        <label class="block">
+        <span class="mb-1 block text-sm font-medium text-gray-700">Salary grade</span>
+        <input type="number" name="salary_grade" value="{{ $position->salary_grade }}"
+        min="1" max="33" class="w-full rounded-md border-gray-300 text-sm">
+        </label>
+        </div>
+
+        <label class="block">
+        <span class="mb-1 block text-sm font-medium text-gray-700">Description</span>
+        <textarea name="description" rows="3" class="w-full rounded-md border-gray-300 text-sm">{{ $position->description }}</textarea>
+        </label>
+
+        <div class="flex justify-end gap-3 pt-2">
+        <button type="button"
+        x-on:click="$dispatch('close-modal', 'edit-position-{{ $position->id }}')"
+        class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</button>
+        <button type="submit"
+        class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">Save
+        changes</button>
+        </div>
+        </form>
+        </x-modal>
+    @endforeach
 
     {{ $positions->links() }}
 
@@ -164,34 +170,6 @@
                 </td>
             </tr>
 
-            <x-modal name="edit-designation-{{ $designation->id }}" focusable max-width="lg">
-                <form method="POST" action="{{ route('admin.designations.update', $designation) }}"
-                    class="space-y-4 p-6">
-                    @csrf
-                    @method('PUT')
-                    <h2 class="text-lg font-semibold text-gray-900">Edit designation</h2>
-
-                    <label class="block">
-                        <span class="mb-1 block text-sm font-medium text-gray-700">Title</span>
-                        <input type="text" name="title" value="{{ $designation->title }}" required
-                            class="w-full rounded-md border-gray-300 text-sm">
-                    </label>
-
-                    <label class="block">
-                        <span class="mb-1 block text-sm font-medium text-gray-700">Description</span>
-                        <textarea name="description" rows="3" class="w-full rounded-md border-gray-300 text-sm">{{ $designation->description }}</textarea>
-                    </label>
-
-                    <div class="flex justify-end gap-3 pt-2">
-                        <button type="button"
-                            x-on:click="$dispatch('close-modal', 'edit-designation-{{ $designation->id }}')"
-                            class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</button>
-                        <button type="submit"
-                            class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">Save
-                            changes</button>
-                    </div>
-                </form>
-            </x-modal>
         @empty
             <tr>
                 <td colspan="3" class="px-6 py-8 text-center text-sm text-gray-500">
@@ -200,6 +178,40 @@
             </tr>
         @endforelse
     </x-admin.table>
+
+    {{-- Kept outside the table. A modal is a <div>, and a <div> inside
+         <tbody> is not valid HTML: the parser throws it out of the table,
+         and what was meant to stay hidden leaks onto the page. --}}
+    @foreach ($designations as $designation)
+        <x-modal name="edit-designation-{{ $designation->id }}" focusable max-width="lg">
+        <form method="POST" action="{{ route('admin.designations.update', $designation) }}"
+        class="space-y-4 p-6">
+        @csrf
+        @method('PUT')
+        <h2 class="text-lg font-semibold text-gray-900">Edit designation</h2>
+
+        <label class="block">
+        <span class="mb-1 block text-sm font-medium text-gray-700">Title</span>
+        <input type="text" name="title" value="{{ $designation->title }}" required
+        class="w-full rounded-md border-gray-300 text-sm">
+        </label>
+
+        <label class="block">
+        <span class="mb-1 block text-sm font-medium text-gray-700">Description</span>
+        <textarea name="description" rows="3" class="w-full rounded-md border-gray-300 text-sm">{{ $designation->description }}</textarea>
+        </label>
+
+        <div class="flex justify-end gap-3 pt-2">
+        <button type="button"
+        x-on:click="$dispatch('close-modal', 'edit-designation-{{ $designation->id }}')"
+        class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</button>
+        <button type="submit"
+        class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">Save
+        changes</button>
+        </div>
+        </form>
+        </x-modal>
+    @endforeach
 
     {{ $designations->links() }}
 

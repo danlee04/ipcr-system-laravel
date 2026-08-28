@@ -60,117 +60,8 @@
                 </td>
             </tr>
 
-            <x-modal name="edit-section-{{ $section->id }}" focusable max-width="lg">
-                <form method="POST" action="{{ route('admin.sections.update', $section) }}"
-                    class="space-y-4 p-6">
-                    @csrf
-                    @method('PUT')
-                    <h2 class="text-lg font-semibold text-gray-900">Edit section</h2>
-
-                    <label class="block">
-                        <span class="mb-1 block text-sm font-medium text-gray-700">Division</span>
-                        <select name="division_id" required class="w-full rounded-md border-gray-300 text-sm">
-                            {{-- Every division, not the page: moving a
-                                 section to one that is filtered out
-                                 has to stay possible. --}}
-                            @foreach ($allDivisions as $option)
-                                <option value="{{ $option->id }}"
-                                    @selected($section->division_id === $option->id)>{{ $option->name }}</option>
-                            @endforeach
-                        </select>
-                    </label>
-
-                    <label class="block">
-                        <span class="mb-1 block text-sm font-medium text-gray-700">Name</span>
-                        <input type="text" name="name" value="{{ $section->name }}" required
-                            class="w-full rounded-md border-gray-300 text-sm">
-                    </label>
-
-                    <label class="block">
-                        <span class="mb-1 block text-sm font-medium text-gray-700">Code</span>
-                        <input type="text" name="code" value="{{ $section->code }}" maxlength="20"
-                            class="w-full rounded-md border-gray-300 text-sm">
-                    </label>
-
-                    <label class="block">
-                        <span class="mb-1 block text-sm font-medium text-gray-700">Section Head</span>
-                        <select name="section_head_employee_id"
-                            class="w-full rounded-md border-gray-300 text-sm">
-                            <option value="">No head assigned</option>
-                            @foreach ($employees as $employee)
-                                <option value="{{ $employee->id }}"
-                                    @selected($section->section_head_employee_id === $employee->id)>
-                                    {{ $employee->full_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <span class="mt-1 block text-xs text-gray-500">
-                            This is who assesses everyone in the section.
-                        </span>
-                    </label>
-
-                    <div class="flex justify-end gap-3 pt-2">
-                        <button type="button"
-                            x-on:click="$dispatch('close-modal', 'edit-section-{{ $section->id }}')"
-                            class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                            class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">
-                            Save
-                        </button>
-                    </div>
-                </form>
-            </x-modal>
         @endforeach
 
-        <x-modal name="edit-division-{{ $division->id }}" focusable max-width="lg">
-            <form method="POST" action="{{ route('admin.divisions.update', $division) }}" class="space-y-4 p-6">
-                @csrf
-                @method('PUT')
-                <h2 class="text-lg font-semibold text-gray-900">Edit division</h2>
-
-                <label class="block">
-                    <span class="mb-1 block text-sm font-medium text-gray-700">Name</span>
-                    <input type="text" name="name" value="{{ $division->name }}" required
-                        class="w-full rounded-md border-gray-300 text-sm">
-                </label>
-
-                <label class="block">
-                    <span class="mb-1 block text-sm font-medium text-gray-700">Code</span>
-                    <input type="text" name="code" value="{{ $division->code }}" maxlength="20"
-                        class="w-full rounded-md border-gray-300 text-sm">
-                </label>
-
-                <label class="block">
-                    <span class="mb-1 block text-sm font-medium text-gray-700">Division Head</span>
-                    <select name="division_head_employee_id" class="w-full rounded-md border-gray-300 text-sm">
-                        <option value="">No head assigned</option>
-                        @foreach ($employees as $employee)
-                            <option value="{{ $employee->id }}"
-                                @selected($division->division_head_employee_id === $employee->id)>
-                                {{ $employee->full_name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <span class="mt-1 block text-xs text-gray-500">
-                        Required before anyone in this division can submit an IPCR.
-                    </span>
-                </label>
-
-                <div class="flex justify-end gap-3 pt-2">
-                    <button type="button"
-                        x-on:click="$dispatch('close-modal', 'edit-division-{{ $division->id }}')"
-                        class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-                        Cancel
-                    </button>
-                    <button type="submit"
-                        class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">
-                        Save
-                    </button>
-                </div>
-            </form>
-        </x-modal>
     @empty
         <tr>
             <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">
@@ -183,5 +74,123 @@
         </tr>
     @endforelse
 </x-admin.table>
+
+{{-- Kept outside the table. A modal is a <div>, and a <div> inside
+     <tbody> is not valid HTML: the parser throws it out of the table,
+     and what was meant to stay hidden leaks onto the page. --}}
+@foreach ($divisions as $division)
+    <x-modal name="edit-division-{{ $division->id }}" focusable max-width="lg">
+        <form method="POST" action="{{ route('admin.divisions.update', $division) }}" class="space-y-4 p-6">
+            @csrf
+            @method('PUT')
+            <h2 class="text-lg font-semibold text-gray-900">Edit division</h2>
+
+            <label class="block">
+                <span class="mb-1 block text-sm font-medium text-gray-700">Name</span>
+                <input type="text" name="name" value="{{ $division->name }}" required
+                    class="w-full rounded-md border-gray-300 text-sm">
+            </label>
+
+            <label class="block">
+                <span class="mb-1 block text-sm font-medium text-gray-700">Code</span>
+                <input type="text" name="code" value="{{ $division->code }}" maxlength="20"
+                    class="w-full rounded-md border-gray-300 text-sm">
+            </label>
+
+            <label class="block">
+                <span class="mb-1 block text-sm font-medium text-gray-700">Division Head</span>
+                <select name="division_head_employee_id" class="w-full rounded-md border-gray-300 text-sm">
+                    <option value="">No head assigned</option>
+                    @foreach ($employees as $employee)
+                        <option value="{{ $employee->id }}"
+                            @selected($division->division_head_employee_id === $employee->id)>
+                            {{ $employee->full_name }}
+                        </option>
+                    @endforeach
+                </select>
+                <span class="mt-1 block text-xs text-gray-500">
+                    Required before anyone in this division can submit an IPCR.
+                </span>
+            </label>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button"
+                    x-on:click="$dispatch('close-modal', 'edit-division-{{ $division->id }}')"
+                    class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                    Cancel
+                </button>
+                <button type="submit"
+                    class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">
+                    Save
+                </button>
+            </div>
+        </form>
+    </x-modal>
+
+    @foreach ($division->sections as $section)
+        <x-modal name="edit-section-{{ $section->id }}" focusable max-width="lg">
+            <form method="POST" action="{{ route('admin.sections.update', $section) }}"
+                class="space-y-4 p-6">
+                @csrf
+                @method('PUT')
+                <h2 class="text-lg font-semibold text-gray-900">Edit section</h2>
+
+                <label class="block">
+                    <span class="mb-1 block text-sm font-medium text-gray-700">Division</span>
+                    <select name="division_id" required class="w-full rounded-md border-gray-300 text-sm">
+                        {{-- Every division, not the page: moving a
+                             section to one that is filtered out
+                             has to stay possible. --}}
+                        @foreach ($allDivisions as $option)
+                            <option value="{{ $option->id }}"
+                                @selected($section->division_id === $option->id)>{{ $option->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
+
+                <label class="block">
+                    <span class="mb-1 block text-sm font-medium text-gray-700">Name</span>
+                    <input type="text" name="name" value="{{ $section->name }}" required
+                        class="w-full rounded-md border-gray-300 text-sm">
+                </label>
+
+                <label class="block">
+                    <span class="mb-1 block text-sm font-medium text-gray-700">Code</span>
+                    <input type="text" name="code" value="{{ $section->code }}" maxlength="20"
+                        class="w-full rounded-md border-gray-300 text-sm">
+                </label>
+
+                <label class="block">
+                    <span class="mb-1 block text-sm font-medium text-gray-700">Section Head</span>
+                    <select name="section_head_employee_id"
+                        class="w-full rounded-md border-gray-300 text-sm">
+                        <option value="">No head assigned</option>
+                        @foreach ($employees as $employee)
+                            <option value="{{ $employee->id }}"
+                                @selected($section->section_head_employee_id === $employee->id)>
+                                {{ $employee->full_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <span class="mt-1 block text-xs text-gray-500">
+                        This is who assesses everyone in the section.
+                    </span>
+                </label>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button"
+                        x-on:click="$dispatch('close-modal', 'edit-section-{{ $section->id }}')"
+                        class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white hover:bg-nav-800">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </x-modal>
+    @endforeach
+@endforeach
 
 {{ $divisions->links() }}
