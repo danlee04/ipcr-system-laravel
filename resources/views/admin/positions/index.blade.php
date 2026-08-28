@@ -14,13 +14,6 @@
 
     <x-page-container class="space-y-6">
         <x-admin.flash />
-
-        <p class="max-w-3xl text-sm text-gray-600">
-            A <strong>position</strong> is the single plantilla post an employee holds, and the source of their
-            core functions. A <strong>designation</strong> is an extra assignment they may hold several of at once,
-            and the source of strategic and support functions.
-        </p>
-
         {{-- Tab state lives in the query string so a redirect after saving
              returns to the tab the administrator was working in. --}}
         <div class="border-b border-gray-200">
@@ -41,52 +34,49 @@
              offering it those would invite a search that can only come back
              empty. --}}
         <x-admin.live-list :action="route('admin.positions.index')">
-        <x-admin.filter-bar :action="route('admin.positions.index')"
-            :placeholder="$tab === 'positions' ? 'Search by title or item number' : 'Search by title'"
-            :hidden="$tab === 'designations' ? ['tab' => 'designations'] : []">
+            <x-admin.filter-bar :action="route('admin.positions.index')" :placeholder="$tab === 'positions' ? 'Search by title or item number' : 'Search by title'" :hidden="$tab === 'designations' ? ['tab' => 'designations'] : []">
 
-            @if ($tab === 'positions')
-                <div class="flex flex-wrap items-end gap-2"
-                    x-data="{ division: '{{ request('division') }}', section: '{{ request('section') }}' }">
-                    <label class="block">
-                        <span class="sr-only">Division</span>
-                        <select name="division" x-model="division" x-on:change="section = ''"
-                            class="w-44 rounded-lg border-gray-300 text-sm">
-                            <option value="">All divisions</option>
-                            @foreach ($divisions as $option)
-                                <option value="{{ $option->id }}">{{ $option->name }}</option>
-                            @endforeach
-                        </select>
-                    </label>
+                @if ($tab === 'positions')
+                    <div class="flex flex-wrap items-end gap-2" x-data="{ division: '{{ request('division') }}', section: '{{ request('section') }}' }">
+                        <label class="block">
+                            <span class="sr-only">Division</span>
+                            <select name="division" x-model="division" x-on:change="section = ''"
+                                class="w-44 rounded-lg border-gray-300 text-sm">
+                                <option value="">All divisions</option>
+                                @foreach ($divisions as $option)
+                                    <option value="{{ $option->id }}">{{ $option->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
 
-                    <label class="block">
-                        <span class="sr-only">Section</span>
-                        <select name="section" x-model="section" class="w-44 rounded-lg border-gray-300 text-sm">
-                            <option value="">All sections</option>
-                            @foreach ($sections as $option)
-                                <option value="{{ $option->id }}" data-division="{{ $option->division_id }}"
-                                    x-show="division === '' || division === '{{ $option->division_id }}'">
-                                    {{ $option->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </label>
-                </div>
-            @endif
+                        <label class="block">
+                            <span class="sr-only">Section</span>
+                            <select name="section" x-model="section" class="w-44 rounded-lg border-gray-300 text-sm">
+                                <option value="">All sections</option>
+                                @foreach ($sections as $option)
+                                    <option value="{{ $option->id }}" data-division="{{ $option->division_id }}"
+                                        x-show="division === '' || division === '{{ $option->division_id }}'">
+                                        {{ $option->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+                    </div>
+                @endif
 
-            <label class="block">
-                <span class="sr-only">Status</span>
-                <select name="status" class="w-32 rounded-lg border-gray-300 text-sm">
-                    <option value="">Any status</option>
-                    <option value="active" @selected(request('status') === 'active')>Active</option>
-                    <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
-                </select>
-            </label>
-        </x-admin.filter-bar>
+                <label class="block">
+                    <span class="sr-only">Status</span>
+                    <select name="status" class="w-32 rounded-lg border-gray-300 text-sm">
+                        <option value="">Any status</option>
+                        <option value="active" @selected(request('status') === 'active')>Active</option>
+                        <option value="inactive" @selected(request('status') === 'inactive')>Inactive</option>
+                    </select>
+                </label>
+            </x-admin.filter-bar>
 
-        <x-admin.live-results>
-            @include('admin.positions.rows')
-        </x-admin.live-results>
+            <x-admin.live-results>
+                @include('admin.positions.rows')
+            </x-admin.live-results>
         </x-admin.live-list>
     </x-page-container>
 </x-app-layout>

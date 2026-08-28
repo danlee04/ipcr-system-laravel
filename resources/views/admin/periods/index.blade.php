@@ -11,12 +11,6 @@
 
     <x-page-container class="space-y-6">
         <x-admin.flash />
-
-        <p class="max-w-3xl text-sm text-gray-600">
-            Employees can only start an IPCR while a period is open. Closing a period is how you stop new ones
-            being created once the cycle is over — it never touches the IPCRs already inside it.
-        </p>
-
         {{-- One period is active and every IPCR is created against it. Making
              one active closes whichever was, so the ambiguity this box used to
              warn about can no longer be created. --}}
@@ -77,9 +71,7 @@
                             {{-- Making one active closes whichever was, so the
                                  button says so before it is pressed. --}}
                             <form method="POST" action="{{ route('admin.periods.status', $period) }}"
-                                @if ($period->status !== 'open' && $activePeriod)
-                                    onsubmit="return confirm('Make this the active period? {{ addslashes($activePeriod->name) }} will be closed.');"
-                                @endif>
+                                @if ($period->status !== 'open' && $activePeriod) onsubmit="return confirm('Make this the active period? {{ addslashes($activePeriod->name) }} will be closed.');" @endif>
                                 @csrf
                                 @method('PATCH')
                                 <input type="hidden" name="open" value="{{ $period->status === 'open' ? 0 : 1 }}">
