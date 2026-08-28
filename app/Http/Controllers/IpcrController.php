@@ -99,23 +99,29 @@ class IpcrController extends Controller
     }
 
     /**
-     * Scrap a draft the owner no longer wants.
+     * Scrap an IPCR. The policy decides whose, and at what stage.
      *
-     * The policy allows drafts only. The IPCR's items go with it through the
-     * cascade, which is right - they exist only inside this draft. No
-     * ipcr_approvals are destroyed: a draft has never been passed to anyone,
-     * so no action can have been recorded against it.
+     * Its lines and its approval history go with it through the cascade. That
+     * is the whole point and also the whole risk, which is why an approved one
+     * is out of reach until somebody reopens it.
+     *
+     * Back where it was deleted from, not always to My IPCRs: an administrator
+     * clearing test records off the hospital-wide list should stay on it.
      */
     public function destroy(Request $request, Ipcr $ipcr): RedirectResponse
     {
         $this->authorize('delete', $ipcr);
 
-        $periodName = $ipcr->period->name;
+        $owner = $ipcr->employee?->full_name;
+        $periodName = $ipcr->period?->name;
 
         $ipcr->delete();
 
-        return redirect()->route('ipcrs.index')
-            ->with('status', "Deleted your draft IPCR for {$periodName}.");
+        $said = $request->user()->id === $ipcr->employee?->user_id
+            ? "Deleted your IPCR for {$periodName}."
+            : "Deleted {$owner}'s IPCR for {$periodName}.";
+
+        return back()->with('status', $said);
     }
 
     /** The main working screen: view items, add/edit them, and submit. */

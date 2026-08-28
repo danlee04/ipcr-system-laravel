@@ -61,16 +61,29 @@ class IpcrPolicy
     }
 
     /**
-     * Drafts only, and owners only.
+     * The owner scraps a draft; HR and an administrator scrap anything that is
+     * still moving.
      *
-     * isEditableByOwner() is deliberately not used here: it also covers
-     * Returned, and a returned IPCR already has an approval row recorded.
-     * ipcrs has no soft delete and ipcr_approvals cascades on delete, so
-     * deleting would permanently destroy that audit trail. Only a draft is
-     * safe - it has never been passed to anyone.
+     * For the owner it is drafts only. isEditableByOwner() is deliberately not
+     * used: it also covers Returned, and a returned IPCR already carries an
+     * approval row. ipcrs has no soft delete and ipcr_approvals cascades, so
+     * that would destroy an audit trail the owner never wrote. A draft has
+     * never been passed to anyone.
+     *
+     * HR and administrators need the wider power to set the system up and keep
+     * it tidy - a half-built record that reached a Section Head is otherwise
+     * stuck there for good, past the owner's reach and nobody else's business.
+     *
+     * Approved is the exception for everyone. It is the signed record, and it
+     * is reopened first: a deliberate step, written into the IPCR's own
+     * history, rather than one click away from a finished appraisal.
      */
     public function delete(User $user, Ipcr $ipcr): bool
     {
+        if ($user->hasAnyRole(['admin', 'hr'])) {
+            return $ipcr->status !== IpcrStatus::Approved;
+        }
+
         return $this->owns($user, $ipcr)
             && $ipcr->status === IpcrStatus::Draft;
     }

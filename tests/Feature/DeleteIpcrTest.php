@@ -39,7 +39,9 @@ class DeleteIpcrTest extends TestCase
             'status'      => IpcrStatus::Draft,
         ]);
 
+        // Back where they were, which for an employee is their own list.
         $this->actingAs($user)
+            ->from(route('ipcrs.index'))
             ->delete(route('ipcrs.destroy', $ipcr))
             ->assertRedirect(route('ipcrs.index'));
 

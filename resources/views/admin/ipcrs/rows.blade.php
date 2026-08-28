@@ -67,6 +67,19 @@
                             class="text-sm font-medium text-red-600 hover:underline">Reopen</button>
                     @endcan
 
+                    {{-- Anything still moving can be scrapped from here. An
+                         approved one cannot: it is reopened first, which is a
+                         decision of its own and is written into its history. --}}
+                    @can('delete', $ipcr)
+                        <form method="POST" action="{{ route('ipcrs.destroy', $ipcr) }}"
+                            onsubmit="return confirm('Delete {{ $ipcr->employee?->full_name }}\'s IPCR for {{ $ipcr->period?->name }}? Its functions and its approval history go with it, and none of it can be recovered.');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                class="text-sm font-medium text-red-600 hover:underline">Delete</button>
+                        </form>
+                    @endcan
+
                     <a href="{{ route('ipcrs.show', $ipcr) }}"
                         class="inline-flex items-center rounded-md bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 transition-colors hover:bg-gray-50">
                         Open

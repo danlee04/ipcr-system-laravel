@@ -134,15 +134,21 @@ class IpcrOversightTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_an_admin_cannot_delete_someone_elses_draft(): void
+    /**
+     * Scrapping is the one thing an administrator may do to somebody else's
+     * IPCR, and only while it is still moving. Setting the system up leaves
+     * half-built records that reached a Section Head, past the owner's reach;
+     * see DeletingAnIpcrTest for the whole rule, the approved case included.
+     */
+    public function test_an_admin_can_delete_someone_elses_draft(): void
     {
         $ipcr = $this->someoneElsesIpcr();
 
         $this->actingAs($this->userWithRole('admin'))
             ->delete(route('ipcrs.destroy', $ipcr))
-            ->assertForbidden();
+            ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('ipcrs', ['id' => $ipcr->id]);
+        $this->assertDatabaseMissing('ipcrs', ['id' => $ipcr->id]);
     }
 
     /**

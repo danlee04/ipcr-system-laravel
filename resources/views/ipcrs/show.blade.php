@@ -131,7 +131,7 @@
                         {{-- The category is said once, over its own block,
                              rather than repeated down a column of its own. --}}
                         <div
-                            class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-6 py-3">
+                            class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
                             <span
                                 class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {{ $category->badgeClasses() }}">
                                 {{ $category->label() }}
@@ -145,19 +145,23 @@
                             </span>
                         </div>
 
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <table class="w-full table-fixed divide-y divide-gray-200">
                             <thead>
                                 <tr>
-                                    <th class="px-6 py-2 text-left text-xs font-medium uppercase text-gray-400">Output
-                                    </th>
-                                    <th class="px-6 py-2 text-left text-xs font-medium uppercase text-gray-400">Success
-                                        Indicator</th>
-                                    <th class="px-6 py-2 text-left text-xs font-medium uppercase text-gray-400">Actual
-                                        Accomplishment</th>
-                                    <th class="px-6 py-2 text-left text-xs font-medium uppercase text-gray-400">Avg.
-                                        Rating</th>
+                                    <th
+                                        class="w-[27%] px-4 py-2 text-left text-xs font-medium uppercase text-gray-400">
+                                        Output</th>
+                                    <th
+                                        class="w-[27%] px-4 py-2 text-left text-xs font-medium uppercase text-gray-400">
+                                        Success Indicator</th>
+                                    <th
+                                        class="w-[30%] px-4 py-2 text-left text-xs font-medium uppercase text-gray-400">
+                                        Actual Accomplishment</th>
+                                    <th
+                                        class="w-[8%] px-4 py-2 text-left text-xs font-medium uppercase text-gray-400">
+                                        Avg.</th>
                                     @if ($canEdit)
-                                        <th class="px-6 py-2"></th>
+                                        <th class="w-[8%] px-4 py-2"></th>
                                     @endif
                                 </tr>
                             </thead>
@@ -169,18 +173,18 @@
                                              hover. Whole, they set the height of
                                              the row to the longest thing anybody
                                              ever wrote. --}}
-                                        <td class="px-6 py-4 text-sm">
-                                            <p class="line-clamp-2 max-w-xs font-medium text-gray-900"
+                                        <td class="px-4 py-3 align-top text-sm">
+                                            <p class="line-clamp-2 font-medium text-gray-900"
                                                 title="{{ $item->output }}">{{ $item->output }}</p>
                                         </td>
-                                        <td class="px-6 py-4 text-sm">
-                                            <p class="line-clamp-2 max-w-xs text-gray-600"
+                                        <td class="px-4 py-3 align-top text-sm">
+                                            <p class="line-clamp-2 text-gray-600"
                                                 title="{{ $item->success_indicator }}">
                                                 {{ $item->success_indicator ?: '—' }}</p>
                                         </td>
-                                        <td class="px-6 py-4 text-sm">
+                                        <td class="px-4 py-3 align-top text-sm">
                                             @if ($ipcr->showsAccomplishment())
-                                                <p class="line-clamp-2 max-w-xs text-gray-700"
+                                                <p class="line-clamp-2 text-gray-700"
                                                     title="{{ $item->actual_accomplishment }}">
                                                     {{ $item->actual_accomplishment ?: '—' }}</p>
 
@@ -208,12 +212,12 @@
                                                 <span class="text-gray-400">&mdash;</span>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 font-data text-sm text-gray-900">
+                                        <td class="px-4 py-3 align-top font-data text-sm text-gray-900">
                                             {{ $item->average_rating !== null ? number_format((float) $item->average_rating, 2) : '—' }}
                                         </td>
                                         @if ($canEdit)
-                                            <td class="px-6 py-4 text-right text-sm">
-                                                <div class="flex items-center justify-end gap-3">
+                                            <td class="px-4 py-3 align-top text-right text-sm">
+                                                <div class="flex flex-col items-end gap-1">
                                                     <button type="button"
                                                         x-on:click="$dispatch('open-modal', 'edit-item-{{ $item->id }}')"
                                                         class="font-medium text-gray-900 hover:underline">
