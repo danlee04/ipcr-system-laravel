@@ -14,11 +14,16 @@ namespace App\Enums;
  * Who a function reaches is asked separately now, on the function itself: a
  * position, a designation, or everyone.
  */
+/*
+ * Declared in reading order - Core, Support, Strategic - because cases() is
+ * what fills every dropdown and every list, and that is the order the sheet is
+ * read in everywhere else.
+ */
 enum FunctionCategory: string
 {
-    case Strategic = 'strategic';
     case Core      = 'core';
     case Support   = 'support';
+    case Strategic = 'strategic';
 
     /** The wording the user sees on the IPCR form. */
     public function label(): string

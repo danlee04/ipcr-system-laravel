@@ -49,12 +49,64 @@ class ThreeCategoriesTest extends TestCase
     // The three
     // -----------------------------------------------------------------
 
-    public function test_there_are_exactly_three_categories(): void
+    /**
+     * Three, and in reading order. cases() is what fills every dropdown and
+     * every list, so the order it is declared in is the order the hospital
+     * sees - Core first, Strategic last, the same as the sheet.
+     */
+    public function test_there_are_exactly_three_categories_in_reading_order(): void
     {
         $this->assertSame(
-            ['strategic', 'core', 'support'],
+            ['core', 'support', 'strategic'],
             array_column(FunctionCategory::cases(), 'value')
         );
+    }
+
+    /**
+     * The form opens on the category the function actually is.
+     *
+     * It used to open on Strategic whatever it was. The select carried an
+     * x-model pointing at nothing - the Alpine scope behind it had been taken
+     * away when "applies to" became its own question - so Alpine emptied the
+     * select on load and the browser fell back to the first option. Editing a
+     * Core function and pressing Save turned it Strategic.
+     */
+    public function test_the_form_opens_on_the_category_the_function_is(): void
+    {
+        $position = \App\Models\Position::factory()->create();
+
+        $core = \App\Models\JobFunction::create([
+            'category' => FunctionCategory::Core, 'position_id' => $position->id,
+            'title' => 'Provides direct patient care', 'is_active' => true,
+        ]);
+
+        $html = $this->actingAs($this->admin())
+            ->get(route('admin.functions.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringNotContainsString('x-model="category"', $html, 'Nothing may overwrite the chosen category.');
+        $this->assertStringContainsString('value="core" selected', $html);
+
+        $this->assertGreaterThan(0, $core->id);
+    }
+
+    /** And a new one opens on Core, which is what most functions are. */
+    public function test_a_new_function_opens_on_core(): void
+    {
+        \App\Models\Position::factory()->create();
+
+        $html = $this->actingAs($this->admin())
+            ->get(route('admin.functions.index'))
+            ->assertOk()
+            ->getContent();
+
+        // The create modal comes last on the page; its own select is the one
+        // with nothing saved behind it.
+        $create = substr($html, strrpos($html, 'name="category"'));
+
+        $this->assertStringContainsString('value="core" selected', $create);
+        $this->assertStringNotContainsString('value="strategic" selected', $create);
     }
 
     public function test_each_one_is_called_a_function(): void

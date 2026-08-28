@@ -32,7 +32,13 @@
          typed on the catalog entry would only ever be overruled. --}}
     <label class="block sm:max-w-xs">
         <span class="mb-1 block text-sm font-medium text-gray-700">Category</span>
-        <select name="category" x-model="category" required class="w-full rounded-md border-gray-300 text-sm">
+        {{-- No x-model. There is no Alpine scope here holding a category -
+             there was one when this select decided which link fields showed,
+             and that question moved out. What was left bound the value to
+             nothing, so Alpine emptied the select on load and the browser fell
+             back to the first option: every function looked Strategic, new or
+             saved. The server picks it, as it does everywhere else. --}}
+        <select name="category" required class="w-full rounded-md border-gray-300 text-sm">
             @foreach (FunctionCategory::cases() as $category)
                 <option value="{{ $category->value }}" @selected($current === $category->value)>
                     {{ $category->label() }}
@@ -45,7 +51,12 @@
          it is: a Section Head's strategic commitments belong to their post, an
          OIC's core duties to their designation, and the flag ceremony to
          everybody - all three of those are still Core, Support or Strategic. --}}
-    <div x-data="{ via: '{{ $appliesTo }}', division: '{{ $currentDivision }}', section: '{{ $currentSection }}' }"
+    <div x-data="{
+        via: '{{ $appliesTo }}',
+        division: '{{ $currentDivision }}',
+        section: '{{ $currentSection }}',
+        position: '{{ old('position_id', $function?->position_id) }}',
+    }"
         class="space-y-4">
 
         <fieldset class="flex flex-wrap gap-4 rounded-md bg-gray-50 p-3 ring-1 ring-inset ring-gray-200">
@@ -87,7 +98,7 @@
             <div class="grid gap-4 sm:grid-cols-2">
                 <label class="block">
                     <span class="mb-1 block text-sm font-medium text-gray-700">Division</span>
-                    <select x-model="division" x-on:change="section = ''"
+                    <select x-model="division" x-on:change="section = ''; position = ''"
                         class="w-full rounded-md border-gray-300 text-sm">
                         <option value="">All divisions</option>
                         @foreach ($divisions as $division)
@@ -98,7 +109,8 @@
 
                 <label class="block">
                     <span class="mb-1 block text-sm font-medium text-gray-700">Section</span>
-                    <select x-model="section" class="w-full rounded-md border-gray-300 text-sm">
+                    <select x-model="section" x-on:change="position = ''"
+                        class="w-full rounded-md border-gray-300 text-sm">
                         <option value="">All sections</option>
                         @foreach ($sections as $section)
                             <option value="{{ $section->id }}" data-division="{{ $section->division_id }}"
@@ -113,15 +125,19 @@
 
         <label class="block">
             <span class="mb-1 block text-sm font-medium text-gray-700">Position</span>
-            <select name="position_id" class="w-full rounded-md border-gray-300 text-sm"
-                :disabled="via !== 'position'">
+            <select name="position_id" x-model="position" class="w-full rounded-md border-gray-300 text-sm"
+                :disabled="via !== 'position'"
+                x-on:change="
+                    const chosen = $event.target.selectedOptions[0];
+                    division = chosen?.dataset.division ?? '';
+                    section = chosen?.dataset.section ?? '';
+                ">
                 <option value="">— Choose a position —</option>
                 @foreach ($positions as $position)
                     <option value="{{ $position->id }}" data-section="{{ $position->section_id }}"
                         data-division="{{ $position->section?->division_id }}"
                         x-show="(section === '' || section === '{{ $position->section_id }}')
-                            && (division === '' || division === '{{ $position->section?->division_id }}')"
-                        @selected(old('position_id', $function?->position_id) == $position->id)>
+                            && (division === '' || division === '{{ $position->section?->division_id }}')">
                         {{ $position->title }}@if ($position->section)
                             — {{ $position->section->name }}
                         @endif

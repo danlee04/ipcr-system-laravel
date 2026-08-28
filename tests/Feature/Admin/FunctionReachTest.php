@@ -230,6 +230,49 @@ class FunctionReachTest extends TestCase
     }
 
     /**
+     * A position sits in exactly one section and one division, so naming it
+     * says both. The two selects above it fill themselves in.
+     */
+    public function test_choosing_a_position_fills_in_its_division_and_section(): void
+    {
+        $division = \App\Models\Division::factory()->create();
+        $section = \App\Models\Section::factory()->create(['division_id' => $division->id]);
+        $position = Position::factory()->create(['section_id' => $section->id]);
+
+        $html = $this->actingAs($this->admin())
+            ->get(route('admin.functions.index'))
+            ->assertOk()
+            ->getContent();
+
+        // The option carries where it sits, and the select copies it up.
+        $this->assertStringContainsString('data-section="' . $section->id . '"', $html);
+        $this->assertStringContainsString('data-division="' . $division->id . '"', $html);
+        $this->assertStringContainsString('division = chosen?.dataset.division', $html);
+        $this->assertStringContainsString('section = chosen?.dataset.section', $html);
+
+        $this->assertGreaterThan(0, $position->id);
+    }
+
+    /**
+     * And narrowing from above clears what sat below it.
+     *
+     * An option hidden by the filter is still a selected option, and would
+     * still be submitted - the same trap as every other hidden field.
+     */
+    public function test_narrowing_the_division_clears_the_position(): void
+    {
+        Position::factory()->create();
+
+        $html = $this->actingAs($this->admin())
+            ->get(route('admin.functions.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('x-on:change="section = \'\'; position = \'\'"', $html);
+        $this->assertStringContainsString('x-on:change="position = \'\'"', $html);
+    }
+
+    /**
      * The choice belongs to every category, not to one of them. It used to be
      * shown only under Core, which is what tied the audience to the kind of
      * work - and the whole question now stands outside the category entirely.
