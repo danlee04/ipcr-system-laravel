@@ -77,7 +77,7 @@ class AccomplishmentWriter
      * the screen says why.
      *
      * @param  array<string, array{value?: mixed, count?: mixed, total?: mixed}>  $reported
-     * @return list<string> the names of the measures that cannot be graded
+     * @return array<string, string> measure name => why it was refused
      */
     public function ungradable(JobFunction $function, array $reported): array
     {
@@ -92,6 +92,17 @@ class AccomplishmentWriter
                 continue;   // nothing reported is n/a, not an error
             }
 
+            $name = $measure->measure->label();
+
+            // Checked before the bands, and checked on a reported-only measure
+            // too - that one has no bands at all, so this is the only thing
+            // standing between a slip of the keyboard and "-5%" on the sheet.
+            if ($figures['value'] < 0 && ! $measure->acceptsNegative()) {
+                $refused[$name] = "{$name} cannot be below zero.";
+
+                continue;
+            }
+
             if ($measure->bands->isEmpty()) {
                 continue;   // reported only: printed, never graded
             }
@@ -103,7 +114,8 @@ class AccomplishmentWriter
                 : $measure->bands->contains('level', (int) $figures['value']);
 
             if (! $graded) {
-                $refused[] = $measure->measure->label();
+                $refused[$name] = "The figure you reported for {$name} falls outside every level of this "
+                    . 'function\'s rubric. Check it against the levels shown beside the field.';
             }
         }
 

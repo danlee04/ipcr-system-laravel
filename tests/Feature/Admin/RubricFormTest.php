@@ -435,6 +435,52 @@ class RubricFormTest extends TestCase
             ->assertSee('By hand');
     }
 
+    /**
+     * A bound reads as it was typed, not as it is stored.
+     *
+     * The column is decimal:2, so a hundred came back "100.00" and every From
+     * and To on the form read like a sum of money. The hundredths that were
+     * meant stay - 99.99 is the top of a band.
+     */
+    public function test_a_whole_bound_is_shown_whole(): void
+    {
+        $this->store(['rubric' => ['efficiency' => $this->numericBands()]])
+            ->assertSessionHasNoErrors();
+
+        $html = $this->actingAs($this->admin())
+            ->get(route('admin.functions.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('value="100"', $html);
+        $this->assertStringContainsString('value="90"', $html);
+        $this->assertStringContainsString('value="99.99"', $html, 'A real hundredth is left alone.');
+
+        $this->assertStringNotContainsString('value="100.00"', $html);
+        $this->assertStringNotContainsString('value="90.00"', $html);
+    }
+
+    /** An open end stays empty rather than reading as a nought. */
+    public function test_an_open_end_is_left_blank(): void
+    {
+        $this->store(['rubric' => ['efficiency' => $this->numericBands()]]);
+
+        $html = $this->actingAs($this->admin())
+            ->get(route('admin.functions.index'))
+            ->assertOk()
+            ->getContent();
+
+        preg_match_all(
+            '/name="rubric\[[a-z]+\]\[\d\]\[(?:min|max)\]"\s+value="([^"]*)"/',
+            $html,
+            $bounds
+        );
+
+        $this->assertNotEmpty($bounds[1], 'The bounds have to be findable for this to mean anything.');
+        $this->assertContains('', $bounds[1], 'The two open ends carry nothing.');
+        $this->assertNotContains('0', $bounds[1], 'And nothing is not nought.');
+    }
+
     /** The wording already saved has to survive being bound to Alpine. */
     public function test_an_existing_template_is_still_in_the_box(): void
     {

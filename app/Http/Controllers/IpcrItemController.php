@@ -190,14 +190,10 @@ class IpcrItemController extends Controller
         return $function->hasRubric() ? $function : null;
     }
 
-    /** @param  list<string>  $measures */
-    private function ungradableMessage(array $measures): string
+    /** @param  array<string, string>  $reasons  measure name => why */
+    private function ungradableMessage(array $reasons): string
     {
-        $named = implode(' and ', $measures);
-        $verb = count($measures) === 1 ? 'falls' : 'fall';
-
-        return "The figure you reported for {$named} {$verb} outside every level of this function's rubric. "
-            . 'Check it against the levels shown beside the field. Nothing was saved.';
+        return implode(' ', $reasons) . ' Nothing was saved.';
     }
 
 }

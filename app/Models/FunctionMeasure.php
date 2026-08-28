@@ -49,6 +49,25 @@ class FunctionMeasure extends Model
     }
 
     /**
+     * Does a figure below zero mean anything here?
+     *
+     * Only where the scale itself is written across zero: a timeliness ladder
+     * counted from the deadline, where minus five is five days early and earns
+     * the top mark. The bands say so themselves - a bound below zero is the
+     * only reason to write one.
+     *
+     * Everywhere else a negative is a typo. A percentage ladder is open at the
+     * bottom so that anything under seventy scores a one, and minus five went
+     * through the same door; a reported-only figure has no ladder at all and
+     * nothing was checking it.
+     */
+    public function acceptsNegative(): bool
+    {
+        return $this->bands->contains(fn (FunctionRatingBand $band): bool => ($band->min_value !== null && (float) $band->min_value < 0)
+            || ($band->max_value !== null && (float) $band->max_value < 0));
+    }
+
+    /**
      * Is a mark worked out from this figure, or is it only printed?
      *
      * No levels means nothing to grade against. Plenty of wordings carry a

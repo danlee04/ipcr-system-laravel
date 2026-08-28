@@ -8,6 +8,22 @@
     // What is already on the function, so the panels open on what is there
     // rather than resetting every measure to n/a.
     $saved = $function?->measures->keyBy(fn ($m) => $m->measure->value) ?? collect();
+
+    /*
+     * A bound as it was typed, not as it is stored.
+     *
+     * The column is decimal:2, so a hundred comes back "100.00" and every
+     * From and To on the form reads like a sum of money. The hundredths matter
+     * where they were meant - 99.99 is the top of a band and stays - so only
+     * the trailing zeros go.
+     */
+    $bound = function ($value): string {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        return rtrim(rtrim(number_format((float) $value, 2, '.', ''), '0'), '.');
+    };
 @endphp
 
 {{-- How this function is graded.
@@ -133,13 +149,13 @@
                                     <td class="py-1 pe-2" x-show="answer !== 'descriptor'" x-cloak>
                                         <input type="number" step="0.01"
                                             name="rubric[{{ $measure->value }}][{{ $level }}][min]"
-                                            value="{{ old("rubric.{$measure->value}.{$level}.min", $band?->min_value) }}"
+                                            value="{{ old("rubric.{$measure->value}.{$level}.min", $bound($band?->min_value)) }}"
                                             class="w-full rounded-md border-gray-300 py-1 text-center font-data text-sm">
                                     </td>
                                     <td class="py-1" x-show="answer !== 'descriptor'" x-cloak>
                                         <input type="number" step="0.01"
                                             name="rubric[{{ $measure->value }}][{{ $level }}][max]"
-                                            value="{{ old("rubric.{$measure->value}.{$level}.max", $band?->max_value) }}"
+                                            value="{{ old("rubric.{$measure->value}.{$level}.max", $bound($band?->max_value)) }}"
                                             class="w-full rounded-md border-gray-300 py-1 text-center font-data text-sm">
                                     </td>
                                 </tr>
