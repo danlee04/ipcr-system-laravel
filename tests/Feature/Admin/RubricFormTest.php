@@ -201,6 +201,121 @@ class RubricFormTest extends TestCase
         ])->assertSessionHasErrors('accomplishment_template');
     }
 
+    /**
+     * A ratio belongs to a counted measure and nothing else.
+     *
+     * This one used to pass and then print "{t_ratio}" in the middle of the
+     * sentence on somebody's IPCR: the template was checked for having at
+     * least one good placeholder, not for every placeholder being good.
+     */
+    public function test_a_ratio_on_a_typed_number_is_refused(): void
+    {
+        $this->store([
+            'rubric'                  => ['timeliness' => $this->numericBands(['unit' => 'days'])],
+            'accomplishment_template' => 'Submitted within {t} days ({t_ratio})',
+        ])->assertSessionHasErrors('accomplishment_template');
+    }
+
+    public function test_the_same_ratio_is_fine_once_the_measure_is_counted(): void
+    {
+        $this->store([
+            'rubric'                  => ['timeliness' => $this->numericBands(['answer' => MeasureAnswer::Count->value])],
+            'accomplishment_template' => '{t}% ({t_ratio}) submitted on time',
+        ])->assertSessionHasNoErrors();
+    }
+
+    /** A misspelt placeholder is the same mistake wearing a different hat. */
+    public function test_a_placeholder_that_does_not_exist_is_refused(): void
+    {
+        $this->store([
+            'rubric'                  => ['efficiency' => $this->numericBands()],
+            'accomplishment_template' => '{e}% of DTR submitted in {days} days',
+        ])->assertSessionHasErrors('accomplishment_template');
+    }
+
+    /** And the error says which one, and what there was to choose from. */
+    public function test_the_error_names_the_offending_placeholder(): void
+    {
+        $this->store([
+            'rubric'                  => ['efficiency' => $this->numericBands()],
+            'accomplishment_template' => '{e}% within {t} days',
+        ])->assertInvalid([
+            // Which one is wrong, and what there was to choose from.
+            'accomplishment_template' => '{t}',
+        ]);
+    }
+
+    /**
+     * The message names the setting to change, not only the list to pick from.
+     *
+     * The list alone leaves you to work backwards from what is allowed to what
+     * you would have to have done differently, which is the wrong way round.
+     */
+    public function test_the_error_says_how_to_get_what_was_asked_for(): void
+    {
+        $this->store([
+            'rubric'                  => ['timeliness' => $this->numericBands(['answer' => MeasureAnswer::Count->value])],
+            'accomplishment_template' => '{e}% ({e_ratio}) submitted {t_when}',
+        ])->assertInvalid([
+            'accomplishment_template' => 'Efficiency is not graded on a figure yet',
+        ]);
+    }
+
+    public function test_the_error_explains_a_days_reading_on_a_counted_measure(): void
+    {
+        $this->store([
+            'rubric'                  => ['timeliness' => $this->numericBands(['answer' => MeasureAnswer::Count->value])],
+            'accomplishment_template' => 'Submitted {t_when}',
+        ])->assertInvalid([
+            'accomplishment_template' => 'not answered by a number in days',
+        ]);
+    }
+
+    public function test_the_error_explains_a_ratio_on_a_typed_number(): void
+    {
+        $this->store([
+            'rubric'                  => ['timeliness' => $this->numericBands(['unit' => 'days'])],
+            'accomplishment_template' => 'Submitted {t} days ({t_ratio})',
+        ])->assertInvalid([
+            'accomplishment_template' => 'Only a counted measure has parts to name',
+        ]);
+    }
+
+    /** One measure, one reason - not the same sentence twice over. */
+    public function test_two_placeholders_on_the_same_measure_are_explained_once(): void
+    {
+        $response = $this->store([
+            'rubric'                  => ['timeliness' => $this->numericBands(['unit' => 'days'])],
+            'accomplishment_template' => '{e}% ({e_ratio}) submitted {t_when}',
+        ]);
+
+        // The bag comes back in more than one shape depending on how the
+        // session was flashed; flattening it sidesteps the question.
+        $message = implode(' ', \Illuminate\Support\Arr::flatten(
+            (array) $response->getSession()->get('errors')
+        ));
+
+        $this->assertSame(1, substr_count($message, 'Efficiency is not graded on a figure yet'));
+    }
+
+    /** A scale in days may say its reading in words. */
+    public function test_the_when_placeholder_is_accepted_on_a_measure_in_days(): void
+    {
+        $this->store([
+            'rubric'                  => ['timeliness' => $this->numericBands(['unit' => 'days'])],
+            'accomplishment_template' => 'Bid Evaluation Report submitted {t_when}',
+        ])->assertSessionHasNoErrors();
+    }
+
+    /** "5 % before the deadline" is nonsense, so it is refused on a percentage. */
+    public function test_the_when_placeholder_is_refused_on_another_unit(): void
+    {
+        $this->store([
+            'rubric'                  => ['timeliness' => $this->numericBands(['unit' => '%'])],
+            'accomplishment_template' => 'Submitted {t_when}',
+        ])->assertSessionHasErrors('accomplishment_template');
+    }
+
     public function test_a_template_naming_a_figure_is_kept(): void
     {
         $this->store([
@@ -259,6 +374,42 @@ class RubricFormTest extends TestCase
         $this->actingAs($this->admin())
             ->get(route('admin.functions.index'))
             ->assertOk()
-            ->assertSee('function functionRubric()', false);
+            ->assertSee('function functionRubric(', false);
+    }
+
+    /**
+     * A placeholder the rubric cannot fill is flagged as it is typed.
+     *
+     * The list of what is available was already under the box, and people
+     * still pasted {e} into a rubric with no Efficiency - a quiet list is easy
+     * to read past. This says it back to them, and says which panel to change.
+     */
+    public function test_the_form_flags_an_unusable_placeholder_before_saving(): void
+    {
+        Position::factory()->create();
+
+        $html = $this->actingAs($this->admin())
+            ->get(route('admin.functions.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringContainsString('x-text="unusable.join(\' \')"', $html);
+        $this->assertStringContainsString('is not graded on a figure yet.', $html);
+        $this->assertStringContainsString('is not answered by counting out of a total.', $html);
+        $this->assertStringContainsString('is not answered by a number in days.', $html);
+    }
+
+    /** The wording already saved has to survive being bound to Alpine. */
+    public function test_an_existing_template_is_still_in_the_box(): void
+    {
+        $this->store([
+            'rubric'                  => ['efficiency' => $this->numericBands()],
+            'accomplishment_template' => '{e}% of DTR submitted every 5th day',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.functions.index'))
+            ->assertOk()
+            ->assertSee('{e}% of DTR submitted every 5th day', false);
     }
 }

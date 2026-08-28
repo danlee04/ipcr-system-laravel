@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * What the employee reported for one measure on one IPCR line.
  *
  * The count and total are kept alongside the percentage they make, because
- * the accomplishment sentence says "12 of 12" and that cannot be recovered
+ * the accomplishment sentence says "12/12" and that cannot be recovered
  * from 100% afterwards.
  */
 class IpcrItemMeasure extends Model

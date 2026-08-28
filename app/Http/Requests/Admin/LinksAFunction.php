@@ -161,8 +161,15 @@ trait LinksAFunction
     }
 
     /**
-     * A template with no placeholder would read the same every period, which
-     * is worse than no template - it looks filled in.
+     * Every placeholder in the template has to be one this rubric can fill,
+     * and there has to be at least one.
+     *
+     * Both halves matter. A template with no placeholder reads the same every
+     * period, which is worse than no template - it looks filled in. And a
+     * placeholder nothing fills is left exactly as typed, so the sentence on
+     * somebody's IPCR ends up carrying "{t_ratio}" in the middle of it. That
+     * is the one that catches people out: a ratio exists only where the
+     * measure is counted, and a typed number has no ratio to give.
      */
     private function templateMustNameAFigure(Validator $validator): void
     {
@@ -172,28 +179,133 @@ trait LinksAFunction
             return;
         }
 
+        $allowed = $this->fillablePlaceholders();
+
+        preg_match_all('/\{[^}]*\}/', $template, $found);
+        $used = array_unique($found[0]);
+
+        if ($used === []) {
+            $validator->errors()->add(
+                'accomplishment_template',
+                'Put a placeholder where the measured figure goes, or the sentence reads the same every period.'
+            );
+
+            return;
+        }
+
+        $unknown = array_diff($used, $allowed);
+
+        if ($unknown === []) {
+            return;
+        }
+
+        // Saying what is allowed is not the same as saying how to get what was
+        // wanted. Somebody who typed {t_when} wants the days reading, and the
+        // useful reply is which setting gives it to them - not a list they
+        // then have to work backwards from.
+        $reasons = collect($unknown)
+            ->map(fn (string $token): ?string => $this->whyUnusable($token))
+            ->filter()
+            ->unique()
+            ->implode(' ');
+
+        $validator->errors()->add('accomplishment_template', trim(sprintf(
+            '%s %s nothing this rubric can fill, so it would be printed as written. %s Available: %s',
+            implode(' and ', $unknown),
+            count($unknown) === 1 ? 'names' : 'name',
+            $reasons,
+            $allowed === [] ? 'none until a measure is graded on a figure' : implode(', ', $allowed),
+        )));
+    }
+
+    /**
+     * Why one placeholder cannot be filled, in terms of the setting to change.
+     *
+     * Null when nothing specific can be said - a plain typo, or one of the
+     * short forms - and the list of what is available says it better.
+     */
+    private function whyUnusable(string $token): ?string
+    {
         $rubric = $this->input('rubric', []);
-        $tokens = ['{value}', '{ratio}'];
+
+        [$head, $suffix] = array_pad(explode('_', trim($token, '{}'), 2), 2, null);
+
+        $measure = collect(RatingMeasure::cases())
+            ->first(fn (RatingMeasure $m): bool => $m->key() === $head);
+
+        if ($measure === null) {
+            return null;
+        }
+
+        $answer = MeasureAnswer::tryFrom((string) ($rubric[$measure->value]['answer'] ?? ''));
+
+        if (! $answer?->isNumeric()) {
+            return "{$measure->label()} is not graded on a figure yet - answer it by a number or a count first.";
+        }
+
+        return match ($suffix) {
+            'ratio', 'count', 'total' => "Only a counted measure has parts to name, and {$measure->label()} is answered by a typed number.",
+            'when' => "A before and an after need days, and {$measure->label()} is not answered by a number in days.",
+            default => null,
+        };
+    }
+
+    /**
+     * The placeholders the rubric being saved can actually supply.
+     *
+     * Kept in step with AccomplishmentWriter::render(), which is what does the
+     * filling - a token offered here and not filled there is the bug this
+     * exists to prevent.
+     *
+     * @return list<string>
+     */
+    private function fillablePlaceholders(): array
+    {
+        $rubric = $this->input('rubric', []);
+        $tokens = [];
+        $numeric = [];
 
         foreach (RatingMeasure::cases() as $measure) {
             $answer = MeasureAnswer::tryFrom((string) ($rubric[$measure->value]['answer'] ?? ''));
 
-            if ($answer?->isNumeric()) {
-                $key = $measure->key();
-                $tokens = array_merge($tokens, ["{{$key}}", "{{$key}_ratio}", "{{$key}_count}", "{{$key}_total}"]);
+            if (! $answer?->isNumeric()) {
+                continue;
+            }
+
+            $inDays = $answer === MeasureAnswer::Number
+                && ($rubric[$measure->value]['unit'] ?? null) === 'days';
+
+            $numeric[] = ['answer' => $answer, 'inDays' => $inDays];
+            $key = $measure->key();
+            $tokens[] = "{{$key}}";
+
+            // Only a counted measure has parts to name. A typed number is one
+            // figure and nothing divides it.
+            if ($answer === MeasureAnswer::Count) {
+                $tokens = array_merge($tokens, ["{{$key}_ratio}", "{{$key}_count}", "{{$key}_total}"]);
+            }
+
+            // And only a scale in days has a before and an after.
+            if ($inDays) {
+                $tokens[] = "{{$key}_when}";
             }
         }
 
-        foreach ($tokens as $token) {
-            if (str_contains($template, $token)) {
-                return;
+        // With exactly one figure in the whole rubric, naming which one is
+        // ceremony - there is only one it could mean.
+        if (count($numeric) === 1) {
+            $tokens[] = '{value}';
+
+            if ($numeric[0]['answer'] === MeasureAnswer::Count) {
+                $tokens[] = '{ratio}';
+            }
+
+            if ($numeric[0]['inDays']) {
+                $tokens[] = '{when}';
             }
         }
 
-        $validator->errors()->add(
-            'accomplishment_template',
-            'Put a placeholder where the measured figure goes, or the sentence reads the same every period.'
-        );
+        return $tokens;
     }
 
     /**

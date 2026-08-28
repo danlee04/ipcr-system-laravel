@@ -70,7 +70,11 @@ class FunctionMeasure extends Model
      * The placeholders this measure offers a template.
      *
      * A counted measure offers the parts as well as the percentage, because
-     * the sentence usually wants to say "12 of 12" rather than "100%".
+     * the sentence usually wants to say "(12/12)" beside the percentage.
+     *
+     * A measure in days offers the reading in words. Those scales are written
+     * from the deadline - minus is early, plus is late - and nobody wants "-5"
+     * sitting in the middle of a sentence.
      *
      * @return list<string>
      */
@@ -89,6 +93,21 @@ class FunctionMeasure extends Model
             $tokens[] = '{' . $key . '_total}';
         }
 
+        if ($this->readsAsDaysFromDeadline()) {
+            $tokens[] = '{' . $key . '_when}';
+        }
+
         return $tokens;
+    }
+
+    /**
+     * Is this figure a number of days either side of a deadline?
+     *
+     * Only then does "before" or "after" mean anything. On a percentage it
+     * would read "5 % before the deadline", so it is not offered at all.
+     */
+    public function readsAsDaysFromDeadline(): bool
+    {
+        return $this->answer === MeasureAnswer::Number && $this->unit === 'days';
     }
 }

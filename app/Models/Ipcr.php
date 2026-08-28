@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\FunctionCategory;
 use App\Enums\IpcrMode;
 use App\Enums\IpcrStatus;
 use Illuminate\Database\Eloquent\Builder;
@@ -160,44 +159,6 @@ class Ipcr extends Model
                     ->orWhere('actual_accomplishment', '');
             })
             ->count();
-    }
-
-    /**
-     * The total weight carried by each category that has items.
-     *
-     * Only categories with items appear. An item with no weight counts as
-     * zero rather than being skipped, so a blank weight shows up as a
-     * shortfall instead of quietly vanishing.
-     *
-     * @return array<string, float>
-     */
-    public function weightTotalsByCategory(): array
-    {
-        return $this->items
-            ->groupBy(fn (IpcrItem $item): string => $item->category instanceof FunctionCategory
-                ? $item->category->value
-                : (string) $item->category)
-            ->map(fn ($lines): float => round(
-                $lines->sum(fn (IpcrItem $item): float => (float) ($item->weight ?? 0)),
-                2
-            ))
-            ->all();
-    }
-
-    /**
-     * Categories whose weights do not add up to 100%, and what they add up to.
-     *
-     * A small tolerance is allowed so that a legitimate 33.33 + 33.33 + 33.34
-     * is not rejected for being a hundredth out.
-     *
-     * @return array<string, float>
-     */
-    public function categoriesWithBadWeightTotals(float $tolerance = 0.01): array
-    {
-        return array_filter(
-            $this->weightTotalsByCategory(),
-            fn (float $total): bool => abs($total - 100.0) > $tolerance
-        );
     }
 
     /**

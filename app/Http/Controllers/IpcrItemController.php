@@ -9,40 +9,102 @@ use App\Models\Ipcr;
 use App\Models\IpcrItem;
 use App\Models\JobFunction;
 use App\Services\AccomplishmentWriter;
+use App\Services\FunctionCatalogService;
+use App\Services\ItemWeights;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class IpcrItemController extends Controller
 {
     /** Add one function/output line to a draft or returned IPCR. */
-    public function store(StoreIpcrItemRequest $request, Ipcr $ipcr): RedirectResponse
+    public function store(StoreIpcrItemRequest $request, Ipcr $ipcr, ItemWeights $weights): RedirectResponse
     {
         $this->authorize('update', $ipcr);
         abort_unless($ipcr->isEditableByOwner(), 403, 'This IPCR can no longer be edited.');
 
         $data = $request->validated();
-
-        // Left blank, the weight takes whatever the category has not spent.
-        // The first line takes all 100, and each one after takes the
-        // remainder, so the total is right at every point rather than only
-        // once somebody has done the arithmetic.
-        if (($data['weight'] ?? null) === null || $data['weight'] === '') {
-            $data['weight'] = $this->remainingWeight($ipcr, $data['category']);
-        }
-
-        if ($overflow = $this->weightOverflow($ipcr, $data['category'], (float) $data['weight'])) {
-            return back()->with('error', $overflow);
-        }
-
         $data['sort_order'] = ((int) $ipcr->items()->max('sort_order')) + 1;
 
         $ipcr->items()->create($data);
+
+        // The category's hundred is shared again across everything in it, this
+        // new line included. Nobody types a weight, so nothing here can be
+        // left over or spent twice.
+        $weights->share($ipcr, FunctionCategory::from($data['category']));
 
         return back()->with('status', 'Function added.');
     }
 
     /**
-     * Edit an existing line - output, indicator, weight, accomplishment.
+     * Add every function ticked off the catalog, in one go.
+     *
+     * Separate from store() because it asks a different question. That one
+     * takes an output somebody typed; this one takes a list of ids and reads
+     * everything else off the catalog, so the wording on the IPCR matches the
+     * wording HR wrote once.
+     */
+    public function addFromCatalog(
+        Request $request,
+        Ipcr $ipcr,
+        FunctionCatalogService $catalog,
+        ItemWeights $weights,
+    ): RedirectResponse {
+        $this->authorize('update', $ipcr);
+        abort_unless($ipcr->isEditableByOwner(), 403, 'This IPCR can no longer be edited.');
+
+        $validated = $request->validate([
+            'job_function_ids'   => ['required', 'array', 'min:1'],
+            'job_function_ids.*' => ['integer'],
+        ], [], ['job_function_ids' => 'functions']);
+
+        // Checked against this employee's own catalog rather than trusted. The
+        // form sends a list of numbers, and a crafted one can name anything.
+        $offered = $catalog->availableFor($ipcr->employee)->all();
+
+        $chosen = collect($validated['job_function_ids'])
+            ->unique()
+            ->map(fn (int $id): ?JobFunction => $offered->get($id))
+            ->filter();
+
+        // Already there is not an error, it is a second click.
+        $already = $ipcr->items()->whereNotNull('job_function_id')->pluck('job_function_id')->all();
+        $adding = $chosen->reject(fn (JobFunction $f): bool => in_array($f->id, $already, true))->values();
+
+        if ($adding->isEmpty()) {
+            return back()->with('error', 'Nothing new to add - those are already on your IPCR.');
+        }
+
+        DB::transaction(function () use ($ipcr, $adding, $weights): void {
+            $sort = (int) $ipcr->items()->max('sort_order');
+
+            foreach ($adding as $function) {
+                $ipcr->items()->create([
+                    'job_function_id'   => $function->id,
+                    'category'          => $function->category,
+                    'output'            => $function->title,
+                    'success_indicator' => $function->success_indicator,
+                    'sort_order'        => ++$sort,
+                ]);
+            }
+
+            // Once per category, after all of them are in, rather than once
+            // per line - the shares would otherwise be worked out and thrown
+            // away again for every function added.
+            foreach ($adding->map(fn (JobFunction $f) => $f->category)->unique() as $category) {
+                $weights->share($ipcr, $category);
+            }
+        });
+
+        $count = $adding->count();
+
+        return back()->with('status', $count === 1
+            ? 'Function added.'
+            : "{$count} functions added.");
+    }
+
+    /**
+     * Edit an existing line - output, indicator, accomplishment.
      *
      * On a line that came from a graded catalog function the employee reports
      * figures instead of writing a sentence: the rubric turns those into the
@@ -71,10 +133,6 @@ class IpcrItemController extends Controller
             return back()->with('error', $this->ungradableMessage($refused));
         }
 
-        if ($overflow = $this->weightOverflow($ipcr, $item->category, (float) ($data['weight'] ?? 0), $item->id)) {
-            return back()->with('error', $overflow);
-        }
-
         DB::transaction(function () use ($item, $data, $rubric, $reported, $writer): void {
             $item->update($data);
 
@@ -87,13 +145,18 @@ class IpcrItemController extends Controller
     }
 
     /** Remove a line before submission. */
-    public function destroy(Ipcr $ipcr, IpcrItem $item): RedirectResponse
+    public function destroy(Ipcr $ipcr, IpcrItem $item, ItemWeights $weights): RedirectResponse
     {
         $this->authorize('update', $ipcr);
         abort_unless($ipcr->isEditableByOwner(), 403, 'This IPCR can no longer be edited.');
         abort_if($item->ipcr_id !== $ipcr->id, 404);
 
+        $category = $item->category;
+
         $item->delete();
+
+        // Its share goes back to whatever is left in the category.
+        $weights->share($ipcr, $category);
 
         return back()->with('status', 'Function removed.');
     }
@@ -128,52 +191,4 @@ class IpcrItemController extends Controller
             . 'Check it against the levels shown beside the field. Nothing was saved.';
     }
 
-    /**
-     * How much of this category's 100% is still unspent.
-     *
-     * Never negative: a category already full gives the next line nothing
-     * rather than a number that would fail the guard below.
-     */
-    private function remainingWeight(Ipcr $ipcr, FunctionCategory|string $category): float
-    {
-        $category = $category instanceof FunctionCategory ? $category : FunctionCategory::from($category);
-
-        $used = (float) $ipcr->items()->where('category', $category->value)->sum('weight');
-
-        return max(0, round(100 - $used, 2));
-    }
-
-    /**
-     * Would this weight push its category past 100%?
-     *
-     * Caught here as well as at submission because the mistake is far cheaper
-     * to fix on the line that caused it than in a list of twenty. Returns the
-     * message to show, or null when the weight fits.
-     *
-     * $ignoreItemId excludes the line being edited from the running total, so
-     * re-saving an unchanged weight is never treated as an overflow.
-     */
-    private function weightOverflow(Ipcr $ipcr, FunctionCategory|string $category, float $weight, ?int $ignoreItemId = null): ?string
-    {
-        $category = $category instanceof FunctionCategory
-            ? $category
-            : FunctionCategory::from($category);
-
-        $existing = (float) $ipcr->items()
-            ->where('category', $category->value)
-            ->when($ignoreItemId, fn ($query) => $query->whereKeyNot($ignoreItemId))
-            ->sum('weight');
-
-        // A hundredth of tolerance, matching the submit guard, so thirds that
-        // add up to 100.00 are not rejected by floating point noise.
-        if ($existing + $weight <= 100.01) {
-            return null;
-        }
-
-        $remaining = max(0, round(100 - $existing, 2));
-        $short = rtrim(rtrim(number_format($remaining, 2, '.', ''), '0'), '.');
-
-        return "{$category->label()} already uses " . rtrim(rtrim(number_format($existing, 2, '.', ''), '0'), '.')
-            . "% of its 100%. There is {$short}% left.";
-    }
 }

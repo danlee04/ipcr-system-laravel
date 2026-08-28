@@ -23,7 +23,6 @@ class StoreIpcrItemRequest extends FormRequest
             'category'           => ['required', Rule::enum(FunctionCategory::class)],
             'output'             => ['required', 'string'],
             'success_indicator'  => ['nullable', 'string'],
-            'weight'             => ['nullable', 'numeric', 'min:0', 'max:100'],
         ];
     }
 }

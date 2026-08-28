@@ -138,8 +138,15 @@ class AccomplishmentWriter
             if ($measure->answer === MeasureAnswer::Count) {
                 $replacements['{' . $key . '_count}'] = $this->tidy($figures['count']);
                 $replacements['{' . $key . '_total}'] = $this->tidy($figures['total']);
+                // A slash, not the word: these sit in brackets beside the
+                // percentage - "100% (7/7)" - where "7 of 7" reads as prose in
+                // the middle of a figure.
                 $replacements['{' . $key . '_ratio}'] = $this->tidy($figures['count'])
-                    . ' of ' . $this->tidy($figures['total']);
+                    . '/' . $this->tidy($figures['total']);
+            }
+
+            if ($measure->readsAsDaysFromDeadline()) {
+                $replacements['{' . $key . '_when}'] = $this->daysFromDeadline($figures['value']);
             }
         }
 
@@ -153,6 +160,10 @@ class AccomplishmentWriter
             if ($only->answer === MeasureAnswer::Count) {
                 $replacements['{ratio}'] = $replacements['{' . $key . '_ratio}'] ?? '';
             }
+
+            if ($only->readsAsDaysFromDeadline()) {
+                $replacements['{when}'] = $replacements['{' . $key . '_when}'] ?? '';
+            }
         }
 
         return $replacements === []
@@ -165,7 +176,7 @@ class AccomplishmentWriter
      *
      * A count is divided here rather than stored twice over: the bands are
      * read against the percentage, and the two parts are kept only so the
-     * sentence can say "12 of 12".
+     * sentence can say "12/12".
      *
      * @param  array{value?: mixed, count?: mixed, total?: mixed}  $input
      * @return array{value: float, count: ?float, total: ?float}|null
@@ -200,6 +211,29 @@ class AccomplishmentWriter
         }
 
         return (float) $raw;
+    }
+
+    /**
+     * A signed number of days, said the way a person would say it.
+     *
+     * The scale is written from the deadline, so the sign is the whole point:
+     * -5 is five days early and 5 is five days late. The template author gets
+     * the sign, the plural and the on-time case for free, because getting any
+     * of the three wrong makes the sheet read badly and none of them is their
+     * problem to solve.
+     */
+    private function daysFromDeadline(float $days): string
+    {
+        if ($days === 0.0) {
+            return 'on time';
+        }
+
+        $count = $this->tidy(abs($days));
+        $noun = abs($days) === 1.0 ? 'day' : 'days';
+
+        return $days < 0
+            ? "{$count} {$noun} before the deadline"
+            : "{$count} {$noun} after the deadline";
     }
 
     /** 100 rather than 100.00, but 99.5 kept as 99.5. */

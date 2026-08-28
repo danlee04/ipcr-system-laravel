@@ -159,7 +159,7 @@ class ReportingFiguresTest extends TestCase
         $this->report($item, ['efficiency' => ['count' => 11, 'total' => 12]]);
 
         $item = $item->fresh();
-        $this->assertSame('11 of 12 reports submitted on time', $item->actual_accomplishment);
+        $this->assertSame('11/12 reports submitted on time', $item->actual_accomplishment);
         $this->assertSame('4.00', $item->efficiency_rating, '11 of 12 is 91.67%, which is a 4.');
     }
 

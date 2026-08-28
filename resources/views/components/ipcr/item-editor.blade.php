@@ -27,7 +27,13 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <h2 class="text-lg font-semibold text-gray-900">Edit this function</h2>
-                <p class="mt-0.5 text-sm text-gray-600">{{ $item->category->label() }}</p>
+                {{-- The weight is not asked for and cannot be typed. Saying
+                     what it is here answers the question before it is asked. --}}
+                <p class="mt-0.5 text-sm text-gray-600">
+                    {{ $item->category->label() }} &middot;
+                    <span class="font-data">{{ $tidy($item->weight) }}%</span> of the category,
+                    shared evenly
+                </p>
             </div>
             @if ($rubric->isNotEmpty())
                 <span
@@ -38,15 +44,9 @@
         </div>
 
         <div class="grid gap-4 sm:grid-cols-6">
-            <label class="sm:col-span-4">
+            <label class="sm:col-span-6">
                 <span class="mb-1 block text-xs font-medium text-gray-600">Output / objective</span>
                 <textarea name="output" rows="2" required class="w-full rounded-md border-gray-300 text-sm">{{ $item->output }}</textarea>
-            </label>
-
-            <label class="sm:col-span-2">
-                <span class="mb-1 block text-xs font-medium text-gray-600">Weight %</span>
-                <input type="number" step="0.01" min="0" max="100" name="weight"
-                    value="{{ $tidy($item->weight) }}" class="w-full rounded-md border-gray-300 text-sm">
             </label>
 
             <label class="sm:col-span-6">

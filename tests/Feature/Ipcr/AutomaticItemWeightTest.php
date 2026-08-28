@@ -6,28 +6,25 @@ use App\Enums\FunctionCategory;
 use App\Enums\IpcrStatus;
 use App\Models\Employee;
 use App\Models\Ipcr;
-use App\Models\IpcrItem;
+use App\Models\IpcrPeriod;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * The weight on an IPCR line fills itself in.
+ * The weight of a line is worked out, not typed.
  *
- * Weights have to total 100 in each category before an IPCR can be submitted.
- * Making the employee work that out by hand is arithmetic the system already
- * knows how to do - and getting it wrong is only discovered at the very last
- * step, when they press Submit.
- *
- * So a line added without a weight takes whatever is left in its category.
- * The first one takes 100, and each one after takes the remainder, which
- * means the total is correct at every point rather than only at the end.
+ * Within a category the lines share the hundred equally: three core functions
+ * are 33.33, 33.33 and 33.34. That is what "automatic" has to mean, because
+ * the alternative - the first line taking all hundred and every line after it
+ * taking nothing - passes the submit guard while quietly making every function
+ * but the first count for nothing at all.
  */
 class AutomaticItemWeightTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Employee $owner;
+    private User $owner;
 
     private Ipcr $ipcr;
 
@@ -35,124 +32,143 @@ class AutomaticItemWeightTest extends TestCase
     {
         parent::setUp();
 
-        $this->owner = Employee::factory()->create(['user_id' => User::factory()->create()->id]);
+        $this->owner = User::factory()->create();
+        $employee = Employee::factory()->create(['user_id' => $this->owner->id]);
+
         $this->ipcr = Ipcr::factory()->create([
-            'employee_id' => $this->owner->id,
-            'status'      => IpcrStatus::Draft,
+            'employee_id'    => $employee->id,
+            'ipcr_period_id' => IpcrPeriod::factory()->create(['status' => 'open'])->id,
+            'status'         => IpcrStatus::Draft,
         ]);
+
+        $this->owner = $this->owner->fresh();
     }
 
-    private function add(array $overrides = []): void
+    private function add(string $output, FunctionCategory $category = FunctionCategory::Core, array $extra = []): void
     {
-        $this->actingAs($this->owner->user)
-            ->post(route('ipcrs.items.store', $this->ipcr), $overrides + [
-                'category' => FunctionCategory::Core->value,
-                'output'   => 'Something worth doing',
-            ])
+        $this->actingAs($this->owner)
+            ->post(route('ipcrs.items.store', $this->ipcr), array_merge([
+                'category' => $category->value,
+                'output'   => $output,
+            ], $extra))
             ->assertSessionHasNoErrors();
     }
 
-    private function weights(FunctionCategory $category = FunctionCategory::Core): array
+    /** @return array<string, string> output => weight */
+    private function weights(): array
     {
-        return $this->ipcr->items()
-            ->where('category', $category->value)
-            ->orderBy('sort_order')
-            ->pluck('weight')
-            ->map(fn ($w) => (float) $w)
-            ->all();
+        return $this->ipcr->items()->orderBy('id')->pluck('weight', 'output')->all();
     }
 
-    // -----------------------------------------------------------------
-    // Filling itself in
-    // -----------------------------------------------------------------
-
-    public function test_the_first_function_in_a_category_takes_all_of_it(): void
+    public function test_one_function_carries_the_whole_category(): void
     {
-        $this->add();
+        $this->add('Only one');
 
-        $this->assertSame([100.0], $this->weights());
+        $this->assertSame(['Only one' => '100.00'], $this->weights());
     }
 
-    public function test_the_next_one_takes_what_is_left(): void
+    public function test_two_functions_split_it_evenly(): void
     {
-        $this->add(['weight' => 60]);
-        $this->add();
+        $this->add('First');
+        $this->add('Second');
 
-        $this->assertSame([60.0, 40.0], $this->weights());
+        $this->assertSame(['First' => '50.00', 'Second' => '50.00'], $this->weights());
     }
 
-    /** Three lines, none of them weighted by hand, still total 100. */
-    public function test_the_total_is_never_wrong(): void
+    /** The odd hundredth goes to the last line, so the total is exactly 100. */
+    public function test_three_functions_split_it_to_the_hundredth(): void
     {
-        $this->add(['weight' => 30]);
-        $this->add(['weight' => 25]);
-        $this->add();
+        $this->add('First');
+        $this->add('Second');
+        $this->add('Third');
 
-        $this->assertSame(100.0, array_sum($this->weights()));
+        $this->assertSame(
+            ['First' => '33.33', 'Second' => '33.33', 'Third' => '33.34'],
+            $this->weights()
+        );
     }
 
-    public function test_a_weight_typed_by_hand_still_wins(): void
+    public function test_the_category_still_totals_one_hundred(): void
     {
-        $this->add(['weight' => 35]);
+        $this->add('First');
+        $this->add('Second');
+        $this->add('Third');
 
-        $this->assertSame([35.0], $this->weights());
+        $this->assertSame(
+            100.0,
+            round((float) $this->ipcr->items()->sum('weight'), 2)
+        );
     }
 
-    /** Nothing left to give: zero, not a negative number and not an overflow. */
-    public function test_a_full_category_gives_the_next_line_nothing(): void
+    /** Each category is its own hundred; adding to one leaves the other alone. */
+    public function test_the_categories_do_not_disturb_each_other(): void
     {
-        $this->add(['weight' => 100]);
-        $this->add();
+        $this->add('Core one');
+        $this->add('Support one', FunctionCategory::Support);
+        $this->add('Core two');
 
-        $this->assertSame([100.0, 0.0], $this->weights());
+        $this->assertSame([
+            'Core one'    => '50.00',
+            'Support one' => '100.00',
+            'Core two'    => '50.00',
+        ], $this->weights());
     }
 
-    /** Each category is counted on its own. */
-    public function test_categories_do_not_borrow_from_each_other(): void
+    /** Removing one gives its share back to the others. */
+    public function test_removing_a_function_shares_its_weight_out_again(): void
     {
-        $this->add(['weight' => 100]);
-        $this->add(['category' => FunctionCategory::Support->value]);
+        $this->add('First');
+        $this->add('Second');
+        $this->add('Third');
 
-        $this->assertSame([100.0], $this->weights(FunctionCategory::Support));
+        $second = $this->ipcr->items()->where('output', 'Second')->first();
+
+        $this->actingAs($this->owner)
+            ->delete(route('ipcrs.items.destroy', [$this->ipcr, $second]));
+
+        $this->assertSame(['First' => '50.00', 'Third' => '50.00'], $this->weights());
     }
-
-    public function test_a_blank_weight_is_treated_as_no_weight(): void
-    {
-        $this->add(['weight' => '']);
-
-        $this->assertSame([100.0], $this->weights());
-    }
-
-    // -----------------------------------------------------------------
-    // What it is for
-    // -----------------------------------------------------------------
 
     /**
-     * The point of all this: an IPCR built without touching a single weight
-     * passes the submit guard, which used to be the last thing to fail and
-     * the hardest to fix.
+     * There is no weight field, and sending one anyway changes nothing.
+     *
+     * The form does not ask, so this is a crafted request rather than a
+     * mistake - and a weight that could be smuggled in would let one line
+     * quietly outrank the rest of its category.
      */
-    public function test_an_ipcr_built_without_typing_a_weight_can_be_submitted(): void
+    public function test_a_weight_sent_anyway_is_ignored(): void
     {
-        $this->add();
-        $this->add(['category' => FunctionCategory::Support->value]);
+        $this->add('Heavy', FunctionCategory::Core, ['weight' => 70]);
+        $this->add('Light');
 
-        $this->assertSame([], $this->ipcr->fresh()->load('items')->categoriesWithBadWeightTotals());
+        $this->assertSame(['Heavy' => '50.00', 'Light' => '50.00'], $this->weights());
     }
 
-    // -----------------------------------------------------------------
-    // The catalog no longer carries one
-    // -----------------------------------------------------------------
-
-    public function test_adding_from_the_catalog_sends_no_weight_of_its_own(): void
+    /** Nor can one be smuggled in by editing a line afterwards. */
+    public function test_a_weight_cannot_be_edited_in_either(): void
     {
-        IpcrItem::factory()->create([
-            'ipcr_id' => $this->ipcr->id, 'category' => FunctionCategory::Core, 'weight' => 70,
-        ]);
+        $this->add('First');
+        $this->add('Second');
 
-        // What the catalog button posts now: no weight at all.
-        $this->add(['job_function_id' => null]);
+        $first = $this->ipcr->items()->where('output', 'First')->first();
 
-        $this->assertSame([70.0, 30.0], $this->weights());
+        $this->actingAs($this->owner)->put(route('ipcrs.items.update', [$this->ipcr, $first]), [
+            'output' => 'First', 'weight' => 90,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(['First' => '50.00', 'Second' => '50.00'], $this->weights());
+    }
+
+    /** And the form does not offer one to type. */
+    public function test_the_form_does_not_ask_for_a_weight(): void
+    {
+        $this->add('First');
+
+        $html = $this->actingAs($this->owner)
+            ->get(route('ipcrs.show', $this->ipcr))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringNotContainsString('name="weight"', $html);
     }
 }

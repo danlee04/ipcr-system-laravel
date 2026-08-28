@@ -103,32 +103,43 @@
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <h3 class="text-sm font-semibold text-gray-900">Functions &amp; Outputs</h3>
 
-                        {{-- The running total per category. Submission requires
-                             each one to reach 100%, so the owner needs to see
-                             where they stand while they are still building. --}}
+                        {{-- What each category is worth in the final rating.
+                             It is not typed anywhere: it follows from what the
+                             employee actually holds, and adding a strategic
+                             function changes the whole split. The old chips
+                             counted the weights up to 100 instead, which can no
+                             longer be anything else. --}}
                         @php
-                            $weightTotals = $ipcr->weightTotalsByCategory();
-                            $badTotals = $ipcr->categoriesWithBadWeightTotals();
+                            $present = $ipcr->items
+                                ->map(fn($line) => $line->category->value)
+                                ->unique()
+                                ->values()
+                                ->all();
+                            $split = app(\App\Services\RatingCalculator::class)->weightsFor($present);
                         @endphp
 
-                        @if ($weightTotals !== [])
+                        @if ($split !== [])
                             <div class="flex flex-wrap items-center gap-2">
-                                @foreach ($weightTotals as $category => $total)
-                                    @php $short = rtrim(rtrim(number_format($total, 2, '.', ''), '0'), '.'); @endphp
+                                @foreach ($split as $category => $share)
+                                    @php
+                                        $count = $ipcr->items->filter(fn($line) => $line->category->value === $category)->count();
+                                        $short = rtrim(rtrim(number_format($share, 2, '.', ''), '0'), '.');
+                                    @endphp
                                     <span
-                                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-data text-xs ring-1 ring-inset {{ isset($badTotals[$category]) ? 'bg-amber-50 text-amber-800 ring-amber-500/30' : 'bg-emerald-50 text-emerald-800 ring-emerald-500/30' }}">
+                                        class="inline-flex items-center gap-1.5 rounded-full bg-nav-900/5 px-2.5 py-1 font-data text-xs text-nav-900 ring-1 ring-inset ring-nav-900/10">
                                         <span
                                             class="font-sans font-medium">{{ \App\Enums\FunctionCategory::from($category)->label() }}</span>
-                                        {{ $short }} of 100%
+                                        {{ $short }}% · {{ $count }}
                                     </span>
                                 @endforeach
                             </div>
                         @endif
                     </div>
 
-                    @if ($badTotals !== [] && $canEdit)
-                        <p class="mt-2 text-xs text-amber-800">
-                            Each category must total 100% before this IPCR can be submitted.
+                    @if ($canEdit && $ipcr->items->isNotEmpty())
+                        <p class="mt-2 text-xs text-gray-500">
+                            Each category is worth that much of the final rating, and its functions share it equally.
+                            Add or remove one and the shares are worked out again.
                         </p>
                     @endif
                 </div>
@@ -227,36 +238,73 @@
                 <div class="space-y-6 bg-white shadow-sm sm:rounded-lg ring-1 ring-gray-950/5 p-6">
                     <h3 class="text-sm font-semibold text-gray-900">Add a Function</h3>
 
-                    {{-- Three groups, matching the three kinds of work. A
-                         function open to everyone appears under its own
-                         category rather than in a pool of its own. --}}
-                    @foreach (['core' => $catalog->core, 'strategic' => $catalog->strategic, 'support' => $catalog->support] as $key => $items)
-                        @if ($items->isNotEmpty())
-                            <div>
-                                <p class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
-                                    {{ ucfirst($key) }} — from catalog</p>
-                                <div class="grid gap-2 lg:grid-cols-2 2xl:grid-cols-3">
-                                    @foreach ($items as $jobFunction)
-                                        <form method="POST" action="{{ route('ipcrs.items.store', $ipcr) }}"
-                                            class="flex items-center justify-between gap-4 rounded-md border border-gray-200 px-3 py-2">
-                                            @csrf
-                                            <input type="hidden" name="job_function_id"
-                                                value="{{ $jobFunction->id }}">
-                                            <input type="hidden" name="category"
-                                                value="{{ $jobFunction->category->value }}">
-                                            <input type="hidden" name="output" value="{{ $jobFunction->title }}">
-                                            <input type="hidden" name="success_indicator"
-                                                value="{{ $jobFunction->success_indicator }}">
-                                            <span class="text-sm text-gray-700">{{ $jobFunction->title }}</span>
-                                            <button type="submit"
-                                                class="shrink-0 rounded-md bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-900 hover:bg-gray-200">+
-                                                Add</button>
-                                        </form>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
-                    @endforeach
+                    {{-- One list, one button. Every function used to be its own
+                         form with its own button, so twelve functions meant
+                         twelve clicks and twelve page loads to build one
+                         IPCR. --}}
+                    @php
+                        $alreadyAdded = $ipcr->items->pluck('job_function_id')->filter()->all();
+                        $groups = collect([
+                            'Core Function' => $catalog->core,
+                            'Strategic Function' => $catalog->strategic,
+                            'Support Function' => $catalog->support,
+                        ])->filter(fn($items) => $items->isNotEmpty());
+                    @endphp
+
+                    @if ($groups->isNotEmpty())
+                        <form method="POST" action="{{ route('ipcrs.items.catalog', $ipcr) }}" class="space-y-5"
+                            x-data="{ picked: 0 }">
+                            @csrf
+
+                            @foreach ($groups as $label => $items)
+                                <fieldset>
+                                    <legend class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                                        {{ $label }}
+                                    </legend>
+
+                                    <div class="grid gap-2 lg:grid-cols-2 2xl:grid-cols-3">
+                                        @foreach ($items as $jobFunction)
+                                            @php $added = in_array($jobFunction->id, $alreadyAdded); @endphp
+
+                                            <label
+                                                class="flex items-start gap-3 rounded-md border px-3 py-2 {{ $added ? 'border-gray-200 bg-gray-50' : 'cursor-pointer border-gray-200 hover:border-nav-900/30 hover:bg-gray-50' }}">
+                                                {{-- Already on the IPCR: ticked, fixed,
+                                                     and carrying no value, so a second
+                                                     copy cannot be asked for. --}}
+                                                <input type="checkbox" name="job_function_ids[]"
+                                                    value="{{ $jobFunction->id }}" @disabled($added) @checked($added)
+                                                    x-on:change="picked += $event.target.checked ? 1 : -1"
+                                                    class="mt-0.5 rounded border-gray-300 text-nav-900 focus:ring-seal">
+
+                                                <span class="min-w-0 flex-1">
+                                                    <span
+                                                        class="block text-sm {{ $added ? 'text-gray-500' : 'text-gray-800' }}">{{ $jobFunction->title }}</span>
+                                                    @if ($jobFunction->success_indicator)
+                                                        <span
+                                                            class="mt-0.5 block text-xs text-gray-500">{{ $jobFunction->success_indicator }}</span>
+                                                    @endif
+                                                </span>
+
+                                                @if ($added)
+                                                    <span
+                                                        class="shrink-0 self-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800 ring-1 ring-inset ring-emerald-500/20">Added</span>
+                                                @endif
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </fieldset>
+                            @endforeach
+
+                            <button type="submit" x-bind:disabled="picked === 0"
+                                class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 disabled:cursor-not-allowed disabled:bg-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2">
+                                <span x-show="picked === 0">Select the functions to add</span>
+                                <span x-show="picked > 0" x-cloak>
+                                    Add <span x-text="picked"></span>
+                                    <span x-text="picked === 1 ? 'function' : 'functions'"></span>
+                                </span>
+                            </button>
+                        </form>
+                    @endif
 
                     <div>
                         <p class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Custom function (not
@@ -268,7 +316,7 @@
                             class="grid gap-3 sm:grid-cols-6">
                             @csrf
 
-                            <label class="sm:col-span-4">
+                            <label class="sm:col-span-6">
                                 <span class="mb-1 block text-xs font-medium text-gray-600">Category</span>
                                 <select name="category" class="w-full rounded-md border-gray-300 text-sm" required>
                                     <option value="">Select category…</option>
@@ -276,12 +324,6 @@
                                         <option value="{{ $case->value }}">{{ $case->label() }}</option>
                                     @endforeach
                                 </select>
-                            </label>
-
-                            <label class="sm:col-span-2">
-                                <span class="mb-1 block text-xs font-medium text-gray-600">Weight %</span>
-                                <input type="number" step="0.01" min="0" max="100" name="weight"
-                                    class="w-full rounded-md border-gray-300 text-sm">
                             </label>
 
                             <label class="sm:col-span-3">

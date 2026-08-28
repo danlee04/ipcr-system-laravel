@@ -29,7 +29,7 @@ enum MeasureAnswer: string
         return match ($this) {
             self::Descriptor => 'Picking a descriptor',
             self::Number     => 'Typing a number',
-            self::Count      => 'Counting out of a total — 12 of 12',
+            self::Count      => 'Counting out of a total — 12/12',
         };
     }
 

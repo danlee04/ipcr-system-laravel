@@ -43,7 +43,6 @@ class UpdateIpcrItemRequest extends FormRequest
         return [
             'output'                => ['required', 'string'],
             'success_indicator'     => ['nullable', 'string'],
-            'weight'                => ['nullable', 'numeric', 'min:0', 'max:100'],
             'actual_accomplishment' => ['nullable', 'string'],
 
             // Every level of this has to be spelled out. validated() returns

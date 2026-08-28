@@ -11,6 +11,7 @@ use App\Models\IpcrPeriod;
 use App\Notifications\IpcrSubmitted;
 use App\Services\FunctionCatalogService;
 use App\Services\IpcrRoutingService;
+use App\Services\ItemWeights;
 use App\Services\RatingCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +25,7 @@ class IpcrController extends Controller
         private readonly FunctionCatalogService $functionCatalog,
         private readonly IpcrRoutingService $routing,
         private readonly RatingCalculator $ratings,
+        private readonly ItemWeights $weights,
     ) {}
 
     /**
@@ -189,24 +191,11 @@ class IpcrController extends Controller
                 : "{$missing} functions still have no actual accomplishment. Fill them in, or switch to \"Targets only\".");
         }
 
-        // The weights must add up before anyone is asked to assess this. The
-        // rating maths would cope with any total, but the CSC form does not,
-        // and this is the last moment the owner can still fix it.
-        $badTotals = $ipcr->load('items')->categoriesWithBadWeightTotals();
-
-        if ($badTotals !== []) {
-            $parts = [];
-
-            foreach ($badTotals as $category => $total) {
-                $label = FunctionCategory::from($category)->label();
-                $parts[] = "{$label} totals " . rtrim(rtrim(number_format($total, 2, '.', ''), '0'), '.') . '%';
-            }
-
-            return back()->with(
-                'error',
-                'Weights must total 100% in each category. ' . implode('; ', $parts) . '.'
-            );
-        }
+        // Settled rather than checked. The weights are shared out by the
+        // system, so a category that does not total a hundred is this app's
+        // mistake and not the employee's - and refusing to submit over one
+        // would hand them an error about a field they cannot even see.
+        $this->weights->shareAll($ipcr);
 
         // A chain HR or an administrator set by hand wins over the org chart.
         // It is the only way the Chief of Hospital's own IPCR moves at all -

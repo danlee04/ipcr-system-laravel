@@ -78,6 +78,10 @@ class JobFunction extends Model
             if ($numeric->first()->answer === MeasureAnswer::Count) {
                 $tokens[] = '{ratio}';
             }
+
+            if ($numeric->first()->readsAsDaysFromDeadline()) {
+                $tokens[] = '{when}';
+            }
         }
 
         return $tokens;

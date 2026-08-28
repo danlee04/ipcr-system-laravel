@@ -41,6 +41,23 @@ final readonly class EmployeeFunctionCatalog
         };
     }
 
+    /**
+     * Every function this employee may pick, in one collection keyed by id.
+     *
+     * What the picker is checked against: a form sends back a list of numbers,
+     * and this is what says whether each of them is one this employee could
+     * have been offered.
+     *
+     * @return Collection<int, JobFunction>
+     */
+    public function all(): Collection
+    {
+        return $this->core
+            ->concat($this->strategic)
+            ->concat($this->support)
+            ->keyBy('id');
+    }
+
     public function isEmpty(): bool
     {
         return $this->core->isEmpty()

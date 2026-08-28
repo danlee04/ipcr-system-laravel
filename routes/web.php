@@ -59,6 +59,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/ipcrs/{ipcr}/return', [IpcrApprovalController::class, 'returnForRevision'])->name('ipcrs.return');
 
     Route::post('/ipcrs/{ipcr}/items', [IpcrItemController::class, 'store'])->name('ipcrs.items.store');
+    Route::post('/ipcrs/{ipcr}/items/catalog', [IpcrItemController::class, 'addFromCatalog'])->name('ipcrs.items.catalog');
     Route::put('/ipcrs/{ipcr}/items/{item}', [IpcrItemController::class, 'update'])->name('ipcrs.items.update');
     Route::delete('/ipcrs/{ipcr}/items/{item}', [IpcrItemController::class, 'destroy'])->name('ipcrs.items.destroy');
 });

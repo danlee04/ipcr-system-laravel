@@ -19,7 +19,10 @@
 
      The whole rubric is optional. Functions predate it, and one without a
      rubric is marked by hand the way everything used to be. --}}
-<div class="space-y-3" x-data="functionRubric()">
+{{-- The template is seeded through the argument rather than left in the
+     textarea: x-model would blank it on the first tick otherwise. --}}
+<div class="space-y-3"
+    x-data="functionRubric(@js(old('accomplishment_template', $function?->accomplishment_template ?? '')))">
     <div class="flex items-baseline justify-between gap-3">
         <h3 class="text-sm font-semibold text-gray-900">Description of Rating</h3>
         <span class="text-xs text-gray-500">Blank = n/a</span>
@@ -129,13 +132,28 @@
     <div class="rounded-lg bg-gray-50 p-4 ring-1 ring-inset ring-gray-200" x-show="placeholders.length" x-cloak>
         <label class="block">
             <span class="mb-1 block text-sm font-medium text-gray-700">Accomplishment wording</span>
-            <textarea name="accomplishment_template" rows="2" class="w-full rounded-md border-gray-300 text-sm"
-                placeholder="{e}% of DTR with complete attachments are submitted every 5th day of the ensuing month">{{ old('accomplishment_template', $function?->accomplishment_template) }}</textarea>
+            <textarea name="accomplishment_template" rows="2" x-model="template"
+                class="w-full rounded-md border-gray-300 text-sm"
+                placeholder="{e}% of DTR with complete attachments are submitted every 5th day of the ensuing month"></textarea>
         </label>
+
         <p class="mt-1 text-xs text-gray-500">
             Use <span class="font-data text-gray-700" x-text="placeholders.join('  ')"></span>
             where the reported figure goes.
         </p>
+
+        {{-- Said here rather than on save. The panels above are what decides
+             which placeholders exist, and the answer to "why can I not use
+             {e}?" is always a setting a few inches up the page. --}}
+        <template x-if="unusable.length">
+            <div class="mt-2 rounded-md bg-amber-50 p-2.5 text-xs text-amber-900 ring-1 ring-inset ring-amber-500/30">
+                <span class="font-data font-medium" x-text="unusable.join(' ')"></span>
+                would be printed as written.
+                <template x-for="reason in reasons" :key="reason">
+                    <span x-text="reason + ' '"></span>
+                </template>
+            </div>
+        </template>
     </div>
 </div>
 
@@ -144,13 +162,47 @@
         <script>
             // Mirrors JobFunction::placeholders(). The list follows the panels
             // rather than the saved rubric, so it is right while still typing.
-            function functionRubric() {
+            function functionRubric(template = '') {
                 return {
                     placeholders: [],
+                    numeric: [],
+                    template: template ?? '',
+
+                    names: { q: 'Quality', e: 'Efficiency', t: 'Timeliness' },
 
                     init() {
                         this.refresh();
                         this.$el.addEventListener('change', () => this.refresh());
+                    },
+
+                    /** Placeholders typed into the wording that nothing can fill. */
+                    get unusable() {
+                        const used = this.template.match(/\{[^}]*\}/g) ?? [];
+
+                        return [...new Set(used)].filter((t) => !this.placeholders.includes(t));
+                    },
+
+                    /** Why, in terms of the panel to go and change. */
+                    get reasons() {
+                        const said = new Set();
+
+                        this.unusable.forEach((token) => {
+                            const [head, suffix] = token.slice(1, -1).split('_');
+                            const name = this.names[head];
+                            if (!name) return;
+
+                            const measure = this.numeric.find((m) => m.key === head);
+
+                            if (!measure) {
+                                said.add(name + ' is not graded on a figure yet.');
+                            } else if (['ratio', 'count', 'total'].includes(suffix)) {
+                                said.add(name + ' is not answered by counting out of a total.');
+                            } else if (suffix === 'when') {
+                                said.add(name + ' is not answered by a number in days.');
+                            }
+                        });
+
+                        return [...said];
                     },
 
                     refresh() {
@@ -163,7 +215,15 @@
                             const match = select.name.match(/rubric\[(\w+)\]/);
                             if (!match) return;
 
-                            numeric.push({ key: match[1].charAt(0), isCount: select.value === 'count' });
+                            // A scale in days runs either side of a deadline,
+                            // which is what gives it a before and an after.
+                            const unit = panel.querySelector('select[name$="[unit]"]');
+
+                            numeric.push({
+                                key: match[1].charAt(0),
+                                isCount: select.value === 'count',
+                                inDays: select.value === 'number' && unit?.value === 'days',
+                            });
                         });
 
                         const tokens = [];
@@ -172,13 +232,16 @@
                             if (m.isCount) {
                                 tokens.push('{' + m.key + '_ratio}', '{' + m.key + '_count}', '{' + m.key + '_total}');
                             }
+                            if (m.inDays) tokens.push('{' + m.key + '_when}');
                         });
 
                         if (numeric.length === 1) {
                             tokens.push('{value}');
                             if (numeric[0].isCount) tokens.push('{ratio}');
+                            if (numeric[0].inDays) tokens.push('{when}');
                         }
 
+                        this.numeric = numeric;
                         this.placeholders = tokens;
                     },
                 };

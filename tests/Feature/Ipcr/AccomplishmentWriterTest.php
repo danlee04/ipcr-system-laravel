@@ -155,7 +155,7 @@ class AccomplishmentWriterTest extends TestCase
 
         $this->writer->apply($item, $function, ['efficiency' => ['count' => 11, 'total' => 12]]);
 
-        $this->assertSame('Submitted 11 of 12 monthly reports', $item->fresh()->actual_accomplishment);
+        $this->assertSame('Submitted 11/12 monthly reports', $item->fresh()->actual_accomplishment);
     }
 
     public function test_the_parts_of_a_count_are_kept(): void
