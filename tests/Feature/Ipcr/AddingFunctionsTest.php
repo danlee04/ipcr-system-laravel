@@ -4,6 +4,7 @@ namespace Tests\Feature\Ipcr;
 
 use App\Enums\FunctionCategory;
 use App\Enums\IpcrStatus;
+use App\Models\Designation;
 use App\Models\Employee;
 use App\Models\Ipcr;
 use App\Models\IpcrPeriod;
@@ -20,10 +21,13 @@ use Tests\TestCase;
  * employee with twelve of them clicked twelve times and waited for twelve page
  * loads to build one IPCR. They are ticked off a list now and added together.
  *
- * The ids are checked against the employee's own catalog rather than trusted.
- * A list of numbers in a form is exactly the sort of thing a crafted request
- * names something else in - and a function nobody's post reaches has no
- * business on their IPCR.
+ * The ids are checked against the catalog rather than trusted. A list of
+ * numbers in a form is exactly the sort of thing a crafted request names
+ * something else in.
+ *
+ * What the catalog offers is wider than this employee's own post: another
+ * post's work can be borrowed, because people cover vacancies. An appointment
+ * somebody else holds cannot, and neither can a retired function.
  */
 class AddingFunctionsTest extends TestCase
 {
@@ -65,14 +69,20 @@ class AddingFunctionsTest extends TestCase
         ]);
     }
 
-    /** Tied to somebody else's post, so it reaches this employee with nothing. */
+    /**
+     * Tied to an appointment this employee does not hold.
+     *
+     * Another post's work is offered now, separately, so the thing that is
+     * still out of reach is a designation: that is a role somebody was
+     * appointed to, and its functions are theirs while they hold it.
+     */
     private function outOfReach(string $title): JobFunction
     {
         return JobFunction::create([
-            'category'    => FunctionCategory::Core,
-            'position_id' => Position::factory()->create()->id,
-            'title'       => $title,
-            'is_active'   => true,
+            'category'       => FunctionCategory::Core,
+            'designation_id' => Designation::factory()->create()->id,
+            'title'          => $title,
+            'is_active'      => true,
         ]);
     }
 
@@ -163,7 +173,7 @@ class AddingFunctionsTest extends TestCase
     public function test_a_function_out_of_reach_is_never_added(): void
     {
         $mine = $this->reachable('Mine');
-        $theirs = $this->outOfReach('Somebody elses');
+        $theirs = $this->outOfReach('Somebody elses appointment');
 
         $this->add([$mine->id, $theirs->id]);
 

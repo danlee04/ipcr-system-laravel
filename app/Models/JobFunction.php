@@ -99,7 +99,9 @@ class JobFunction extends Model
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        // Qualified: this runs inside a join against positions, which carries
+        // an is_active of its own.
+        return $query->where($query->qualifyColumn('is_active'), true);
     }
 
     public function scopeOfCategory(Builder $query, FunctionCategory $category): Builder

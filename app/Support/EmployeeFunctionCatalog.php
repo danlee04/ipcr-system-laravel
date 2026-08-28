@@ -11,10 +11,14 @@ use Illuminate\Support\Collection;
  * so it can drop straight into a tabbed or grouped picker UI when the
  * employee is adding functions to their IPCR.
  *
- * Three buckets, matching the three kinds of work. There used to be a fourth
- * for the common pool, which put functions open to everyone somewhere other
- * than the category they actually belong to - and then needed a second field
- * to say where they really went.
+ * Three buckets matching the three kinds of work, and a fourth that is not a
+ * kind of work at all: everything catalogued under somebody else's post. That
+ * one is kept apart because it reads differently - borrowing a line from
+ * another position is a deliberate act, and the picker shows it as one.
+ *
+ * There used to be a bucket for the common pool, which put functions open to
+ * everyone somewhere other than the category they actually belong to - and
+ * then needed a second field to say where they really went.
  *
  * Note: this is only a LIST OF WHAT MAY BE PICKED. Nothing in it is added
  * to the IPCR automatically - every addition stays manual.
@@ -25,11 +29,13 @@ final readonly class EmployeeFunctionCatalog
      * @param  Collection<int, JobFunction>  $core
      * @param  Collection<int, JobFunction>  $strategic
      * @param  Collection<int, JobFunction>  $support
+     * @param  Collection<int, JobFunction>  $elsewhere  filed under another post
      */
     public function __construct(
         public Collection $core,
         public Collection $strategic,
         public Collection $support,
+        public Collection $elsewhere,
     ) {}
 
     public function forCategory(FunctionCategory $category): Collection
@@ -55,6 +61,7 @@ final readonly class EmployeeFunctionCatalog
         return $this->core
             ->concat($this->strategic)
             ->concat($this->support)
+            ->concat($this->elsewhere)
             ->keyBy('id');
     }
 
@@ -62,6 +69,7 @@ final readonly class EmployeeFunctionCatalog
     {
         return $this->core->isEmpty()
             && $this->strategic->isEmpty()
-            && $this->support->isEmpty();
+            && $this->support->isEmpty()
+            && $this->elsewhere->isEmpty();
     }
 }

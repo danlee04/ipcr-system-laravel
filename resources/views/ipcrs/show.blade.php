@@ -131,7 +131,7 @@
                         {{-- The category is said once, over its own block,
                              rather than repeated down a column of its own. --}}
                         <div
-                            class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
+                            class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-3 py-2.5">
                             <span
                                 class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {{ $category->badgeClasses() }}">
                                 {{ $category->label() }}
@@ -146,22 +146,31 @@
                         </div>
 
                         <table class="w-full table-fixed divide-y divide-gray-200">
+                            {{-- The width goes where the words are. An output is
+                                 a title - "Awarded Contract" - while the other
+                                 two are whole sentences carrying figures and
+                                 deadlines, and equal columns spent the room
+                                 where it was not needed.
+
+                                 The accomplishment is left unwidthed on purpose:
+                                 it takes whatever the row has over, which keeps
+                                 the table full whether or not the last column is
+                                 there. It goes once the IPCR is submitted. --}}
                             <thead>
                                 <tr>
                                     <th
-                                        class="w-[27%] px-4 py-2 text-left text-xs font-medium uppercase text-gray-400">
+                                        class="w-[18%] px-3 py-2 text-left text-xs font-medium uppercase text-gray-400">
                                         Output</th>
                                     <th
-                                        class="w-[27%] px-4 py-2 text-left text-xs font-medium uppercase text-gray-400">
+                                        class="w-[30%] px-3 py-2 text-left text-xs font-medium uppercase text-gray-400">
                                         Success Indicator</th>
-                                    <th
-                                        class="w-[30%] px-4 py-2 text-left text-xs font-medium uppercase text-gray-400">
+                                    <th class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-400">
                                         Actual Accomplishment</th>
                                     <th
-                                        class="w-[8%] px-4 py-2 text-left text-xs font-medium uppercase text-gray-400">
+                                        class="w-[5%] px-2 py-2 text-left text-xs font-medium uppercase text-gray-400">
                                         Avg.</th>
                                     @if ($canEdit)
-                                        <th class="w-[8%] px-4 py-2"></th>
+                                        <th class="w-[12%] px-3 py-2"></th>
                                     @endif
                                 </tr>
                             </thead>
@@ -173,16 +182,16 @@
                                              hover. Whole, they set the height of
                                              the row to the longest thing anybody
                                              ever wrote. --}}
-                                        <td class="px-4 py-3 align-top text-sm">
+                                        <td class="px-3 py-3 align-top text-sm">
                                             <p class="line-clamp-2 font-medium text-gray-900"
                                                 title="{{ $item->output }}">{{ $item->output }}</p>
                                         </td>
-                                        <td class="px-4 py-3 align-top text-sm">
+                                        <td class="px-3 py-3 align-top text-sm">
                                             <p class="line-clamp-2 text-gray-600"
                                                 title="{{ $item->success_indicator }}">
                                                 {{ $item->success_indicator ?: '—' }}</p>
                                         </td>
-                                        <td class="px-4 py-3 align-top text-sm">
+                                        <td class="px-3 py-3 align-top text-sm">
                                             @if ($ipcr->showsAccomplishment())
                                                 <p class="line-clamp-2 text-gray-700"
                                                     title="{{ $item->actual_accomplishment }}">
@@ -212,11 +221,11 @@
                                                 <span class="text-gray-400">&mdash;</span>
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 align-top font-data text-sm text-gray-900">
+                                        <td class="px-2 py-3 align-top font-data text-sm text-gray-900">
                                             {{ $item->average_rating !== null ? number_format((float) $item->average_rating, 2) : '—' }}
                                         </td>
                                         @if ($canEdit)
-                                            <td class="px-4 py-3 align-top text-right text-sm">
+                                            <td class="px-3 py-3 align-top text-right text-sm">
                                                 <div class="flex flex-col items-end gap-1">
                                                     <button type="button"
                                                         x-on:click="$dispatch('open-modal', 'edit-item-{{ $item->id }}')"

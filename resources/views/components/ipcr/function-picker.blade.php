@@ -6,7 +6,7 @@
     $taken = $ipcr->items->pluck('job_function_id')->filter()->all();
     $left = fn($items) => $items->reject(fn($function) => in_array($function->id, $taken))->values();
 
-    // Two sources, and they read differently. What reaches this employee
+    // Three sources, and they read differently. What reaches this employee
     // through their own post or designation is theirs alone; what reaches
     // everyone is the hospital's, and is the same short list on every IPCR.
     // Mixing the two made a long single column where nothing stood out.
@@ -19,6 +19,10 @@
         ->filter(fn($items) => $items->isNotEmpty());
 
     $everyone = $left($catalog->all()->filter->reachesEveryone());
+
+    // The third: somebody else's post. Grouped by the post it came from,
+    // because which one it was is the whole point of borrowing it.
+    $others = $left($catalog->elsewhere)->groupBy(fn($function) => $function->position?->title ?? 'Unassigned');
 @endphp
 
 <div class="space-y-6 rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-950/5">
@@ -29,14 +33,15 @@
         </p>
     </div>
 
-    @if ($mine->isNotEmpty() || $everyone->isNotEmpty())
+    @if ($mine->isNotEmpty() || $everyone->isNotEmpty() || $others->isNotEmpty())
         <form method="POST" action="{{ route('ipcrs.items.catalog', $ipcr) }}" class="space-y-5"
             x-data="{ picked: 0 }">
             @csrf
 
-            <div class="grid gap-6 lg:grid-cols-3">
+            {{-- The two everyday sources, half the width each. --}}
+            <div class="grid gap-6 lg:grid-cols-2">
                 {{-- Theirs, folded by category. --}}
-                <div class="space-y-3 lg:col-span-2">
+                <div class="space-y-3">
                     <p class="text-xs font-medium uppercase tracking-wide text-gray-500">
                         From your position and designations
                     </p>
@@ -77,6 +82,41 @@
                     @endforelse
                 </div>
             </div>
+
+            {{-- Somebody else's post. Shut until it is opened, and below the
+                 two columns rather than beside them: this is the exception -
+                 covering a vacancy, or work that moved before the catalog
+                 caught up - and it should take a decision to reach it. --}}
+            @if ($others->isNotEmpty())
+                <details class="rounded-lg ring-1 ring-inset ring-gray-200">
+                    <summary
+                        class="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-4 py-2.5 text-sm hover:bg-gray-50">
+                        <span class="font-medium text-gray-800">From another position</span>
+                        <span class="font-data text-xs text-gray-400">{{ $others->flatten()->count() }}</span>
+                    </summary>
+
+                    <div class="space-y-4 border-t border-gray-200 p-4">
+                        <p class="text-xs text-gray-500">
+                            Work the catalog files under a post that is not yours - for covering a vacancy, or a task
+                            that moved before the catalog caught up. Add one only if you actually did it.
+                        </p>
+
+                        @foreach ($others as $position => $items)
+                            <div class="space-y-1.5">
+                                <p class="font-data text-[0.6875rem] uppercase tracking-wide text-gray-500">
+                                    {{ $position }}
+                                </p>
+
+                                <div class="grid gap-1.5 sm:grid-cols-2">
+                                    @foreach ($items as $jobFunction)
+                                        <x-ipcr.catalog-choice :function="$jobFunction" with-category />
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </details>
+            @endif
 
             <button type="submit" x-bind:disabled="picked === 0"
                 class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 disabled:cursor-not-allowed disabled:bg-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
