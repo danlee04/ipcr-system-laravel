@@ -33,6 +33,32 @@ class AppShellTest extends TestCase
     }
 
     /**
+     * The collapse control sits in the brand bar, not at the foot.
+     *
+     * It belongs beside the thing it resizes, and at the foot it was the last
+     * item in a column of links - a control dressed as a destination. Icon
+     * only: the word "Collapse" was the widest label in the sidebar, and it
+     * disappears in the one state where the button matters most.
+     */
+    public function test_the_collapse_control_sits_at_the_top_and_carries_no_label(): void
+    {
+        $user = User::factory()->create();
+        \App\Models\Employee::factory()->create(['user_id' => $user->id]);
+
+        $html = $this->actingAs($user->fresh())->get('/dashboard')->assertOk()->getContent();
+
+        $toggle = strpos($html, 'toggleCollapsed()');
+        $nav = strpos($html, '<nav');
+
+        $this->assertNotFalse($toggle, 'No collapse control at all.');
+        $this->assertLessThan($nav, $toggle, 'The collapse control is below the nav.');
+
+        // One control, and it says what it does to a screen reader alone.
+        $this->assertSame(1, substr_count($html, 'toggleCollapsed()'));
+        $this->assertStringNotContainsString('>Collapse<', $html);
+    }
+
+    /**
      * Not every user has an Employee record - the relation is null on new
      * accounts. The sidebar must not fall over; it shows the email instead of
      * an employee number.

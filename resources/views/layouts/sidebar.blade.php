@@ -44,24 +44,44 @@
         drawerOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
         collapsed ? 'lg:w-18' : 'lg:w-64',
     ]">
-    {{-- Brand --}}
-    <div class="flex h-16 shrink-0 items-center gap-3 border-b border-white/10 px-4">
+    {{-- Brand, and the control that resizes what sits under it.
+
+         Collapsed, the brand steps aside and the toggle is the only thing in
+         the bar: seventy-two pixels will not hold both, and the one worth
+         keeping is the way back out. --}}
+    <div class="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-3"
+        :class="collapsed ? 'lg:justify-center lg:px-2' : ''">
         <a href="{{ route('dashboard') }}"
-            class="flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900">
-            <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-nav-800 ring-1 ring-white/10">
-                <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            class="flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900"
+            :class="collapsed ? 'lg:hidden' : ''">
+            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-nav-800 ring-1 ring-white/10">
+                <svg class="h-4.5 w-4.5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <path d="M10 3h4v5h5v4h-5v5h-4v-5H5V8h5V3Z" />
                 </svg>
             </span>
-            <span class="min-w-0" :class="collapsed ? 'lg:hidden' : ''">
+            <span class="min-w-0">
                 <span class="block font-data text-[0.625rem] uppercase tracking-[0.18em] text-nav-300">DTRC</span>
                 <span class="block truncate text-sm font-semibold text-white">IPCR System</span>
             </span>
         </a>
 
+        {{-- Desktop only, and never labelled: "Collapse" was the widest word
+             in the sidebar, and it is invisible in the one state where the
+             button matters most. The chevron points the way it will move. --}}
+        <button type="button" @click="toggleCollapsed()"
+            class="ms-auto hidden h-9 w-9 shrink-0 place-items-center rounded-md text-nav-300 transition-colors hover:bg-nav-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright lg:grid"
+            :class="collapsed ? 'lg:ms-0' : ''"
+            :aria-expanded="(!collapsed).toString()" aria-controls="app-sidebar">
+            <span class="sr-only" x-text="collapsed ? 'Expand menu' : 'Collapse menu'">Collapse menu</span>
+            <svg class="h-5 w-5 transition-transform duration-200" :class="collapsed ? 'rotate-180' : ''"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 8l-4 4 4 4" />
+            </svg>
+        </button>
+
         {{-- Close the drawer - phones only. --}}
         <button type="button" @click="closeDrawer()"
-            class="ms-auto grid h-11 w-11 shrink-0 place-items-center rounded-md text-nav-300 transition-colors hover:bg-nav-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright lg:hidden">
+            class="ms-auto grid h-10 w-10 shrink-0 place-items-center rounded-md text-nav-300 transition-colors hover:bg-nav-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright lg:hidden">
             <span class="sr-only">Close menu</span>
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 aria-hidden="true">
@@ -71,7 +91,7 @@
     </div>
 
     {{-- Nav --}}
-    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Main">
+    <nav class="flex-1 space-y-0.5 overflow-y-auto px-2 py-2" aria-label="Main">
         <x-sidebar-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
             <x-slot:icon>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -104,7 +124,9 @@
             <x-sidebar-link :href="route('approvals.inbox')" :active="request()->routeIs('approvals.*')">
                 <x-slot:icon>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.5 9 17l10.5-10.5" />
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 5H7.5A1.5 1.5 0 0 0 6 6.5v12A1.5 1.5 0 0 0 7.5 20h9a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 16.5 5H15M9 3.5h6v3H9v-3Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m9.5 13 2 2 3.5-3.5" />
                     </svg>
                 </x-slot:icon>
                 For My Approval
@@ -134,7 +156,7 @@
                  return 403 anyway, but there is no reason to advertise them.
                  HR is included because HR does the same setup work as an
                  administrator - see the admin route group in routes/web.php. --}}
-            <p class="px-3 pb-1 pt-5 font-data text-[0.625rem] uppercase tracking-[0.18em] text-nav-300"
+            <p class="px-3 pb-1 pt-4 font-data text-[0.625rem] uppercase tracking-[0.18em] text-nav-300"
                 :class="collapsed ? 'lg:hidden' : ''">
                 Administration
             </p>
@@ -211,10 +233,10 @@
     </nav>
 
     {{-- Who is signed in --}}
-    <div class="shrink-0 border-t border-white/10 p-3">
-        <div class="flex items-center gap-3 rounded-md px-1 py-2">
+    <div class="shrink-0 border-t border-white/10 p-2">
+        <div class="flex items-center gap-2.5 rounded-md px-1 py-1.5">
             <span
-                class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-nav-700 font-data text-xs font-medium text-white ring-1 ring-white/10">
+                class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-nav-700 font-data text-xs font-medium text-white ring-1 ring-white/10">
                 {{ $initials !== '' ? $initials : '?' }}
             </span>
             <span class="min-w-0 flex-1" :class="collapsed ? 'lg:hidden' : ''">
@@ -228,7 +250,7 @@
             </span>
         </div>
 
-        <div class="mt-1 space-y-1">
+        <div class="mt-1 space-y-0.5">
             <x-sidebar-link :href="route('profile.edit')" :active="request()->routeIs('profile.*')">
                 <x-slot:icon>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -242,7 +264,7 @@
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit"
-                    class="group relative flex min-h-11 w-full items-center gap-3 rounded-md py-2 pe-2 ps-3 text-sm text-nav-300 transition-colors hover:bg-nav-800/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900">
+                    class="group relative flex min-h-11 w-full items-center gap-2.5 rounded-md py-1.5 pe-2 ps-3 text-sm text-nav-300 lg:min-h-10 transition-colors hover:bg-nav-800/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900">
                     <span class="shrink-0" aria-hidden="true">
                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="1.8">
@@ -258,17 +280,5 @@
             </form>
         </div>
 
-        {{-- Collapse toggle - desktop only. --}}
-        <button type="button" @click="toggleCollapsed()"
-            class="mt-2 hidden min-h-11 w-full items-center gap-3 rounded-md py-2 pe-2 ps-3 text-sm text-nav-300 transition-colors hover:bg-nav-800/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900 lg:flex"
-            :aria-expanded="(!collapsed).toString()" aria-controls="app-sidebar">
-            <span class="shrink-0" aria-hidden="true">
-                <svg class="h-5 w-5 transition-transform duration-200" :class="collapsed ? 'rotate-180' : ''"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 8l-4 4 4 4" />
-                </svg>
-            </span>
-            <span class="truncate" :class="collapsed ? 'lg:hidden' : ''">Collapse</span>
-        </button>
     </div>
 </aside>

@@ -148,6 +148,47 @@ class FunctionGroupingTest extends TestCase
     }
 
     // -----------------------------------------------------------------
+    // The Category column
+    // -----------------------------------------------------------------
+
+    /**
+     * A badge is a fixed little shape, not a sentence.
+     *
+     * Left-aligned it sat against the column rule with a wide gap after it,
+     * and a column of them read as ragged. The heading goes with them, or the
+     * two would disagree about where the column is.
+     */
+    public function test_the_category_badge_is_centred_in_its_column(): void
+    {
+        $this->common('Observes the working hours');
+
+        $html = $this->html();
+
+        $this->assertStringContainsString(
+            'text-center',
+            $this->classOf('#<th[^>]*class="([^"]*)"[^>]*>\s*Category\s*</th>#s', $html),
+            'The Category heading is not centred.',
+        );
+
+        $this->assertStringContainsString(
+            'text-center',
+            $this->classOf(
+                '#<td class="([^"]*)">\s*<span\s+class="inline-flex items-center rounded-full px-2\.5#s',
+                $html,
+            ),
+            'The category badge cell is not centred.',
+        );
+    }
+
+    /** The class attribute the pattern captures. */
+    private function classOf(string $pattern, string $html): string
+    {
+        $this->assertSame(1, preg_match($pattern, $html, $match), 'Nothing matched ' . $pattern);
+
+        return $match[1];
+    }
+
+    // -----------------------------------------------------------------
     // Paging
     // -----------------------------------------------------------------
 
@@ -177,6 +218,50 @@ class FunctionGroupingTest extends TestCase
             ['Common Function' => 5, 'Core Function' => 2],
             $this->rowsPerGroup($this->html(['core_page' => 2])),
         );
+    }
+
+    /** It sits over six columns, so the middle is where it belongs. */
+    public function test_the_block_heading_is_centred_over_its_rows(): void
+    {
+        $this->common('Observes the working hours');
+
+        $this->assertMatchesRegularExpression(
+            '/<th scope="colgroup"[^>]*class="[^"]*text-center/s',
+            $this->html(),
+        );
+    }
+
+    /**
+     * Every page link points back at this list, and nowhere else.
+     *
+     * This is the one thing live paging rests on: the handler compares a
+     * clicked link's path against the list's own before it takes the click
+     * off the browser. A link pointing anywhere else would be followed, and
+     * the whole screen would reload.
+     */
+    public function test_every_page_link_points_back_at_the_list(): void
+    {
+        $this->fill();
+
+        preg_match_all(
+            '#<nav role="navigation" aria-label="Pagination Navigation".*?</nav>#s',
+            $this->html(),
+            $navs,
+        );
+
+        $this->assertNotEmpty($navs[0], 'No pager rendered, so nothing was checked.');
+
+        $wanted = parse_url(route('admin.functions.index'), PHP_URL_PATH);
+
+        foreach ($navs[0] as $nav) {
+            preg_match_all('/<a\s+href="([^"]+)"/', $nav, $links);
+
+            $this->assertNotEmpty($links[1]);
+
+            foreach ($links[1] as $href) {
+                $this->assertSame($wanted, parse_url($href, PHP_URL_PATH));
+            }
+        }
     }
 
     /** Seven in each of two blocks: enough for a second page in both. */

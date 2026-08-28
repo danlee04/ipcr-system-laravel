@@ -88,16 +88,32 @@ Alpine.data('liveList', (action) => ({
         });
 
         // Paging, and anything else in the rows pointing back at this list.
+        // Matched on the path rather than on the front of the string: a
+        // trailing slash or a different port would otherwise send a page link
+        // through the browser and reload the whole screen.
         this.$root.addEventListener('click', (event) => {
             const link = event.target.closest('[data-live-results] a[href]');
 
-            if (!link || !link.href.startsWith(action)) {
+            if (!link || !this.isOurs(link.href)) {
                 return;
             }
 
             event.preventDefault();
             this.load(link.href);
         });
+    },
+
+    /** Does this link point back at the list this component owns? */
+    isOurs(href) {
+        try {
+            const target = new URL(href, window.location.href);
+            const mine = new URL(action, window.location.href);
+
+            return target.origin === mine.origin
+                && target.pathname.replace(/\/+$/, '') === mine.pathname.replace(/\/+$/, '');
+        } catch {
+            return false;
+        }
     },
 
     form() {
@@ -135,7 +151,12 @@ Alpine.data('liveList', (action) => ({
 
         this.request?.abort();
         this.request = new AbortController();
-        this.busy = true;
+
+        // Dimmed only if the wait is long enough to be worth saying so. A
+        // local server answers a page click in well under this, and dimming
+        // the whole list and snapping it back for forty milliseconds is the
+        // flash that made live paging look like a page reload.
+        const dim = setTimeout(() => (this.busy = true), 200);
 
         try {
             const response = await fetch(target, {
@@ -159,8 +180,13 @@ Alpine.data('liveList', (action) => ({
                 return;
             }
 
+            // A full navigation, so the user still gets where they asked to
+            // go. Said out loud first: from the outside this is indistinguish-
+            // able from live paging simply not working.
+            console.error('Live list request failed, falling back to a page load.', error);
             window.location.href = target;
         } finally {
+            clearTimeout(dim);
             this.busy = false;
         }
     },

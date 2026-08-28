@@ -89,12 +89,12 @@ class DaysFromDeadlineTest extends TestCase
     public static function readings(): array
     {
         return [
-            'well ahead'   => [-12.0, 'Bid Evaluation Report submitted 12 days before the deadline'],
-            'five early'   => [-5.0, 'Bid Evaluation Report submitted 5 days before the deadline'],
-            'one early'    => [-1.0, 'Bid Evaluation Report submitted 1 day before the deadline'],
+            'well ahead'   => [-12.0, 'Bid Evaluation Report submitted 12 days before'],
+            'five early'   => [-5.0, 'Bid Evaluation Report submitted 5 days before'],
+            'one early'    => [-1.0, 'Bid Evaluation Report submitted 1 day before'],
             'on the day'   => [0.0, 'Bid Evaluation Report submitted on time'],
-            'one late'     => [1.0, 'Bid Evaluation Report submitted 1 day after the deadline'],
-            'a week late'  => [7.0, 'Bid Evaluation Report submitted 7 days after the deadline'],
+            'one late'     => [1.0, 'Bid Evaluation Report submitted 1 day after'],
+            'a week late'  => [7.0, 'Bid Evaluation Report submitted 7 days after'],
         ];
     }
 
@@ -167,7 +167,7 @@ class DaysFromDeadlineTest extends TestCase
         $this->assertContains('{when}', $this->function()->placeholders());
 
         $this->assertSame(
-            'Bid Evaluation Report submitted 5 days before the deadline',
+            'Bid Evaluation Report submitted 5 days before',
             $this->sentenceFor(-5, $this->function(template: 'Bid Evaluation Report submitted {when}'))
         );
     }

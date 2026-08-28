@@ -11,7 +11,7 @@
         <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Output / MFO</th>
         <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Success Indicator
         </th>
-        <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Category</th>
+        <th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500">Category</th>
         <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Rated On</th>
         <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
         <th class="px-6 py-3"></th>
@@ -31,11 +31,10 @@
              announces it before each one. --}}
         <tr class="bg-gray-50">
             <th scope="colgroup" colspan="6"
-                class="px-6 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
+                class="px-6 py-2 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
                 {{ $label }}
-                <span class="ms-2 font-data text-[0.625rem] font-normal normal-case tracking-normal text-gray-400">
-                    {{ $page->total() }}
-                </span>
+                <span
+                    class="ms-1.5 font-data text-[0.625rem] font-normal normal-case tracking-normal text-gray-400">{{ $page->total() }}</span>
             </th>
         </tr>
 
@@ -62,7 +61,7 @@
                 <span class="line-clamp-1 block max-w-xl text-gray-600"
                     title="{{ $function->success_indicator }}">{{ $function->success_indicator ?: '—' }}</span>
             </td>
-            <td class="px-6 py-4">
+            <td class="px-6 py-4 text-center">
                 <span
                     class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset {{ $function->category->badgeClasses() }}">
                     {{ $function->category->label() }}

@@ -17,11 +17,14 @@
 <a
     href="{{ $href }}"
     @if ($active) aria-current="page" @endif
-    class="group relative flex min-h-11 items-center gap-3 rounded-md py-2 pe-2 ps-3 text-sm transition-colors
+    {{-- min-h-11 is the touch target a phone needs; the desktop rows are
+         read with a mouse and can be tighter. --}}
+    class="group relative flex min-h-11 items-center gap-2.5 rounded-md py-1.5 pe-2 ps-3 text-sm transition-colors lg:min-h-10
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900
         {{ $active
             ? 'bg-nav-800 font-semibold text-white'
             : 'text-nav-300 hover:bg-nav-800/60 hover:text-white' }}"
+    :class="collapsed ? 'lg:justify-center lg:ps-2 lg:pe-2' : ''"
 >
     {{-- The accent rail: the only place the mint appears in the shell. --}}
     <span

@@ -125,7 +125,7 @@ class NegativeFigureTest extends TestCase
 
         $item = $item->fresh();
         $this->assertSame('5.00', $item->timeliness_rating);
-        $this->assertSame('Submitted 5 days before the deadline', $item->actual_accomplishment);
+        $this->assertSame('Submitted 5 days before', $item->actual_accomplishment);
     }
 
     // -----------------------------------------------------------------
