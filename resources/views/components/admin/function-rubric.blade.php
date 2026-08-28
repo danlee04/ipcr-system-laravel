@@ -116,7 +116,7 @@
                      invent five levels for it and then ignore them. --}}
                 <label class="flex items-start gap-2 rounded-md bg-gray-50 p-2.5 ring-1 ring-inset ring-gray-200">
                     <input type="checkbox" name="rubric[{{ $measure->value }}][reported_only]" value="1"
-                        x-model="reportedOnly" class="mt-0.5 rounded border-gray-300 text-nav-900 focus:ring-seal">
+                        x-model="reportedOnly" class="mt-0.5 rounded border-gray-300 text-nav-900 focus:ring-accent">
                     <span class="text-xs text-gray-600">
                         <span class="font-medium text-gray-800">Report this figure without rating it.</span>
                         The employee still types it and it still goes into the wording, but it earns no mark and

@@ -54,16 +54,16 @@
             font-size: 10pt;
             padding: 6px 14px;
             border-radius: 6px;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #d7e0ec;
             background: #fff;
-            color: #0f172a;
+            color: #1f293b;
             text-decoration: none;
             cursor: pointer;
         }
 
         .toolbar button {
-            background: #0d2233;
-            border-color: #0d2233;
+            background: #061938;
+            border-color: #061938;
             color: #fff;
         }
 

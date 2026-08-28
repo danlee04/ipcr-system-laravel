@@ -3,7 +3,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h2 class="text-xl font-semibold leading-tight text-gray-800">{{ __('Rating Periods') }}</h2>
             <button type="button" x-data x-on:click="$dispatch('open-modal', 'create-period')"
-                class="inline-flex items-center rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2">
+                class="inline-flex items-center rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
                 + New Period
             </button>
         </div>
@@ -50,7 +50,7 @@
                         <span class="font-medium text-gray-900">{{ $period->name }}</span>
                         @if ($activePeriod && $period->id === $activePeriod->id)
                             <span
-                                class="ms-2 inline-flex items-center rounded-full bg-seal/15 px-2 py-0.5 font-data text-[0.625rem] uppercase tracking-wide text-amber-800 ring-1 ring-inset ring-amber-500/30">Active</span>
+                                class="ms-2 inline-flex items-center rounded-full bg-mint-100 px-2 py-0.5 font-data text-[0.625rem] uppercase tracking-wide text-mint-800 ring-1 ring-inset ring-mint-500/30">Active</span>
                         @endif
                         <span class="block font-data text-xs text-gray-500">{{ $period->year }}</span>
                     </td>

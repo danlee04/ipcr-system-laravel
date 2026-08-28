@@ -215,8 +215,9 @@ Chart.register(
     Tooltip,
 );
 
-const axisColor = 'rgba(0, 0, 0, 0.35)';
-const gridColor = 'rgba(0, 0, 0, 0.05)';
+// ink-900, so the chart furniture is the same near-black as the type.
+const axisColor = 'rgba(19, 28, 43, 0.45)';
+const gridColor = 'rgba(19, 28, 43, 0.07)';
 
 function renderChart(canvas) {
     let config;
@@ -267,8 +268,8 @@ function renderChart(canvas) {
             data: {
                 labels: config.labels,
                 datasets: [
-                    { label: 'Total', data: config.total, backgroundColor: '#D6E8F7', borderRadius: 5, order: 2 },
-                    { label: 'Approved', data: config.approved, backgroundColor: '#639922', borderRadius: 5, order: 1 },
+                    { label: 'Total', data: config.total, backgroundColor: '#d9e6ff', borderRadius: 5, order: 2 },
+                    { label: 'Approved', data: config.approved, backgroundColor: '#25c7a3', borderRadius: 5, order: 1 },
                 ],
             },
             options: {

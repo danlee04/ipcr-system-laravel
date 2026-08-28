@@ -20,7 +20,7 @@
                      belongs on the list rather than one page away. --}}
                 @if ($post = $employee->postTitle())
                     <span
-                        class="ms-2 inline-flex items-center rounded-full bg-seal/15 px-2 py-0.5 font-data text-[0.625rem] uppercase tracking-wide text-amber-800 ring-1 ring-inset ring-amber-500/30">{{ $post }}</span>
+                        class="ms-2 inline-flex items-center rounded-full bg-mint-100 px-2 py-0.5 font-data text-[0.625rem] uppercase tracking-wide text-mint-800 ring-1 ring-inset ring-mint-500/30">{{ $post }}</span>
                 @endif
             </td>
             <td class="px-6 py-4 font-data text-sm text-gray-600">{{ $employee->employee_number }}</td>

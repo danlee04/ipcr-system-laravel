@@ -26,10 +26,10 @@ enum IpcrStatus: string
     public function badgeClasses(): string
     {
         return match ($this) {
-            self::Draft     => 'bg-gray-100 text-gray-700 ring-gray-500/20',
+            self::Draft     => 'bg-ink-100 text-ink-700 ring-ink-400/40',
             self::Submitted => 'bg-amber-100 text-amber-800 ring-amber-500/20',
-            self::Assessed  => 'bg-blue-100 text-blue-800 ring-blue-500/20',
-            self::Approved  => 'bg-emerald-100 text-emerald-800 ring-emerald-500/20',
+            self::Assessed  => 'bg-brand-100 text-brand-800 ring-brand-500/25',
+            self::Approved  => 'bg-mint-100 text-mint-800 ring-mint-500/25',
             self::Returned  => 'bg-red-100 text-red-800 ring-red-500/20',
         };
     }

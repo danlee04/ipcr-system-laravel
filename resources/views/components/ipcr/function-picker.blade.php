@@ -79,7 +79,7 @@
             </div>
 
             <button type="submit" x-bind:disabled="picked === 0"
-                class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 disabled:cursor-not-allowed disabled:bg-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2">
+                class="rounded-md bg-nav-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-nav-800 disabled:cursor-not-allowed disabled:bg-gray-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
                 <span x-show="picked === 0">Select the functions to add</span>
                 <span x-show="picked > 0" x-cloak>
                     Add <span x-text="picked"></span>

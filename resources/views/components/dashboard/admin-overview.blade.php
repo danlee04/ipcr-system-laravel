@@ -17,7 +17,7 @@
     $donut = [
         'labels' => ['Draft', 'For Assessment', 'For Final Approval', 'Approved'],
         'data' => [$t['draft'], $t['review'], $t['final'], $t['approved']],
-        'colors' => ['#EF9F27', '#378ADD', '#5DCAA5', '#639922'],
+        'colors' => ['#bcc9dc', '#8db6ff', '#015ae6', '#25c7a3'],
     ];
 
     // Built here rather than inline in the attribute: Blade's @json argument

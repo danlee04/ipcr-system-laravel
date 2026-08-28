@@ -47,7 +47,7 @@
     {{-- Brand --}}
     <div class="flex h-16 shrink-0 items-center gap-3 border-b border-white/10 px-4">
         <a href="{{ route('dashboard') }}"
-            class="flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900">
+            class="flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900">
             <span class="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-nav-800 ring-1 ring-white/10">
                 <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                     <path d="M10 3h4v5h5v4h-5v5h-4v-5H5V8h5V3Z" />
@@ -61,7 +61,7 @@
 
         {{-- Close the drawer - phones only. --}}
         <button type="button" @click="closeDrawer()"
-            class="ms-auto grid h-11 w-11 shrink-0 place-items-center rounded-md text-nav-300 transition-colors hover:bg-nav-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal lg:hidden">
+            class="ms-auto grid h-11 w-11 shrink-0 place-items-center rounded-md text-nav-300 transition-colors hover:bg-nav-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright lg:hidden">
             <span class="sr-only">Close menu</span>
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 aria-hidden="true">
@@ -242,7 +242,7 @@
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit"
-                    class="group relative flex min-h-11 w-full items-center gap-3 rounded-md py-2 pe-2 ps-3 text-sm text-nav-300 transition-colors hover:bg-nav-800/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900">
+                    class="group relative flex min-h-11 w-full items-center gap-3 rounded-md py-2 pe-2 ps-3 text-sm text-nav-300 transition-colors hover:bg-nav-800/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900">
                     <span class="shrink-0" aria-hidden="true">
                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="1.8">
@@ -260,7 +260,7 @@
 
         {{-- Collapse toggle - desktop only. --}}
         <button type="button" @click="toggleCollapsed()"
-            class="mt-2 hidden min-h-11 w-full items-center gap-3 rounded-md py-2 pe-2 ps-3 text-sm text-nav-300 transition-colors hover:bg-nav-800/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-seal focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900 lg:flex"
+            class="mt-2 hidden min-h-11 w-full items-center gap-3 rounded-md py-2 pe-2 ps-3 text-sm text-nav-300 transition-colors hover:bg-nav-800/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900 lg:flex"
             :aria-expanded="(!collapsed).toString()" aria-controls="app-sidebar">
             <span class="shrink-0" aria-hidden="true">
                 <svg class="h-5 w-5 transition-transform duration-200" :class="collapsed ? 'rotate-180' : ''"

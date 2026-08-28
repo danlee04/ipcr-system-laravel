@@ -33,7 +33,7 @@
     <div class="mt-3 grid gap-3 sm:grid-cols-2">
         @foreach (\App\Enums\IpcrMode::cases() as $case)
             <label
-                class="group relative flex cursor-pointer items-start gap-3 rounded-lg border-2 border-gray-200 bg-white p-4 transition-colors hover:border-gray-300 hover:bg-gray-50 has-checked:border-nav-900 has-checked:bg-nav-900/5 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-seal">
+                class="group relative flex cursor-pointer items-start gap-3 rounded-lg border-2 border-gray-200 bg-white p-4 transition-colors hover:border-gray-300 hover:bg-gray-50 has-checked:border-nav-900 has-checked:bg-nav-900/5 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent">
                 <input type="radio" name="mode" value="{{ $case->value }}" class="sr-only"
                     @checked($selected === $case->value) required>
 

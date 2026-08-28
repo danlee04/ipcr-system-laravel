@@ -15,20 +15,183 @@
        personnel record, not something for body copy. */
     --font-data: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-    /* App shell. A navy ground for the sidebar - official and calm, and
-       clearly separated from the white working canvas. */
-    --color-nav-900: #0d2233;
-    --color-nav-800: #16344b;
-    --color-nav-700: #1e4360;
-    --color-nav-300: #8faac2;
-    --color-nav-100: #c7d8e6;
+    /* ------------------------------------------------------------------
+       The house palette. Three colours were chosen; everything below is
+       built out of them, so the whole system moves together when one of
+       the three changes.
 
-    /* Flag yellow. Used ONLY as a thin rail on the active item and for the
-       focus ring - never as a large surface. */
-    --color-seal: #e8b923;
+         #015ae6  brand-600   the blue the system is signed in
+         #25c7a3  mint-500    the accent, and every "this went well"
+         #95f9df  mint-200    the same accent where it sits on dark ground
 
-    /* Bond paper, not cream. */
-    --color-paper: #f6f7f5;
+       The ladders around them are those hues at other lightnesses - not
+       new colours, just more and less of these two.
+       ------------------------------------------------------------------ */
+
+    --color-brand-50: #eef4ff;
+    --color-brand-100: #d9e6ff;
+    --color-brand-200: #bcd3ff;
+    --color-brand-300: #8db6ff;
+    --color-brand-400: #578eff;
+    --color-brand-500: #2a6cfb;
+    --color-brand-600: #015ae6;
+    --color-brand-700: #0146b8;
+    --color-brand-800: #063a94;
+    --color-brand-900: #0b3475;
+    --color-brand-950: #071f45;
+
+    --color-mint-50: #e8fdf7;
+    --color-mint-100: #c2fbec;
+    --color-mint-200: #95f9df;
+    --color-mint-300: #5fecca;
+    --color-mint-400: #37d8b3;
+    --color-mint-500: #25c7a3;
+    --color-mint-600: #12a184;
+    --color-mint-700: #0d806b;
+    --color-mint-800: #106557;
+    --color-mint-900: #115349;
+    --color-mint-950: #03302b;
+
+    /* Neutrals carry the blue rather than sit beside it: every rule, label
+       and paragraph is the brand hue with the colour drained out of it. */
+    --color-ink-50: #f4f7fb;
+    --color-ink-100: #e9eff7;
+    --color-ink-200: #d7e0ec;
+    --color-ink-300: #bcc9dc;
+    --color-ink-400: #8998b1;
+    --color-ink-500: #5f6f88;
+    --color-ink-600: #45536a;
+    --color-ink-700: #333f54;
+    --color-ink-800: #1f293b;
+    --color-ink-900: #131c2b;
+    --color-ink-950: #08111f;
+
+    /* App shell. The bottom of the brand ladder - the same blue with the
+       lights off - so the sidebar reads as the deep end of one colour and
+       not as a second, unrelated navy. */
+    --color-nav-900: #061938;
+    --color-nav-800: #092553;
+    --color-nav-700: #0d3677;
+    --color-nav-300: #90aedf;
+    --color-nav-100: #cedcf3;
+
+    /* The accent. Used ONLY as a thin rail on the active item and for the
+       focus ring - never as a large surface. The bright one is for dark
+       ground, where the plain one goes muddy. */
+    --color-accent: var(--color-mint-500);
+    --color-accent-bright: var(--color-mint-200);
+
+    /* Bond paper, with a breath of the blue in it. */
+    --color-paper: #eff4fa;
+
+    /* ------------------------------------------------------------------
+       The stock scales, pointed at the house palette.
+
+       Hundreds of class names across the views say gray, indigo, sky and
+       emerald. Rather than rewrite every one of them - and then have the
+       next hurried edit quietly reintroduce a stray indigo - the names
+       are kept and the colours behind them are replaced.
+
+       Amber and red are deliberately left alone. They are not decoration:
+       a late submission and a returned IPCR have to stay readable as
+       warnings, and a delete button gone mint would be a trap.
+       ------------------------------------------------------------------ */
+
+    --color-gray-50: var(--color-ink-50);
+    --color-gray-100: var(--color-ink-100);
+    --color-gray-200: var(--color-ink-200);
+    --color-gray-300: var(--color-ink-300);
+    --color-gray-400: var(--color-ink-400);
+    --color-gray-500: var(--color-ink-500);
+    --color-gray-600: var(--color-ink-600);
+    --color-gray-700: var(--color-ink-700);
+    --color-gray-800: var(--color-ink-800);
+    --color-gray-900: var(--color-ink-900);
+    --color-gray-950: var(--color-ink-950);
+
+    --color-slate-50: var(--color-ink-50);
+    --color-slate-100: var(--color-ink-100);
+    --color-slate-200: var(--color-ink-200);
+    --color-slate-300: var(--color-ink-300);
+    --color-slate-400: var(--color-ink-400);
+    --color-slate-500: var(--color-ink-500);
+    --color-slate-600: var(--color-ink-600);
+    --color-slate-700: var(--color-ink-700);
+    --color-slate-800: var(--color-ink-800);
+    --color-slate-900: var(--color-ink-900);
+    --color-slate-950: var(--color-ink-950);
+
+    --color-blue-50: var(--color-brand-50);
+    --color-blue-100: var(--color-brand-100);
+    --color-blue-200: var(--color-brand-200);
+    --color-blue-300: var(--color-brand-300);
+    --color-blue-400: var(--color-brand-400);
+    --color-blue-500: var(--color-brand-500);
+    --color-blue-600: var(--color-brand-600);
+    --color-blue-700: var(--color-brand-700);
+    --color-blue-800: var(--color-brand-800);
+    --color-blue-900: var(--color-brand-900);
+    --color-blue-950: var(--color-brand-950);
+
+    --color-indigo-50: var(--color-brand-50);
+    --color-indigo-100: var(--color-brand-100);
+    --color-indigo-200: var(--color-brand-200);
+    --color-indigo-300: var(--color-brand-300);
+    --color-indigo-400: var(--color-brand-400);
+    --color-indigo-500: var(--color-brand-500);
+    --color-indigo-600: var(--color-brand-600);
+    --color-indigo-700: var(--color-brand-700);
+    --color-indigo-800: var(--color-brand-800);
+    --color-indigo-900: var(--color-brand-900);
+    --color-indigo-950: var(--color-brand-950);
+
+    --color-sky-50: var(--color-brand-50);
+    --color-sky-100: var(--color-brand-100);
+    --color-sky-200: var(--color-brand-200);
+    --color-sky-300: var(--color-brand-300);
+    --color-sky-400: var(--color-brand-400);
+    --color-sky-500: var(--color-brand-500);
+    --color-sky-600: var(--color-brand-600);
+    --color-sky-700: var(--color-brand-700);
+    --color-sky-800: var(--color-brand-800);
+    --color-sky-900: var(--color-brand-900);
+    --color-sky-950: var(--color-brand-950);
+
+    --color-emerald-50: var(--color-mint-50);
+    --color-emerald-100: var(--color-mint-100);
+    --color-emerald-200: var(--color-mint-200);
+    --color-emerald-300: var(--color-mint-300);
+    --color-emerald-400: var(--color-mint-400);
+    --color-emerald-500: var(--color-mint-500);
+    --color-emerald-600: var(--color-mint-600);
+    --color-emerald-700: var(--color-mint-700);
+    --color-emerald-800: var(--color-mint-800);
+    --color-emerald-900: var(--color-mint-900);
+    --color-emerald-950: var(--color-mint-950);
+
+    --color-teal-50: var(--color-mint-50);
+    --color-teal-100: var(--color-mint-100);
+    --color-teal-200: var(--color-mint-200);
+    --color-teal-300: var(--color-mint-300);
+    --color-teal-400: var(--color-mint-400);
+    --color-teal-500: var(--color-mint-500);
+    --color-teal-600: var(--color-mint-600);
+    --color-teal-700: var(--color-mint-700);
+    --color-teal-800: var(--color-mint-800);
+    --color-teal-900: var(--color-mint-900);
+    --color-teal-950: var(--color-mint-950);
+
+    --color-green-50: var(--color-mint-50);
+    --color-green-100: var(--color-mint-100);
+    --color-green-200: var(--color-mint-200);
+    --color-green-300: var(--color-mint-300);
+    --color-green-400: var(--color-mint-400);
+    --color-green-500: var(--color-mint-500);
+    --color-green-600: var(--color-mint-600);
+    --color-green-700: var(--color-mint-700);
+    --color-green-800: var(--color-mint-800);
+    --color-green-900: var(--color-mint-900);
+    --color-green-950: var(--color-mint-950);
 }
 
 /* Needed by Alpine: hide x-show elements before it boots, so nothing flashes

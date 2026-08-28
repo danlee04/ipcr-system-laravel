@@ -39,9 +39,9 @@ enum FunctionCategory: string
     public function badgeClasses(): string
     {
         return match ($this) {
-            self::Strategic => 'bg-violet-100 text-violet-800 ring-violet-500/20',
-            self::Core      => 'bg-blue-100 text-blue-800 ring-blue-500/20',
-            self::Support   => 'bg-teal-100 text-teal-800 ring-teal-500/20',
+            self::Strategic => 'bg-nav-900 text-nav-100 ring-nav-700',
+            self::Core      => 'bg-brand-100 text-brand-800 ring-brand-500/25',
+            self::Support   => 'bg-mint-100 text-mint-800 ring-mint-500/25',
         };
     }
 }

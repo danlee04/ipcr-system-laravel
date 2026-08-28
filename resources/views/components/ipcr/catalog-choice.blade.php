@@ -9,7 +9,7 @@
     class="flex cursor-pointer items-start gap-3 rounded-md border border-gray-200 px-3 py-2 hover:border-nav-900/30 hover:bg-gray-50">
     <input type="checkbox" name="job_function_ids[]" value="{{ $function->id }}"
         x-on:change="picked += $event.target.checked ? 1 : -1"
-        class="mt-0.5 rounded border-gray-300 text-nav-900 focus:ring-seal">
+        class="mt-0.5 rounded border-gray-300 text-nav-900 focus:ring-accent">
 
     <span class="min-w-0 flex-1">
         <span class="block text-sm text-gray-800">{{ $function->title }}</span>

@@ -254,7 +254,7 @@ class IpcrNotificationsTest extends TestCase
 
         preg_match($link, $html, $anchor);
 
-        return preg_match('#<span[^>]*rounded-full bg-seal[^>]*>(\d+)</span>#s', $anchor[0], $badge)
+        return preg_match('#<span[^>]*rounded-full bg-accent-bright[^>]*>(\d+)</span>#s', $anchor[0], $badge)
             ? $badge[1]
             : null;
     }
