@@ -8,12 +8,17 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    /* Inter throughout, loaded from Bunny in both layouts. It replaced
+       Figtree for text and IBM Plex Mono for figures - one family, so the
+       page has one voice. */
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
         'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
-    /* Data face - employee numbers, ratings, group labels. The texture of a
-       personnel record, not something for body copy. */
-    --font-data: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    /* Data face - employee numbers, ratings, group labels. Inter as well now,
+       so the difference is no longer the shape of the letters. What still
+       separates it is below: figures of one width, and wider tracking on the
+       small uppercase labels. */
+    --font-data: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
     /* ------------------------------------------------------------------
        The house palette. Three colours were chosen; everything below is
@@ -192,6 +197,22 @@
     --color-green-800: var(--color-mint-800);
     --color-green-900: var(--color-mint-900);
     --color-green-950: var(--color-mint-950);
+}
+
+/*
+ * The data face, now that it is the same family as everything else.
+ *
+ * A proportional font gives a 1 less room than a 4, so a column of ratings
+ * jitters as the digits change and a total never lines up with the figure
+ * above it. Inter carries tabular figures; this is what asks for them.
+ *
+ * The mono face used to do that on its own, and the difference in texture was
+ * doing the same job as the label beside it. On one family the texture has to
+ * come from somewhere, so it comes from the spacing.
+ */
+.font-data {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'cv05' 1;
 }
 
 /* Needed by Alpine: hide x-show elements before it boots, so nothing flashes

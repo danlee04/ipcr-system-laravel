@@ -30,6 +30,27 @@ delete button gone mint would be a trap.
 Badge colours live on the enums (`IpcrStatus::badgeClasses()` and friends), so
 one status looks the same everywhere.
 
+## Type
+
+**Inter, everywhere.** One family for text and for figures, loaded from Bunny
+in `layouts/app.blade.php` and `layouts/guest.blade.php`.
+
+`font-data` is still its own class - employee numbers, marks, dates, the small
+uppercase eyebrows - but it is Inter too now. What separates it is spacing
+rather than the shape of the letters, so `app.css` gives it tabular figures:
+
+```css
+.font-data {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'cv05' 1;
+}
+```
+
+Without that a proportional font gives a 1 less room than a 4, a column of
+ratings jitters as the digits change, and a total does not line up with the
+figure above it. Keep using `font-data` on anything numeric for that reason,
+even though the family no longer differs.
+
 ## The page
 
 Every screen is `<x-app-layout>` with a `header` slot and an
