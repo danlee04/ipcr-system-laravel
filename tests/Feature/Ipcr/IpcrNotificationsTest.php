@@ -243,11 +243,11 @@ class IpcrNotificationsTest extends TestCase
      * The count inside the Notifications link, or null when there is none.
      *
      * Read out of that one anchor rather than searched for across the page - a
-     * bare "3" appears in a dozen places on a dashboard.
+     * bare "3" appears in a dozen places on a page.
      */
     private function sidebarBadgeFor(User $user): ?string
     {
-        $html = $this->actingAs($user->fresh())->get(route('dashboard'))->assertOk()->getContent();
+        $html = $this->actingAs($user->fresh())->get(route('ipcrs.index'))->assertOk()->getContent();
 
         $link = '#<a\s+href="' . preg_quote(route('notifications.index'), '#') . '".*?</a>#s';
         $this->assertMatchesRegularExpression($link, $html, 'The sidebar should link to the notifications.');

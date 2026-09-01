@@ -26,10 +26,18 @@ class DashboardTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * An employee who has a dashboard - which means one who heads a section.
+     *
+     * Somebody with nobody under them is sent to their own sheets instead, so
+     * a test about what the dashboard shows has to be about a head.
+     */
     private function employeeUser(array $employee = []): User
     {
         $user = User::factory()->create();
-        Employee::factory()->create(array_merge(['user_id' => $user->id], $employee));
+        $person = Employee::factory()->create(array_merge(['user_id' => $user->id], $employee));
+
+        Section::factory()->create(['section_head_employee_id' => $person->id]);
 
         return $user->fresh();
     }
@@ -319,9 +327,14 @@ class DashboardTest extends TestCase
      * already knows, and it took the widest slot on the page to say it every
      * single visit.
      */
-    public function test_a_plain_user_with_no_employee_record_still_gets_a_page(): void
+    /** The system administrator is a login, not a member of staff. */
+    public function test_an_administrator_with_no_employee_record_still_gets_a_page(): void
     {
-        $this->actingAs(User::factory()->create(['name' => 'Ana Cruz']))
+        $this->seed(RoleSeeder::class);
+        $user = User::factory()->create(['name' => 'Ana Cruz']);
+        $user->assignRole('admin');
+
+        $this->actingAs($user->fresh())
             ->get('/dashboard')
             ->assertOk()
             ->assertSee('Ana')

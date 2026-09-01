@@ -325,14 +325,14 @@ class ApprovalFlowTest extends TestCase
         $this->submittedIpcr();
 
         $this->actingAs($this->assessor->user)
-            ->get(route('dashboard'))
+            ->get(route('ipcrs.index'))
             ->assertOk()
             ->assertSee('For My Approval');
 
         $bystander = $this->employeeWithLogin();
 
         $this->actingAs($bystander->user)
-            ->get(route('dashboard'))
+            ->get(route('ipcrs.index'))
             ->assertOk()
             ->assertDontSee('For My Approval');
     }
@@ -353,7 +353,7 @@ class ApprovalFlowTest extends TestCase
         $this->assertSame(0, Ipcr::query()->routedTo($head)->count(), 'Nothing has been routed yet.');
 
         $this->actingAs($head->user)
-            ->get(route('dashboard'))
+            ->get(route('ipcrs.index'))
             ->assertOk()
             ->assertSee('For My Approval');
     }
@@ -365,7 +365,7 @@ class ApprovalFlowTest extends TestCase
         $division->update(['division_head_employee_id' => $head->id]);
 
         $this->actingAs($head->user)
-            ->get(route('dashboard'))
+            ->get(route('ipcrs.index'))
             ->assertOk()
             ->assertSee('For My Approval');
     }
@@ -375,7 +375,7 @@ class ApprovalFlowTest extends TestCase
         $chief = Employee::factory()->chiefOfHospital()->create(['user_id' => User::factory()->create()->id]);
 
         $this->actingAs($chief->user)
-            ->get(route('dashboard'))
+            ->get(route('ipcrs.index'))
             ->assertOk()
             ->assertSee('For My Approval');
     }
@@ -383,7 +383,7 @@ class ApprovalFlowTest extends TestCase
     public function test_rank_and_file_never_see_the_link(): void
     {
         $this->actingAs($this->employeeWithLogin()->user)
-            ->get(route('dashboard'))
+            ->get(route('ipcrs.index'))
             ->assertOk()
             ->assertDontSee('For My Approval');
     }
@@ -413,7 +413,7 @@ class ApprovalFlowTest extends TestCase
         $this->assertSame(0, Ipcr::query()->awaitingAssessmentBy($this->assessor)->count());
 
         $this->actingAs($this->assessor->user)
-            ->get(route('dashboard'))
+            ->get(route('ipcrs.index'))
             ->assertOk()
             ->assertSee('For My Approval');
     }
@@ -424,7 +424,7 @@ class ApprovalFlowTest extends TestCase
         $bystander = $this->employeeWithLogin();
 
         $this->actingAs($bystander->user)
-            ->get(route('dashboard'))
+            ->get(route('ipcrs.index'))
             ->assertOk()
             ->assertDontSee('For My Approval');
     }

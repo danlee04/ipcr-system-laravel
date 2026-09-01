@@ -129,6 +129,12 @@
             </div>
         @endif
 
+        {{-- Who this head looks after. Above the hospital-wide figures
+             because it is the part they can actually do something about. --}}
+        @if ($team->isNotEmpty())
+            <x-dashboard.team-roster :team="$team" :period="$period" />
+        @endif
+
         {{-- The hospital-wide picture and the rail beside it, for HR and
              administrators only.
 

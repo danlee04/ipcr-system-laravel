@@ -28,7 +28,7 @@ use Illuminate\Support\Facades\Route;
  * on last time - not a page telling them the system exists.
  */
 Route::get('/', function () {
-    return redirect()->route(Auth::check() ? 'dashboard' : 'login');
+    return redirect()->route(Auth::user()?->landingRoute() ?? 'login');
 });
 
 Route::get('/dashboard', DashboardController::class)

@@ -106,6 +106,52 @@ class DashboardStats
     }
 
     /**
+     * The people a head looks after, and where each of them has got to.
+     *
+     * A section head sees their section; a division head sees every section
+     * under them, however the employee is filed - some carry a division of
+     * their own and some reach it through their section. The Chief sees the
+     * hospital.
+     *
+     * The head is left off their own roster: their sheet is the card at the
+     * top of the page and does not need a second row underneath it.
+     *
+     * @return Collection<int, array{employee: Employee, ipcr: ?Ipcr}>
+     */
+    public function teamOf(Employee $head, ?IpcrPeriod $period): Collection
+    {
+        $query = Employee::query()->active()->with(['position', 'section']);
+
+        if ($section = $head->headedSection) {
+            $query->where('section_id', $section->id);
+        } elseif ($division = $head->headedDivision) {
+            $query->where(fn (Builder $q) => $q->where('division_id', $division->id)
+                ->orWhereHas('section', fn (Builder $s) => $s->where('division_id', $division->id)));
+        } elseif (! $head->isChiefOfHospital()) {
+            return collect();
+        }
+
+        $people = $query->whereKeyNot($head->id)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
+
+        // One query for the sheets rather than one per person.
+        $sheets = $period === null
+            ? collect()
+            : Ipcr::query()
+                ->where('ipcr_period_id', $period->id)
+                ->whereIn('employee_id', $people->pluck('id'))
+                ->get()
+                ->keyBy('employee_id');
+
+        return $people->map(fn (Employee $person): array => [
+            'employee' => $person,
+            'ipcr'     => $sheets->get($person->id),
+        ]);
+    }
+
+    /**
      * Active employees who have not sent an IPCR for assessment.
      *
      * A draft does not count: it has never left the employee's hands, so its

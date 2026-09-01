@@ -10,6 +10,7 @@ use App\Models\Section;
 use App\Services\DashboardStats;
 use App\Services\SetupHealth;
 use App\Support\DashboardScope;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -28,9 +29,16 @@ class DashboardController extends Controller
         private readonly DashboardStats $stats,
     ) {}
 
-    public function __invoke(Request $request): View
+    public function __invoke(Request $request): View|RedirectResponse
     {
         $user = $request->user();
+
+        // Typing the address does not conjure a dashboard. Sent on rather than
+        // refused: they asked for a landing page and they have one.
+        if (! $user->seesDashboard()) {
+            return redirect()->route($user->landingRoute());
+        }
+
         $employee = $user->employee;
         $isAdmin = $user->hasAnyRole(['admin', 'hr']);
 
@@ -42,6 +50,11 @@ class DashboardController extends Controller
             'myIpcr'   => $this->currentIpcr($employee, $period),
             'pending'  => $this->pendingCounts($employee),
             'admin'    => $isAdmin ? $this->adminSummary($request, $period) : null,
+
+            // The people this head looks after, and where each of them has got
+            // to. Empty for admin and HR with no post of their own - the
+            // hospital-wide figures are their version of this.
+            'team'     => $employee ? $this->stats->teamOf($employee, $period) : collect(),
         ]);
     }
 

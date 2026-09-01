@@ -70,10 +70,12 @@ class DashboardRailTest extends TestCase
     // Who gets one
     // -----------------------------------------------------------------
 
-    public function test_an_ordinary_employee_has_no_rail(): void
+    /** A head has a dashboard; the rail on it is for HR and administrators. */
+    public function test_a_head_who_is_not_an_administrator_has_no_rail(): void
     {
         $user = User::factory()->create();
-        Employee::factory()->create(['user_id' => $user->id]);
+        $person = Employee::factory()->create(['user_id' => $user->id]);
+        \App\Models\Section::factory()->create(['section_head_employee_id' => $person->id]);
 
         $this->assertStringNotContainsString('data-dashboard-rail', $this->html($user));
     }

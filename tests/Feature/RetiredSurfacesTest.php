@@ -67,11 +67,16 @@ class RetiredSurfacesTest extends TestCase
         $this->get('/')->assertRedirect(route('login'));
     }
 
-    public function test_the_root_sends_a_signed_in_user_to_their_dashboard(): void
+    /**
+     * Wherever that account belongs, which is not the same place for
+     * everybody: a head gets the dashboard, an employee their own sheets, and
+     * a login HR has not finished setting up gets its profile.
+     */
+    public function test_the_root_sends_a_signed_in_user_where_they_belong(): void
     {
         $user = \App\Models\User::factory()->create();
 
-        $this->actingAs($user)->get('/')->assertRedirect(route('dashboard'));
+        $this->actingAs($user)->get('/')->assertRedirect(route('profile.edit'));
     }
 
     /** And the page it used to render is gone with it. */

@@ -51,7 +51,9 @@
          keeping is the way back out. --}}
     <div class="flex h-18 shrink-0 items-center gap-2 border-b border-white/10 px-5"
         :class="collapsed ? 'lg:justify-center lg:px-2' : ''">
-        <a href="{{ route('dashboard') }}"
+        {{-- Home is wherever this person lands, which is not a dashboard for
+             everybody. --}}
+        <a href="{{ route($user?->landingRoute() ?? 'login') }}"
             class="flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900"
             :class="collapsed ? 'lg:hidden' : ''">
             {{-- The agency logo, the same file the login page carries. A white
@@ -99,15 +101,20 @@
     <nav class="flex-1 space-y-0.5 overflow-y-auto px-2 py-2" aria-label="Main">
         <x-sidebar-heading label="My Work" />
 
-        <x-sidebar-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+        {{-- Only for whoever has people to look after. For everybody else the
+             dashboard was a page about themselves, and their own IPCR says all
+             of it faster. --}}
+        @if ($user?->seesDashboard())
+            <x-sidebar-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
             <x-slot:icon>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M3.5 10.5 12 4l8.5 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-3.5V14h-7v6.5H5A1.5 1.5 0 0 1 3.5 19v-8.5Z" />
                 </svg>
             </x-slot:icon>
-            Dashboard
-        </x-sidebar-link>
+                Dashboard
+            </x-sidebar-link>
+        @endif
 
         {{-- Only for people who have an Employee record. IpcrController aborts
              403 without one, so for an account like the system administrator

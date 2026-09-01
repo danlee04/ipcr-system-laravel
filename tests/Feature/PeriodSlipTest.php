@@ -98,8 +98,10 @@ class PeriodSlipTest extends TestCase
     {
         $this->openPeriod();
 
+        // A head, because they are who has a dashboard.
         $user = User::factory()->create();
-        Employee::factory()->create(['user_id' => $user->id]);
+        $person = Employee::factory()->create(['user_id' => $user->id]);
+        \App\Models\Section::factory()->create(['section_head_employee_id' => $person->id]);
 
         $html = $this->actingAs($user->fresh())->get('/dashboard')->assertOk()->getContent();
 

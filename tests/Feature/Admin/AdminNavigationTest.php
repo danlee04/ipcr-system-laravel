@@ -18,7 +18,9 @@ class AdminNavigationTest extends TestCase
         $user = User::factory()->create();
         $user->assignRole('admin');
 
-        $response = $this->actingAs($user)->get('/dashboard');
+        // No employee record on this account, so the profile rather than the
+        // IPCR list: the sidebar is the same on either.
+        $response = $this->actingAs($user)->get(route('profile.edit'));
 
         $response->assertOk();
         $response->assertSee('Administration');
@@ -35,7 +37,7 @@ class AdminNavigationTest extends TestCase
         $user = User::factory()->create();
         $user->assignRole('hr');
 
-        $response = $this->actingAs($user)->get('/dashboard');
+        $response = $this->actingAs($user)->get(route('profile.edit'));
 
         $response->assertOk();
         $response->assertSee('Administration');
@@ -47,7 +49,7 @@ class AdminNavigationTest extends TestCase
         $this->seed(RoleSeeder::class);
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get('/dashboard');
+        $response = $this->actingAs($user)->get(route('profile.edit'));
 
         $response->assertOk();
         $response->assertDontSee('Administration');
@@ -66,7 +68,9 @@ class AdminNavigationTest extends TestCase
 
         $this->assertNull($user->employee, 'This test is meaningless if the admin has an employee.');
 
-        $response = $this->actingAs($user)->get('/dashboard');
+        // The IPCR list is exactly what this account cannot open, so the
+        // sidebar is read from the page every account has.
+        $response = $this->actingAs($user)->get(route('profile.edit'));
 
         $response->assertOk();
         $response->assertDontSee('My IPCRs');
@@ -80,7 +84,7 @@ class AdminNavigationTest extends TestCase
         Employee::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($user->fresh())
-            ->get('/dashboard')
+            ->get(route('ipcrs.index'))
             ->assertOk()
             ->assertSee('My IPCRs');
     }
@@ -93,7 +97,7 @@ class AdminNavigationTest extends TestCase
         $user->assignRole('admin');
         Employee::factory()->create(['user_id' => $user->id]);
 
-        $response = $this->actingAs($user->fresh())->get('/dashboard');
+        $response = $this->actingAs($user->fresh())->get(route('ipcrs.index'));
 
         $response->assertOk();
         $response->assertSee('My IPCRs');

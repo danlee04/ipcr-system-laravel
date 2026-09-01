@@ -17,12 +17,13 @@ class AppShellTest extends TestCase
 
     public function test_the_sidebar_renders_for_an_authenticated_user(): void
     {
-        // Given an Employee record, because "My IPCRs" is only shown to people
-        // who have one - IpcrController aborts 403 without it.
+        // A head, so every link in the shell is present: "My IPCRs" needs an
+        // employee record and Dashboard needs somebody to look after.
         $user = User::factory()->create();
-        \App\Models\Employee::factory()->create(['user_id' => $user->id]);
+        $person = \App\Models\Employee::factory()->create(['user_id' => $user->id]);
+        \App\Models\Section::factory()->create(['section_head_employee_id' => $person->id]);
 
-        $response = $this->actingAs($user->fresh())->get('/dashboard');
+        $response = $this->actingAs($user->fresh())->get(route('ipcrs.index'));
 
         $response->assertOk();
         $response->assertSee('id="app-sidebar"', false);
@@ -53,7 +54,7 @@ class AppShellTest extends TestCase
         $user = User::factory()->create();
         \App\Models\Employee::factory()->create(['user_id' => $user->id]);
 
-        $html = $this->actingAs($user->fresh())->get('/dashboard')->assertOk()->getContent();
+        $html = $this->actingAs($user->fresh())->get(route('ipcrs.index'))->assertOk()->getContent();
 
         $toggle = strpos($html, 'toggleCollapsed()');
         $nav = strpos($html, '<nav');
@@ -77,7 +78,7 @@ class AppShellTest extends TestCase
 
         $this->assertNull($user->employee);
 
-        $response = $this->actingAs($user)->get('/dashboard');
+        $response = $this->actingAs($user)->get(route('profile.edit'));
 
         $response->assertOk();
         $response->assertSee('no.employee@example.test');

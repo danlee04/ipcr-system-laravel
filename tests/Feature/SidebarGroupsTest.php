@@ -22,7 +22,7 @@ class SidebarGroupsTest extends TestCase
 
     private function sidebar(User $user): string
     {
-        $html = $this->actingAs($user->fresh())->get('/dashboard')->assertOk()->getContent();
+        $html = $this->actingAs($user->fresh())->get(route('ipcrs.index'))->assertOk()->getContent();
 
         $start = strpos($html, 'id="app-sidebar"');
         $end = strpos($html, '</aside>');

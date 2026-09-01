@@ -28,7 +28,9 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Not everybody has a dashboard: an employee with nobody under them
+        // lands on their own sheets instead.
+        return redirect()->intended(route($request->user()->landingRoute(), absolute: false));
     }
 
     /**
