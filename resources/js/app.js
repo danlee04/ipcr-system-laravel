@@ -49,6 +49,41 @@ Alpine.data('appShell', () => ({
  * Anything that goes wrong falls back to loading the URL properly, which is
  * the behaviour we started from.
  */
+/**
+ * The "from another position" block on an IPCR.
+ *
+ * Three selects that narrow each other down to one post, and nothing to tick
+ * until one is named. None of them is submitted - they only decide what is on
+ * screen.
+ */
+Alpine.data('borrowedFunctions', () => ({
+    division: '',
+    section: '',
+    position: '',
+
+    /**
+     * Untick whatever the filter has just hidden.
+     *
+     * A hidden checkbox is still submitted, so without this an employee could
+     * pick a function under one post, narrow to another, and add work they
+     * can no longer see and never meant to choose.
+     *
+     * The change event is dispatched rather than the counter adjusted here:
+     * the button's count belongs to the form around this block, and there
+     * should be one place that knows how to change it.
+     */
+    prune() {
+        this.$el.querySelectorAll('input[type="checkbox"]:checked').forEach((box) => {
+            if (box.closest('[data-post]')?.dataset.post === this.position) {
+                return;
+            }
+
+            box.checked = false;
+            box.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    },
+}));
+
 Alpine.data('liveList', (action) => ({
     busy: false,
     timer: null,

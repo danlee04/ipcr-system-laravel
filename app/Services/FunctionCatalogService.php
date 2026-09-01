@@ -69,7 +69,7 @@ class FunctionCatalogService
             ->orderBy('positions.title')
             ->orderBy('job_functions.title')
             ->select('job_functions.*')
-            ->with('position')
+            ->with('position.section.division')
             ->get();
     }
 

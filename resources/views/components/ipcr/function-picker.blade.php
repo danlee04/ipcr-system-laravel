@@ -28,9 +28,19 @@
         ->map(fn($items) => $left($items->filter->reachesEveryone()))
         ->filter->isNotEmpty();
 
-    // The third: somebody else's post. Grouped by the post it came from,
-    // because which one it was is the whole point of borrowing it.
-    $others = $left($catalog->elsewhere)->groupBy(fn($function) => $function->position?->title ?? 'Unassigned');
+    // The third: somebody else's post.
+    $borrowable = $left($catalog->elsewhere);
+
+    // Grouped by the post rather than its title, because that id is what the
+    // filter below matches on.
+    $others = $borrowable->groupBy(fn($function) => (string) $function->position_id);
+
+    // Only what has something behind it. A hospital has hundreds of posts and
+    // most of them are nothing to do with this employee; offering a division
+    // that narrows to an empty list is a dead end dressed as a choice.
+    $otherPositions = $borrowable->map->position->filter()->unique('id')->sortBy('title')->values();
+    $otherSections = $otherPositions->map->section->filter()->unique('id')->sortBy('name')->values();
+    $otherDivisions = $otherSections->map->division->filter()->unique('id')->sortBy('name')->values();
 @endphp
 
 <div class="space-y-5 rounded-lg bg-white p-6 shadow-sm ring-1 ring-gray-950/5">
@@ -88,23 +98,76 @@
                         <span class="font-data text-xs text-gray-400">{{ $others->flatten()->count() }}</span>
                     </summary>
 
-                    <div class="space-y-4 border-t border-gray-200 p-4">
+                    {{-- Narrowed to one post before anything is shown.
+
+                         Listing every post in the hospital and all its work
+                         the moment this opens is the wall of text the fold was
+                         there to prevent. So it asks first, and the three
+                         selects narrow each other: a division decides which
+                         sections are worth offering, a section which posts.
+
+                         None of them carries a name. They change what is on
+                         screen and nothing else - the form posts a list of
+                         function ids, and a named select here would ride along
+                         and mean nothing at the other end. --}}
+                    <div class="space-y-3 border-t border-gray-200 p-4" x-data="borrowedFunctions()">
                         <p class="text-xs text-gray-500">
                             Work the catalog files under a post that is not yours - for covering a vacancy, or a task
                             that moved before the catalog caught up. Add one only if you actually did it.
                         </p>
 
-                        @foreach ($others as $position => $items)
-                            <div class="space-y-1.5">
-                                <p class="font-data text-[0.6875rem] uppercase tracking-wide text-gray-500">
-                                    {{ $position }}
-                                </p>
-
-                                <div class="grid gap-1.5 sm:grid-cols-2">
-                                    @foreach ($items as $jobFunction)
-                                        <x-ipcr.catalog-choice :function="$jobFunction" with-category />
+                        <div class="grid gap-2 sm:grid-cols-3">
+                            <label class="block">
+                                <span class="sr-only">Division</span>
+                                <select x-model="division"
+                                    x-on:change="section = ''; position = ''; $nextTick(() => prune())"
+                                    class="w-full rounded-md border-gray-300 py-1.5 text-sm">
+                                    <option value="">All divisions</option>
+                                    @foreach ($otherDivisions as $division)
+                                        <option value="{{ $division->id }}">{{ $division->name }}</option>
                                     @endforeach
-                                </div>
+                                </select>
+                            </label>
+
+                            <label class="block">
+                                <span class="sr-only">Section</span>
+                                <select x-model="section" x-on:change="position = ''; $nextTick(() => prune())"
+                                    class="w-full rounded-md border-gray-300 py-1.5 text-sm">
+                                    <option value="">All sections</option>
+                                    @foreach ($otherSections as $section)
+                                        <option value="{{ $section->id }}"
+                                            x-show="division === '' || division === '{{ $section->division_id }}'">
+                                            {{ $section->name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+
+                            <label class="block">
+                                <span class="sr-only">Position</span>
+                                <select x-model="position" x-on:change="$nextTick(() => prune())"
+                                    class="w-full rounded-md border-gray-300 py-1.5 text-sm">
+                                    <option value="">Choose a position</option>
+                                    @foreach ($otherPositions as $post)
+                                        <option value="{{ $post->id }}"
+                                            x-show="(section === '' || section === '{{ $post->section_id }}')
+                                                && (division === '' || division === '{{ $post->section?->division_id }}')">
+                                            {{ $post->title }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                        </div>
+
+                        <p class="rounded-md bg-gray-50 p-3 text-xs text-gray-500 ring-1 ring-inset ring-gray-200"
+                            x-show="position === ''">
+                            Choose a position to see the work filed under it.
+                        </p>
+
+                        @foreach ($others as $postId => $items)
+                            <div data-post="{{ $postId }}" x-show="position === '{{ $postId }}'" x-cloak
+                                class="grid gap-1.5 sm:grid-cols-2">
+                                @foreach ($items as $jobFunction)
+                                    <x-ipcr.catalog-choice :function="$jobFunction" with-category />
+                                @endforeach
                             </div>
                         @endforeach
                     </div>
