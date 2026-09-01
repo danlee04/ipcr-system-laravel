@@ -49,19 +49,24 @@
          Collapsed, the brand steps aside and the toggle is the only thing in
          the bar: seventy-two pixels will not hold both, and the one worth
          keeping is the way back out. --}}
-    <div class="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-3"
+    <div class="flex h-18 shrink-0 items-center gap-2 border-b border-white/10 px-5"
         :class="collapsed ? 'lg:justify-center lg:px-2' : ''">
         <a href="{{ route('dashboard') }}"
-            class="flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900"
+            class="flex min-w-0 items-center gap-3 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-bright focus-visible:ring-offset-2 focus-visible:ring-offset-nav-900"
             :class="collapsed ? 'lg:hidden' : ''">
-            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-nav-800 ring-1 ring-white/10">
-                <svg class="h-4.5 w-4.5 text-white" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <path d="M10 3h4v5h5v4h-5v5h-4v-5H5V8h5V3Z" />
-                </svg>
-            </span>
+            {{-- The agency logo, the same file the login page carries. A white
+                 backing because the mark is drawn for paper and disappears
+                 into the navy without one. --}}
+            <img src="{{ asset('images/dtrc-logo.png') }}" alt=""
+                class="h-9 w-9 shrink-0 rounded-full bg-white/95 object-contain p-0.5 ring-1 ring-white/15">
+            {{-- The agency leads and the system names itself underneath, the
+                 same way round as the login page: one hospital, one system,
+                 and the identity is the hospital. --}}
             <span class="min-w-0">
-                <span class="block font-data text-[0.625rem] uppercase tracking-[0.18em] text-nav-300">DTRC</span>
-                <span class="block truncate text-sm font-semibold text-white">IPCR System</span>
+                <span
+                    class="block truncate text-sm font-semibold leading-tight text-white">{{ config('agency.short_name') }}</span>
+                <span
+                    class="mt-0.5 block truncate font-data text-[0.625rem] uppercase tracking-[0.16em] text-nav-300">IPCR System</span>
             </span>
         </a>
 

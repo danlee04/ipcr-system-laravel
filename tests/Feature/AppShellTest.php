@@ -30,6 +30,14 @@ class AppShellTest extends TestCase
         $response->assertSee('Dashboard');
         $response->assertSee('My IPCRs');
         $response->assertSee('Log out');
+
+        // The agency logo, the same file the login page carries. The mark that
+        // was here before was a generic glyph that stood for nothing.
+        $response->assertSee(asset('images/dtrc-logo.png'), false);
+
+        // The agency leads and the system names itself underneath, the same way
+        // round as the login page. Both come from config, never typed in.
+        $response->assertSee(config('agency.short_name'));
     }
 
     /**
