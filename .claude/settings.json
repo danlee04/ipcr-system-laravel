@@ -1,0 +1,26 @@
+{
+    "permissions": {
+        "allow": [
+            "Bash(php artisan test:*)",
+            "Bash(php artisan route:list:*)",
+            "Bash(php artisan config:clear)",
+            "Bash(php artisan view:clear)",
+            "Bash(php -l:*)",
+            "Bash(vendor/bin/phpunit:*)",
+            "Bash(vendor/bin/pint:*)",
+            "Bash(npm run build)",
+            "Bash(npm run dev)",
+            "Bash(git status:*)",
+            "Bash(git diff:*)",
+            "Bash(git log:*)",
+            "Bash(git show:*)"
+        ],
+        "deny": [
+            "Bash(git commit:*)",
+            "Bash(git push:*)",
+            "Bash(php artisan migrate:fresh:*)",
+            "Bash(php artisan db:wipe:*)",
+            "Read(.env)"
+        ]
+    }
+}
