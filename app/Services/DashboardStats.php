@@ -123,7 +123,7 @@ class DashboardStats
         $query = Employee::query()->active()->with(['position', 'section']);
 
         if ($section = $head->headedSection) {
-            $query->where('section_id', $section->id)
+            $this->postedToSection($query, $section->id)
                 // Nobody above them. A division head has to be filed in some
                 // section and the Chief has to sit somewhere, and their sheets
                 // go upward - the Chief assesses a division head. A name on the
@@ -133,8 +133,7 @@ class DashboardStats
         } elseif ($division = $head->headedDivision) {
             // Everyone in the division, section heads included: the division
             // head assesses those and gives the final word on everyone else.
-            $query->where(fn (Builder $q) => $q->where('division_id', $division->id)
-                ->orWhereHas('section', fn (Builder $s) => $s->where('division_id', $division->id)))
+            $this->postedToDivision($query, $division->id)
                 ->where('is_chief_of_hospital', false);
         } elseif (! $head->isChiefOfHospital()) {
             return collect();
@@ -158,6 +157,60 @@ class DashboardStats
             'employee' => $person,
             'ipcr'     => $sheets->get($person->id),
         ]);
+    }
+
+    /**
+     * Whoever answers to this section.
+     *
+     * Three ways in, and the first that applies decides where somebody
+     * belongs: they head the section, a designation posts them here, or they
+     * are filed here and neither runs a unit nor is posted anywhere. Running a
+     * unit beats a posting and a posting beats the plantilla position - the
+     * head of a section is run by the division that section sits in, whatever
+     * division their own position is filed under - so each later way in has to
+     * leave out whoever an earlier one has already placed.
+     */
+    private function postedToSection(Builder $query, int $sectionId): Builder
+    {
+        return $query->where(fn (Builder $outer) => $outer
+            ->whereHas('headedSection', fn (Builder $s) => $s->whereKey($sectionId))
+            ->orWhere(fn (Builder $posted) => $this->runsNothing($posted)
+                ->whereHas(
+                    'activeDesignations',
+                    fn (Builder $d) => $d->where('designations.section_id', $sectionId),
+                ))
+            ->orWhere(fn (Builder $own) => $this->runsNothing($own)
+                ->whereDoesntHave('activeDesignations', $this->posting(...))
+                ->where('section_id', $sectionId)));
+    }
+
+    /** The same three ways in, one level up. */
+    private function postedToDivision(Builder $query, int $divisionId): Builder
+    {
+        return $query->where(fn (Builder $outer) => $outer
+            ->whereHas('headedSection', fn (Builder $s) => $s->where('division_id', $divisionId))
+            ->orWhereHas('headedDivision', fn (Builder $d) => $d->whereKey($divisionId))
+            ->orWhere(fn (Builder $posted) => $this->runsNothing($posted)
+                ->whereHas('activeDesignations', fn (Builder $d) => $d
+                    ->where('designations.division_id', $divisionId)
+                    ->orWhereHas('section', fn (Builder $s) => $s->where('division_id', $divisionId))))
+            ->orWhere(fn (Builder $own) => $this->runsNothing($own)
+                ->whereDoesntHave('activeDesignations', $this->posting(...))
+                ->where(fn (Builder $filed) => $filed->where('division_id', $divisionId)
+                    ->orWhereHas('section', fn (Builder $s) => $s->where('division_id', $divisionId)))));
+    }
+
+    /** They run no unit of their own, so a posting or their filing places them. */
+    private function runsNothing(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('headedSection')->whereDoesntHave('headedDivision');
+    }
+
+    /** A designation that names an office rather than only a title. */
+    private function posting(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q->whereNotNull('designations.division_id')
+            ->orWhereNotNull('designations.section_id'));
     }
 
     /**

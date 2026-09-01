@@ -288,4 +288,82 @@ class HeadDashboardTest extends TestCase
         $this->assertStringContainsString('Silent', $roster);
         $this->assertStringContainsString('Not started', $roster);
     }
+
+    // -----------------------------------------------------------------
+    // A head who runs a unit outside the one they are filed in
+    // -----------------------------------------------------------------
+
+    /**
+     * Somebody may head a section in one division while their plantilla
+     * position sits in another. The unit they run is where they work: their
+     * IPCR goes to the head of THAT division, so that is the roster their name
+     * belongs on. Filed under the division on their position, they were chased
+     * by a head with no say over them and invisible to the head who assesses
+     * them.
+     */
+    private function borrowedSectionHead(Section $leads, Section $filedIn): Employee
+    {
+        $head = $this->staff($filedIn, 'Guico');
+        $leads->update(['section_head_employee_id' => $head->id]);
+
+        return $head->fresh();
+    }
+
+    public function test_a_division_head_sees_a_section_head_who_runs_one_of_their_sections(): void
+    {
+        $administrative = Division::factory()->create();
+        $residential = Division::factory()->create();
+
+        $chief = $this->staff($this->sectionIn($administrative, 'Office'), 'Onde');
+        $administrative->update(['division_head_employee_id' => $chief->id]);
+
+        $this->borrowedSectionHead(
+            leads: $this->sectionIn($administrative, 'Human Resource Development'),
+            filedIn: $this->sectionIn($residential, 'Health Information Management'),
+        );
+
+        $this->actingAs($this->userFor($chief->fresh()))
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('Guico');
+    }
+
+    public function test_the_division_they_are_only_filed_in_does_not_see_them(): void
+    {
+        $administrative = Division::factory()->create();
+        $residential = Division::factory()->create();
+
+        $chief = $this->staff($this->sectionIn($residential, 'Office'), 'Pajutan');
+        $residential->update(['division_head_employee_id' => $chief->id]);
+
+        $this->borrowedSectionHead(
+            leads: $this->sectionIn($administrative, 'Human Resource Development'),
+            filedIn: $this->sectionIn($residential, 'Health Information Management'),
+        );
+
+        $this->actingAs($this->userFor($chief->fresh()))
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertDontSee('Guico');
+    }
+
+    public function test_the_section_head_they_are_filed_under_does_not_see_them(): void
+    {
+        $administrative = Division::factory()->create();
+        $residential = Division::factory()->create();
+
+        $filedIn = $this->sectionIn($residential, 'Health Information Management');
+        $garcia = $this->headOf($filedIn);
+        $garcia->update(['last_name' => 'Garcia']);
+
+        $this->borrowedSectionHead(
+            leads: $this->sectionIn($administrative, 'Human Resource Development'),
+            filedIn: $filedIn,
+        );
+
+        $this->actingAs($this->userFor($garcia->fresh()))
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertDontSee('Guico');
+    }
 }

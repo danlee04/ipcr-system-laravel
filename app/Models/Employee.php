@@ -83,6 +83,50 @@ class Employee extends Model
         return $this->designations()->wherePivot('is_active', true);
     }
 
+    /**
+     * The designation that posted them somewhere, if one did.
+     *
+     * Most designations name an office. Somebody made OIC of a unit is run by
+     * that unit for the period, whatever their plantilla position says, and
+     * their IPCR is full of that unit's work - the functions come off the
+     * designation. The newest posting wins if there is more than one.
+     */
+    public function postingDesignation(): ?Designation
+    {
+        return $this->activeDesignations
+            ->filter(fn (Designation $d): bool => $d->postsElsewhere())
+            ->sortByDesc(fn (Designation $d) => $d->pivot->start_date)
+            ->first();
+    }
+
+    /**
+     * The section they answer to, which is not always the one they are filed
+     * in. Null for somebody posted to a whole division and no section under
+     * it - the ordinary shape for an officer-in-charge.
+     */
+    public function dutySection(): ?Section
+    {
+        $posting = $this->postingDesignation();
+
+        if ($posting === null) {
+            return $this->section;
+        }
+
+        return $posting->section;
+    }
+
+    /** The division they answer to, through the posting or their own filing. */
+    public function dutyDivision(): ?Division
+    {
+        $posting = $this->postingDesignation();
+
+        if ($posting !== null) {
+            return $posting->section?->division ?? $posting->division;
+        }
+
+        return $this->effective_division;
+    }
+
     /** If they are the assigned Section Head, this is the section they lead. */
     public function headedSection(): HasOne
     {

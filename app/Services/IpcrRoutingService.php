@@ -72,7 +72,27 @@ class IpcrRoutingService
      */
     private function resolveForRankAndFile(Employee $employee): ApprovalChain
     {
-        $section = $employee->section;
+        // Not always the section their plantilla position sits in. A
+        // designation may post them elsewhere, and somebody made OIC of a unit
+        // is run by that unit for the period - their IPCR fills with its work.
+        $section = $employee->dutySection();
+
+        // Posted to a whole division with no section under it: the ordinary
+        // shape for an officer-in-charge, who runs a unit rather than sitting
+        // in one. Nobody stands between them and the division, so the chain is
+        // the one a section head's own IPCR takes.
+        if ($section === null && ($division = $employee->dutyDivision()) !== null) {
+            $divisionHead = $division->head;
+
+            if ($divisionHead === null) {
+                throw IpcrRoutingException::noDivisionHead($division->name);
+            }
+
+            return new ApprovalChain(
+                assessor: $divisionHead,
+                finalApprover: $this->chiefOfHospitalOrFail(),
+            );
+        }
 
         if ($section === null) {
             throw IpcrRoutingException::noSectionAssigned($employee);

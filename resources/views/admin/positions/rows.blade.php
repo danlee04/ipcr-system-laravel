@@ -137,6 +137,8 @@
                 <textarea name="description" rows="3" class="w-full rounded-md border-gray-300 text-sm"></textarea>
             </label>
 
+            <x-admin.designation-office :divisions="$divisions" :sections="$sections" />
+
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" x-on:click="$dispatch('close-modal', 'create-position')"
                     class="rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</button>
@@ -150,6 +152,8 @@
     <x-admin.table>
         <x-slot:head>
             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Title</th>
+            <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Posts
+                them to</th>
             <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status
             </th>
             <th class="px-6 py-3"></th>
@@ -158,6 +162,9 @@
         @forelse ($designations as $designation)
             <tr>
                 <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $designation->title }}</td>
+                <td class="px-6 py-4 text-sm text-gray-600">
+                    {{ $designation->section?->name ?? $designation->division?->name ?? '—' }}
+                </td>
                 <td class="px-6 py-4"><x-admin.active-badge :active="$designation->is_active" /></td>
                 <td class="px-6 py-4">
                     <x-admin.row-actions :record="$designation" :report="$designationReports[$designation->id]"
@@ -172,7 +179,7 @@
 
         @empty
             <tr>
-                <td colspan="3" class="px-6 py-8 text-center text-sm text-gray-500">
+                <td colspan="4" class="px-6 py-8 text-center text-sm text-gray-500">
                     {{ $search ? 'No designations match this search.' : 'No designations yet.' }}
                 </td>
             </tr>
@@ -200,6 +207,10 @@
         <span class="mb-1 block text-sm font-medium text-gray-700">Description</span>
         <textarea name="description" rows="3" class="w-full rounded-md border-gray-300 text-sm">{{ $designation->description }}</textarea>
         </label>
+
+        <x-admin.designation-office :designation="$designation" :divisions="$divisions"
+            :sections="$sections" />
+
 
         <div class="flex justify-end gap-3 pt-2">
         <button type="button"
@@ -230,6 +241,8 @@
                 <span class="mb-1 block text-sm font-medium text-gray-700">Description</span>
                 <textarea name="description" rows="3" class="w-full rounded-md border-gray-300 text-sm"></textarea>
             </label>
+
+            <x-admin.designation-office :divisions="$divisions" :sections="$sections" />
 
             <div class="flex justify-end gap-3 pt-2">
                 <button type="button" x-on:click="$dispatch('close-modal', 'create-designation')"

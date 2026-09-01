@@ -29,10 +29,10 @@
             </nav>
         </div>
 
-        {{-- The two tabs do not take the same filters. A position sits in a
-             section and so in a division; a designation sits nowhere, and
-             offering it those would invite a search that can only come back
-             empty. --}}
+        {{-- The two tabs do not take the same filters. A position always sits
+             in a section and so in a division; a designation may name an
+             office or name none, so a search on one would come back empty for
+             every title that moves nobody. --}}
         <x-admin.live-list :action="route('admin.positions.index')">
             <x-admin.filter-bar :action="route('admin.positions.index')" :placeholder="$tab === 'positions' ? 'Search by title or item number' : 'Search by title'" :hidden="$tab === 'designations' ? ['tab' => 'designations'] : []">
 

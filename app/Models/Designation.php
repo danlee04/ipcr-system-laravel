@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -20,6 +21,8 @@ class Designation extends Model
     protected $fillable = [
         'title',
         'description',
+        'division_id',
+        'section_id',
         'is_active',
     ];
 
@@ -28,6 +31,27 @@ class Designation extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    public function division(): BelongsTo
+    {
+        return $this->belongsTo(Division::class);
+    }
+
+    public function section(): BelongsTo
+    {
+        return $this->belongsTo(Section::class);
+    }
+
+    /**
+     * Does this designation post whoever holds it somewhere?
+     *
+     * Most do. One that names no office is a title and nothing more, and
+     * leaves the holder where their plantilla position put them.
+     */
+    public function postsElsewhere(): bool
+    {
+        return $this->division_id !== null || $this->section_id !== null;
     }
 
     public function employees(): BelongsToMany
