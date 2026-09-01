@@ -55,6 +55,35 @@ class RetiredSurfacesTest extends TestCase
     }
 
     /**
+     * Typing the address gets you to work, not to a signpost.
+     *
+     * The root used to answer with Laravel's starter page - a screen about the
+     * framework, with links to its documentation, in front of a hospital's
+     * appraisal system. There is nothing to say at that address that the
+     * login form does not say better.
+     */
+    public function test_the_root_sends_a_guest_to_the_login_form(): void
+    {
+        $this->get('/')->assertRedirect(route('login'));
+    }
+
+    public function test_the_root_sends_a_signed_in_user_to_their_dashboard(): void
+    {
+        $user = \App\Models\User::factory()->create();
+
+        $this->actingAs($user)->get('/')->assertRedirect(route('dashboard'));
+    }
+
+    /** And the page it used to render is gone with it. */
+    public function test_the_starter_page_is_gone(): void
+    {
+        $this->assertFalse(
+            view()->exists('welcome'),
+            'The Laravel starter page is still in the views.',
+        );
+    }
+
+    /**
      * The IPCR is started from the list, in a modal that asks for the mode.
      * The old page asked for nothing and quietly produced a targets-only IPCR;
      * nothing linked to it, so the only way to reach it was to type the URL.

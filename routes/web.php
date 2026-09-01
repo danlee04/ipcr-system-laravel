@@ -17,10 +17,18 @@ use App\Http\Controllers\IpcrApprovalController;
 use App\Http\Controllers\IpcrController;
 use App\Http\Controllers\IpcrItemController;
 use App\Http\Controllers\NotificationController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+/*
+ * Typing the address gets you to work.
+ *
+ * There is nothing to say at the root that the login form does not say
+ * better, and a signed-in person asking for it wants the dashboard they were
+ * on last time - not a page telling them the system exists.
+ */
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route(Auth::check() ? 'dashboard' : 'login');
 });
 
 Route::get('/dashboard', DashboardController::class)

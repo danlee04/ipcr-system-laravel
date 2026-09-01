@@ -38,8 +38,11 @@ class RegistrationTest extends TestCase
     }
 
     /**
-     * The welcome page guards its sign-up link with Route::has('register').
-     * If the route name ever comes back, that link reappears silently.
+     * Accounts are made by HR, alongside the employee record.
+     *
+     * The login page says so in words rather than offering a link. Several
+     * Breeze partials still guard a sign-up link with Route::has('register'),
+     * so if the route name ever comes back those links reappear silently.
      */
     public function test_the_register_route_name_is_not_registered(): void
     {
