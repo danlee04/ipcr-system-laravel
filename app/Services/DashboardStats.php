@@ -95,11 +95,12 @@ class DashboardStats
     }
 
     /** @return Collection<int, Ipcr> */
-    public function recentActivity(DashboardScope $scope, int $limit = 6): Collection
+    public function recentSubmissions(DashboardScope $scope, int $limit = 8): Collection
     {
         return $this->scoped($scope)
+            ->whereNotNull('submitted_at')
             ->with(['employee', 'period'])
-            ->latest('updated_at')
+            ->latest('submitted_at')
             ->limit($limit)
             ->get();
     }

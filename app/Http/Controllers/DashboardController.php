@@ -85,7 +85,7 @@ class DashboardController extends Controller
             'totals'        => $this->stats->totals($scope),
             'divisionStats' => $divisionStats,
             'periodStats'   => $this->stats->byPeriod($scope),
-            'recent'        => $this->stats->recentActivity($scope),
+            'recent'        => $this->stats->recentSubmissions($scope),
             'notSubmitted'  => $scope->isFiltered() ? $this->stats->notSubmitted($scope) : collect(),
 
             // Filter options.
@@ -96,6 +96,11 @@ class DashboardController extends Controller
 
             // Keyed by id for the client-side swap when a division row is clicked.
             'divisionMap' => collect($divisionStats)->keyBy('id'),
+
+            // For the rail: the open period it is all measured against, and
+            // what is waiting unread on this account.
+            'period' => $period,
+            'unread' => $request->user()->unreadNotifications()->count(),
         ];
     }
 }

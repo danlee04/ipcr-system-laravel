@@ -52,6 +52,27 @@ class DashboardTest extends TestCase
     // The employee's own IPCR
     // -----------------------------------------------------------------
 
+    /**
+     * The way into the IPCR list sits at the end of the filter row.
+     *
+     * It used to be on a line of its own above the three selects, which put a
+     * button in the middle of the controls it carries the answers from - the
+     * period, division and section it links with are all chosen underneath it.
+     */
+    public function test_the_link_to_the_ipcr_list_follows_the_filters(): void
+    {
+        $html = $this->actingAs($this->adminUser())->get('/dashboard')->assertOk()->getContent();
+
+        $this->assertStringContainsString('Manage IPCRs', $html);
+        $this->assertStringNotContainsString('Open IPCRs', $html);
+
+        $this->assertLessThan(
+            strpos($html, 'Manage IPCRs'),
+            strpos($html, 'name="filter_section_id"'),
+            'The button still comes before the section filter.',
+        );
+    }
+
     public function test_an_employee_with_no_ipcr_yet_is_told_to_start_one(): void
     {
         $this->openPeriod();

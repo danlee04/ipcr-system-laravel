@@ -37,10 +37,10 @@
             </div>
         @endif
 
-        {{-- Nothing at all when neither part applies, rather than an empty
-             grid or a card explaining what is not here. An administrator
-             account has no IPCR of its own, and saying so on every visit tells
-             them something they already know. --}}
+        {{-- Nothing at all when neither part applies, rather than an empty grid
+             or a card explaining what is not here. An administrator account has
+             no IPCR of its own, and saying so on every visit tells them
+             something they already know. --}}
         @if ($employee || $pending['total'] > 0)
             <div class="grid gap-6 lg:grid-cols-3">
                 {{-- The employee's own IPCR. --}}
@@ -120,10 +120,26 @@
             </div>
         @endif
 
-        {{-- Everything below is the hospital-wide picture, for HR and
-             administrators only. --}}
+        {{-- The hospital-wide picture and the rail beside it, for HR and
+             administrators only.
+
+             The rail starts here rather than level with the cards above. Those
+             are the short answer to "what should I do next" and they read
+             across the page; this is the long stretch that wants a companion,
+             and the rail is about other people's work rather than your own. --}}
         @if ($admin)
-            <x-dashboard.admin-overview :admin="$admin" />
+            <x-dashboard.admin-overview :admin="$admin">
+                {{-- Handed over rather than placed here: the overview owns its
+                     own layout, and the rail starts where its breakdowns do -
+                     under the strip of figures, not level with it.
+
+                     Stuck to the top on a wide screen, because the column
+                     beside it runs to several screens and a rail that scrolls
+                     away is a rail you have to go back up for. --}}
+                <x-slot:rail>
+                    <x-dashboard.side-rail class="xl:sticky xl:top-6" :admin="$admin" />
+                </x-slot:rail>
+            </x-dashboard.admin-overview>
         @endif
     </x-page-container>
 </x-app-layout>

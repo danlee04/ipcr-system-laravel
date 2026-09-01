@@ -210,23 +210,40 @@ class DashboardStatsTest extends TestCase
         $this->assertSame(1, $row['approved']);
     }
 
-    public function test_recent_activity_returns_the_newest_first(): void
+    /**
+     * Newest first, by when it was sent.
+     *
+     * This used to order by updated_at and be called "recent activity", which
+     * put an assessor typing a mark at the top of a list HR reads to see who
+     * is getting their work in.
+     */
+    public function test_recent_submissions_return_the_newest_first(): void
     {
         $period = IpcrPeriod::factory()->create();
         $old = Employee::factory()->create(['first_name' => 'Older', 'last_name' => 'Record']);
         $new = Employee::factory()->create(['first_name' => 'Newer', 'last_name' => 'Record']);
 
-        // Written straight to the table: an Eloquent update would stamp
-        // updated_at with the current time and defeat the test.
-        $older = $this->ipcrFor($old, $period, IpcrStatus::Draft);
+        $older = $this->ipcrFor($old, $period, IpcrStatus::Submitted);
         $newer = $this->ipcrFor($new, $period, IpcrStatus::Approved);
 
-        \DB::table('ipcrs')->where('id', $older->id)->update(['updated_at' => now()->subDays(3)]);
-        \DB::table('ipcrs')->where('id', $newer->id)->update(['updated_at' => now()]);
+        \DB::table('ipcrs')->where('id', $older->id)->update(['submitted_at' => now()->subDays(3)]);
+        \DB::table('ipcrs')->where('id', $newer->id)->update(['submitted_at' => now()]);
 
-        $recent = $this->stats()->recentActivity(new DashboardScope());
+        $recent = $this->stats()->recentSubmissions(new DashboardScope());
 
         $this->assertSame('Newer Record', $recent->first()->employee->full_name);
+    }
+
+    /** A draft has never left the employee's hands, so it is not a submission. */
+    public function test_recent_submissions_leave_out_what_was_never_sent(): void
+    {
+        $period = IpcrPeriod::factory()->create();
+        $drafting = Employee::factory()->create(['first_name' => 'Still', 'last_name' => 'Drafting']);
+
+        $draft = $this->ipcrFor($drafting, $period, IpcrStatus::Draft);
+        \DB::table('ipcrs')->where('id', $draft->id)->update(['submitted_at' => null]);
+
+        $this->assertCount(0, $this->stats()->recentSubmissions(new DashboardScope()));
     }
 
     // -----------------------------------------------------------------
