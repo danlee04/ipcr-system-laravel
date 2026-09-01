@@ -83,5 +83,9 @@ class AppShellTest extends TestCase
         $response->assertSee('IPCR System');
         $response->assertSee(config('agency.name'));
         $response->assertDontSee('id="app-sidebar"', false);
+
+        // Even halves. The right column was pinned to a fixed width, which left
+        // the form small against a wide panel of copy on a large screen.
+        $response->assertSee('lg:grid-cols-2', false);
     }
 }

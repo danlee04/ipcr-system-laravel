@@ -28,7 +28,7 @@
 --}}
 
 <body class="min-h-screen bg-white font-sans text-gray-800 antialiased">
-    <div class="grid min-h-screen lg:grid-cols-[1fr_29rem]">
+    <div class="grid min-h-screen lg:grid-cols-2">
         <div class="relative hidden overflow-hidden bg-nav-900 px-10 py-12 lg:flex lg:flex-col lg:justify-between">
             {{-- The arc. One shape, off the corner, so the panel is not a flat
                  rectangle of navy - and nothing else in the composition has to
@@ -49,7 +49,7 @@
                 </span>
             </div>
 
-            <div class="relative max-w-md">
+            <div class="relative max-w-lg">
                 <div class="h-1 w-14 rounded-full bg-accent-bright"></div>
 
                 <p class="mt-6 text-4xl font-semibold leading-[1.15] tracking-tight text-white">
@@ -99,7 +99,7 @@
         </div>
 
         <div class="flex items-center justify-center px-5 py-10 sm:px-10">
-            <div class="w-full max-w-sm">
+            <div class="w-full max-w-md">
                 {{ $slot }}
             </div>
         </div>
