@@ -92,6 +92,8 @@
 
     {{-- Nav --}}
     <nav class="flex-1 space-y-0.5 overflow-y-auto px-2 py-2" aria-label="Main">
+        <x-sidebar-heading label="My Work" />
+
         <x-sidebar-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
             <x-slot:icon>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -118,24 +120,6 @@
             </x-sidebar-link>
         @endif
 
-        {{-- Shown to anyone ever routed an IPCR, not only when something is
-             waiting. The badge is what carries the count. --}}
-        @if ($isApprover)
-            <x-sidebar-link :href="route('approvals.inbox')" :active="request()->routeIs('approvals.*')">
-                <x-slot:icon>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9 5H7.5A1.5 1.5 0 0 0 6 6.5v12A1.5 1.5 0 0 0 7.5 20h9a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 16.5 5H15M9 3.5h6v3H9v-3Z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m9.5 13 2 2 3.5-3.5" />
-                    </svg>
-                </x-slot:icon>
-                For My Approval
-                @if ($pendingApprovals > 0)
-                    <x-slot:badge>{{ $pendingApprovals }}</x-slot:badge>
-                @endif
-            </x-sidebar-link>
-        @endif
-
         {{-- Everyone signed in, approver or not: this is also where an
              employee hears that their own IPCR came back or was approved. --}}
         <x-sidebar-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
@@ -151,15 +135,32 @@
             @endif
         </x-sidebar-link>
 
+        {{-- Shown to anyone ever routed an IPCR, not only when something is
+             waiting. The badge is what carries the count. --}}
+        @if ($isApprover)
+            <x-sidebar-heading label="Approvals" />
+
+            <x-sidebar-link :href="route('approvals.inbox')" :active="request()->routeIs('approvals.*')">
+                <x-slot:icon>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 5H7.5A1.5 1.5 0 0 0 6 6.5v12A1.5 1.5 0 0 0 7.5 20h9a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 16.5 5H15M9 3.5h6v3H9v-3Z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m9.5 13 2 2 3.5-3.5" />
+                    </svg>
+                </x-slot:icon>
+                For My Approval
+                @if ($pendingApprovals > 0)
+                    <x-slot:badge>{{ $pendingApprovals }}</x-slot:badge>
+                @endif
+            </x-sidebar-link>
+        @endif
+
         @if ($user?->hasAnyRole(['admin', 'hr']))
             {{-- Administration. Hidden entirely from everyone else: the routes
                  return 403 anyway, but there is no reason to advertise them.
                  HR is included because HR does the same setup work as an
                  administrator - see the admin route group in routes/web.php. --}}
-            <p class="px-3 pb-1 pt-4 font-data text-[0.625rem] uppercase tracking-[0.18em] text-nav-300"
-                :class="collapsed ? 'lg:hidden' : ''">
-                Administration
-            </p>
+            <x-sidebar-heading label="Administration" />
 
             <x-sidebar-link :href="route('admin.ipcrs.index')" :active="request()->routeIs('admin.ipcrs.*')">
                 <x-slot:icon>
