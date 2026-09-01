@@ -1,4 +1,4 @@
-@props(['name', 'autocomplete' => 'current-password'])
+@props(['name', 'autocomplete' => 'current-password', 'icon' => null])
 
 {{--
     A password field with an eye on it.
@@ -12,6 +12,13 @@
     once it has booted.
 --}}
 <div class="relative" x-data="{ show: false }">
+    {{-- An optional lead icon, so this field can sit in a row of inputs that
+         all carry one. The caller adds its own ps- to make room. --}}
+    @isset($icon)
+        <span class="pointer-events-none absolute inset-y-0 inset-s-0 grid w-10 place-items-center text-gray-400"
+            aria-hidden="true">{{ $icon }}</span>
+    @endisset
+
     <input
         {{ $attributes->merge([
             'id' => $name,

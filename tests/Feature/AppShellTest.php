@@ -81,7 +81,7 @@ class AppShellTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('IPCR System');
-        $response->assertSee('Individual Performance Commitment and Review');
+        $response->assertSee(config('agency.name'));
         $response->assertDontSee('id="app-sidebar"', false);
     }
 }
