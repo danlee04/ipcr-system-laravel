@@ -193,6 +193,74 @@ class HeadDashboardTest extends TestCase
         $this->assertStringNotContainsString($head->full_name, $roster);
     }
 
+    /**
+     * Nobody above them.
+     *
+     * A division head may be filed in one of their own sections, and the Chief
+     * has to sit somewhere too. Their sheets go upward - the Chief assesses a
+     * division head - so they are not the section head's business, and a name
+     * on the roster that cannot be chased is noise.
+     */
+    public function test_a_section_head_does_not_see_the_division_head(): void
+    {
+        $division = Division::factory()->create();
+        $section = $this->sectionIn($division);
+        $head = $this->headOf($section);
+
+        // Filed in the very section this head runs.
+        $above = $this->staff($section, 'Bigboss');
+        $division->update(['division_head_employee_id' => $above->id]);
+
+        $this->actingAs($this->userFor($head))
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertDontSee('Bigboss');
+    }
+
+    public function test_a_section_head_does_not_see_the_chief(): void
+    {
+        $section = $this->sectionIn(Division::factory()->create());
+        $head = $this->headOf($section);
+
+        $this->staff($section, 'Chiefly')->update(['is_chief_of_hospital' => true]);
+
+        $this->actingAs($this->userFor($head))
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertDontSee('Chiefly');
+    }
+
+    /** Everyone in the division, section heads included. */
+    public function test_a_division_head_sees_the_section_heads_under_them(): void
+    {
+        $division = Division::factory()->create();
+        $head = $this->staff($this->sectionIn($division, 'Office'), 'Miro');
+        $division->update(['division_head_employee_id' => $head->id]);
+
+        $sectionHead = $this->headOf($this->sectionIn($division, 'Nursing'));
+        $sectionHead->update(['last_name' => 'Sectionhead']);
+
+        $this->actingAs($this->userFor($head->fresh()))
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('Sectionhead');
+    }
+
+    public function test_a_division_head_does_not_see_the_chief(): void
+    {
+        $division = Division::factory()->create();
+        $head = $this->staff($this->sectionIn($division, 'Office'), 'Miro');
+        $division->update(['division_head_employee_id' => $head->id]);
+
+        $this->staff($this->sectionIn($division, 'Nursing'), 'Chiefly')
+            ->update(['is_chief_of_hospital' => true]);
+
+        $this->actingAs($this->userFor($head->fresh()))
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertDontSee('Chiefly');
+    }
+
     // -----------------------------------------------------------------
     // Who has not sent anything in
     // -----------------------------------------------------------------

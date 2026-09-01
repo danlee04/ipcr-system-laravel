@@ -123,10 +123,19 @@ class DashboardStats
         $query = Employee::query()->active()->with(['position', 'section']);
 
         if ($section = $head->headedSection) {
-            $query->where('section_id', $section->id);
+            $query->where('section_id', $section->id)
+                // Nobody above them. A division head has to be filed in some
+                // section and the Chief has to sit somewhere, and their sheets
+                // go upward - the Chief assesses a division head. A name on the
+                // roster that cannot be chased is noise.
+                ->whereDoesntHave('headedDivision')
+                ->where('is_chief_of_hospital', false);
         } elseif ($division = $head->headedDivision) {
+            // Everyone in the division, section heads included: the division
+            // head assesses those and gives the final word on everyone else.
             $query->where(fn (Builder $q) => $q->where('division_id', $division->id)
-                ->orWhereHas('section', fn (Builder $s) => $s->where('division_id', $division->id)));
+                ->orWhereHas('section', fn (Builder $s) => $s->where('division_id', $division->id)))
+                ->where('is_chief_of_hospital', false);
         } elseif (! $head->isChiefOfHospital()) {
             return collect();
         }
