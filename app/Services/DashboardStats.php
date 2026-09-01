@@ -120,7 +120,7 @@ class DashboardStats
      */
     public function teamOf(Employee $head, ?IpcrPeriod $period): Collection
     {
-        $query = Employee::query()->active()->with(['position', 'section']);
+        $query = Employee::query()->active()->with(['position', 'section', 'activeDesignations']);
 
         if ($section = $head->headedSection) {
             $this->postedToSection($query, $section->id)

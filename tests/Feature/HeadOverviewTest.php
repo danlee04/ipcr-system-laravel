@@ -251,6 +251,48 @@ class HeadOverviewTest extends TestCase
         );
     }
 
+    /**
+     * A designation is what a head is chasing them about.
+     *
+     * The position is the plantilla item; the designation is the job they are
+     * actually doing this period, and the one their IPCR will be full of. A
+     * head reading a list of names needs both to know who they are looking at.
+     */
+    public function test_the_list_to_chase_names_the_position_and_the_designation(): void
+    {
+        IpcrPeriod::factory()->create(['status' => 'open']);
+        $section = $this->sectionIn(Division::factory()->create(), 'Nursing Section');
+        $head = $this->headOf($section);
+
+        $silent = $this->staff($section, 'Silent');
+        $silent->update(['position_id' => \App\Models\Position::factory()->create(['title' => 'Statistician II'])->id]);
+        $silent->designations()->attach(
+            \App\Models\Designation::factory()->create(['title' => 'OIC - HRMO'])->id,
+            ['is_active' => true],
+        );
+
+        $pending = $this->block($this->dashboard($head), 'data-head-pending');
+
+        $this->assertStringContainsString('Position / Designation', $pending);
+        $this->assertStringContainsString('Statistician II / OIC - HRMO', $pending);
+    }
+
+    /** Most people hold no designation, and an empty half of a pair is noise. */
+    public function test_somebody_with_no_designation_is_named_by_position_alone(): void
+    {
+        IpcrPeriod::factory()->create(['status' => 'open']);
+        $section = $this->sectionIn(Division::factory()->create(), 'Nursing Section');
+        $head = $this->headOf($section);
+
+        $silent = $this->staff($section, 'Silent');
+        $silent->update(['position_id' => \App\Models\Position::factory()->create(['title' => 'Nurse III'])->id]);
+
+        $pending = $this->block($this->dashboard($head), 'data-head-pending');
+
+        $this->assertStringContainsString('Nurse III', $pending);
+        $this->assertStringNotContainsString('Nurse III /', $pending);
+    }
+
     // -----------------------------------------------------------------
     // What the head can do from here
     // -----------------------------------------------------------------

@@ -25,6 +25,23 @@
     $showsSection = $head->headedDivision !== null;
 
     $initials = fn($person): string => mb_strtoupper(mb_substr($person->first_name, 0, 1) . mb_substr($person->last_name, 0, 1));
+
+    /*
+     * What they are, and what they are currently doing.
+     *
+     * The position is the plantilla item they sit on; a designation is the job
+     * they hold this period, and it is the one their IPCR will be full of. A
+     * head chasing "Statistician II" for HR work would be chasing the wrong
+     * half of the answer, so both are named - and only both when there are
+     * two, because most people hold no designation at all.
+     */
+    $post = function ($person): string {
+        $parts = collect([$person->position?->title])
+            ->merge($person->activeDesignations->pluck('title'))
+            ->filter();
+
+        return $parts->isEmpty() ? '—' : $parts->implode(' / ');
+    };
 @endphp
 
 <div data-head-pending class="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5">
@@ -59,7 +76,7 @@
                 <thead>
                     <tr class="border-b border-gray-100 text-left font-data text-[0.6875rem] uppercase tracking-wider text-gray-500">
                         <th class="px-5 py-2.5 font-medium">Employee</th>
-                        <th class="px-3 py-2.5 font-medium">Position</th>
+                        <th class="px-3 py-2.5 font-medium">Position / Designation</th>
                         @if ($showsSection)
                             <th class="px-3 py-2.5 font-medium">Section</th>
                         @endif
@@ -91,7 +108,7 @@
                             </td>
 
                             <td class="px-3 py-3 text-xs text-gray-500">
-                                {{ $person->position?->title ?? '—' }}
+                                {{ $post($person) }}
                             </td>
 
                             @if ($showsSection)
