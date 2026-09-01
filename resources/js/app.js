@@ -280,6 +280,20 @@ Chart.register(
 const axisColor = 'rgba(19, 28, 43, 0.45)';
 const gridColor = 'rgba(19, 28, 43, 0.07)';
 
+/**
+ * The chart currently on each canvas.
+ *
+ * Chart.js refuses a canvas that already carries one, and the charts are
+ * drawn again whenever the page comes back from the browser's cache - so the
+ * old one has to go first.
+ */
+const charts = new WeakMap();
+
+function draw(canvas, settings) {
+    charts.get(canvas)?.destroy();
+    charts.set(canvas, new Chart(canvas, settings));
+}
+
 function renderChart(canvas) {
     let config;
 
@@ -292,7 +306,7 @@ function renderChart(canvas) {
     if (canvas.dataset.chart === 'doughnut') {
         const total = config.data.reduce((sum, n) => sum + n, 0);
 
-        new Chart(canvas, {
+        draw(canvas, {
             type: 'doughnut',
             data: {
                 labels: config.labels,
@@ -324,7 +338,7 @@ function renderChart(canvas) {
     }
 
     if (canvas.dataset.chart === 'bar') {
-        new Chart(canvas, {
+        draw(canvas, {
             type: 'bar',
             data: {
                 labels: config.labels,
@@ -355,6 +369,27 @@ function renderChart(canvas) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function drawCharts() {
     document.querySelectorAll('canvas[data-chart]').forEach(renderChart);
+}
+
+document.addEventListener('DOMContentLoaded', drawCharts);
+
+/*
+ * Coming back with the Back button.
+ *
+ * A page restored from the browser's cache keeps every canvas exactly as it
+ * was painted - Chart.js writes the size it chose into an inline style - but
+ * the column around it is laid out from scratch. A chart drawn at one width
+ * then sits in a narrower one and spills over the panel beside it.
+ *
+ * DOMContentLoaded does not fire on a restore, so nothing was putting it
+ * right. Drawing them again does, and the charts are cheap: the figures are
+ * already in the markup, so this reads nothing and asks the server for
+ * nothing.
+ */
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        drawCharts();
+    }
 });

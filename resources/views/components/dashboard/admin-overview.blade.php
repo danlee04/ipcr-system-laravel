@@ -177,48 +177,48 @@ $periodChart = [
          leaves room for a companion. --}}
     <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div class="min-w-0 space-y-5">
-            {{-- Status distribution. Recent activity used to sit beside it and
-                 lives in the rail now: the same list twice on one page is the same
-                 list nobody reads. --}}
-            <div class="grid gap-4">
+            {{-- Two summaries that do not need width, side by side. --}}
+            <div class="grid gap-4 lg:grid-cols-2">
                 <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-950/5">
                     <div class="flex flex-wrap items-center justify-between gap-2">
                         <h4 class="text-sm font-semibold text-gray-900">Status distribution</h4>
                         <span class="font-data text-xs text-gray-500">{{ $t['total'] }} total</span>
                     </div>
 
-                    <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
-                        @foreach ($donut['labels'] as $i => $label)
-                            <span class="inline-flex items-center gap-1.5">
-                                <span class="h-2 w-2 rounded-sm" style="background: {{ $donut['colors'][$i] }}"></span>
-                                {{ $label }}
-                                <span class="font-data">{{ $pct($donut['data'][$i]) }}%</span>
-                            </span>
-                        @endforeach
-                    </div>
+                    {{-- The ring is boxed to a square of its own rather than
+                         given the width of the card.
 
-                    <div class="relative mt-4 h-52">
-                        @if ($t['total'] > 0)
-                            <canvas data-chart="doughnut" data-chart-config='@json($donut)'></canvas>
-                        @else
-                            <p class="grid h-full place-items-center text-sm text-gray-400">No IPCRs in this scope yet.
-                            </p>
-                        @endif
-                    </div>
-                </div>
+                         A doughnut fills the smaller side of whatever it is
+                         handed, so in a wide box it sat as a small ring in a
+                         field of nothing - and its size moved with the column,
+                         which is what let a stale canvas spill over the panel
+                         beside it. Fixed here, it cannot do either.
 
-            </div>
+                         The legend goes beside it, where the width actually
+                         buys something: a name, a count and a share per row
+                         instead of a strip of percentages. --}}
+                    <div class="mt-4 flex flex-wrap items-center gap-5">
+                        <div class="relative h-40 w-40 shrink-0 overflow-hidden">
+                            @if ($t['total'] > 0)
+                                <canvas data-chart="doughnut" data-chart-config='@json($donut)'></canvas>
+                            @else
+                                <p class="grid h-full place-items-center text-center text-xs text-gray-400">No IPCRs
+                                    in this scope yet.</p>
+                            @endif
+                        </div>
 
-            {{-- Submissions per period + workflow track --}}
-            <div class="grid gap-4 lg:grid-cols-3">
-                <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-950/5 lg:col-span-2">
-                    <h4 class="text-sm font-semibold text-gray-900">Submissions by period</h4>
-                    <div class="relative mt-4 h-52">
-                        @if ($admin['periodStats'] !== [])
-                            <canvas data-chart="bar" data-chart-config='@json($periodChart)'></canvas>
-                        @else
-                            <p class="grid h-full place-items-center text-sm text-gray-400">No rating periods yet.</p>
-                        @endif
+                        <ul class="min-w-0 flex-1 space-y-2">
+                            @foreach ($donut['labels'] as $i => $label)
+                                <li class="flex items-center gap-2 text-xs">
+                                    <span class="h-2 w-2 shrink-0 rounded-sm"
+                                        style="background: {{ $donut['colors'][$i] }}"></span>
+                                    <span class="min-w-0 flex-1 truncate text-gray-600">{{ $label }}</span>
+                                    <span class="font-data text-gray-900">{{ $donut['data'][$i] }}</span>
+                                    <span
+                                        class="w-9 shrink-0 text-end font-data text-gray-400">{{ $pct($donut['data'][$i]) }}%</span>
+                                </li>
+                            @endforeach
+                        </ul>
                     </div>
                 </div>
 
@@ -258,6 +258,18 @@ $periodChart = [
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {{-- The one chart that wants the room: a column per period. --}}
+            <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-950/5">
+                <h4 class="text-sm font-semibold text-gray-900">Submissions by period</h4>
+                <div class="relative mt-4 h-52 overflow-hidden">
+                    @if ($admin['periodStats'] !== [])
+                        <canvas data-chart="bar" data-chart-config='@json($periodChart)'></canvas>
+                    @else
+                        <p class="grid h-full place-items-center text-sm text-gray-400">No rating periods yet.</p>
+                    @endif
                 </div>
             </div>
 

@@ -59,6 +59,66 @@ class DashboardTest extends TestCase
      * button in the middle of the controls it carries the answers from - the
      * period, division and section it links with are all chosen underneath it.
      */
+    /**
+     * A chart can never paint over the panel beside it.
+     *
+     * Chart.js writes the canvas size into an inline style, and a page
+     * restored with the browser's Back button keeps that style while the
+     * column around it is laid out again from scratch - so a chart drawn at
+     * one width can find itself in a narrower one and spill into the rail.
+     * The redraw on restore is in app.js; this is the box that makes the
+     * spill impossible whatever goes wrong inside it.
+     */
+    public function test_a_chart_cannot_spill_out_of_its_box(): void
+    {
+        $period = $this->openPeriod();
+        Ipcr::factory()->create([
+            'employee_id'    => Employee::factory()->create()->id,
+            'ipcr_period_id' => $period->id,
+            'status'         => IpcrStatus::Approved,
+        ]);
+
+        $html = $this->actingAs($this->adminUser())->get('/dashboard')->assertOk()->getContent();
+
+        preg_match_all('#<div class="([^"]*)">\s*<canvas data-chart#s', $html, $boxes);
+
+        $this->assertNotEmpty($boxes[1], 'No chart on the page, so nothing was checked.');
+
+        foreach ($boxes[1] as $classes) {
+            $this->assertStringContainsString('overflow-hidden', $classes);
+        }
+    }
+
+    /**
+     * The doughnut is boxed to a square rather than given the card.
+     *
+     * It fills the smaller side of whatever it is handed, so in a wide box it
+     * is a small ring in a field of nothing - and its size tracks the column,
+     * which is what let a canvas restored from the browser cache sit at the
+     * wrong width and spill over the panel beside it. A fixed square cannot
+     * do either.
+     */
+    public function test_the_doughnut_is_boxed_to_a_square(): void
+    {
+        $period = $this->openPeriod();
+        Ipcr::factory()->create([
+            'employee_id'    => Employee::factory()->create()->id,
+            'ipcr_period_id' => $period->id,
+            'status'         => IpcrStatus::Approved,
+        ]);
+
+        $html = $this->actingAs($this->adminUser())->get('/dashboard')->assertOk()->getContent();
+
+        $this->assertSame(
+            1,
+            preg_match('#<div class="([^"]*)">\s*<canvas data-chart="doughnut"#s', $html, $box),
+            'No doughnut on the page.',
+        );
+
+        $this->assertMatchesRegularExpression('/\bh-\d+\b/', $box[1], 'The ring has no fixed height.');
+        $this->assertMatchesRegularExpression('/\bw-\d+\b/', $box[1], 'The ring stretches with the column.');
+    }
+
     public function test_the_link_to_the_ipcr_list_follows_the_filters(): void
     {
         $html = $this->actingAs($this->adminUser())->get('/dashboard')->assertOk()->getContent();
