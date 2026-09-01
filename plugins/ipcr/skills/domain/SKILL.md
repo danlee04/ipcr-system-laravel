@@ -1,5 +1,5 @@
 ---
-name: ipcr-domain
+name: domain
 description: The IPCR form itself - how a sheet is built, scored, routed and approved. Read before touching anything that rates, weights, routes or approves an IPCR, or that adds functions to the catalog. Triggers on "IPCR", "rating", "rubric", "measure", "Q/E/T", "approval chain", "assessor", "final approver", "job function", "catalog", "period", "weight", "adjectival".
 ---
 

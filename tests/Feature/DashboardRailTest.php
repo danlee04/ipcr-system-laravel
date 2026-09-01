@@ -168,18 +168,30 @@ class DashboardRailTest extends TestCase
         }
     }
 
-    /** Where the open period stands: the deadline, and how much is in. */
-    public function test_it_says_where_the_open_period_stands(): void
+    /**
+     * How much of the scope is in.
+     *
+     * The period and its deadline are in the masthead, on this page and on
+     * the login page both - see PeriodSlipTest. What is left for the rail is
+     * the part only an administrator wants: how many have been sent.
+     */
+    public function test_it_says_how_much_has_been_sent(): void
     {
-        IpcrPeriod::factory()->create([
-            'name'                => 'July - December',
-            'status'              => 'open',
-            'submission_deadline' => now()->addDays(12),
+        $period = IpcrPeriod::factory()->create(['status' => 'open']);
+
+        $this->submitted('Sent', 'Already', $period);
+
+        Ipcr::factory()->create([
+            'employee_id'    => Employee::factory()->create()->id,
+            'ipcr_period_id' => $period->id,
+            'status'         => IpcrStatus::Draft,
+            'submitted_at'   => null,
         ]);
 
         $rail = $this->rail($this->admin());
 
-        $this->assertStringContainsString('July - December', $rail);
-        $this->assertStringContainsString('12 days left', $rail);
+        $this->assertStringContainsString('Sent for assessment', $rail);
+        $this->assertMatchesRegularExpression('/1\s*\/\s*2/', $rail);
+        $this->assertStringContainsString('1 still in draft', $rail);
     }
 }

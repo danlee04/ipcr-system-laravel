@@ -1,5 +1,5 @@
 ---
-name: ui-conventions
+name: ui
 description: The palette, the app shell and how a screen is put together in this project - colour tokens, page width, tables, live-filtered lists and the words used on screen. Read before building or restyling any page. Triggers on "colour", "color", "palette", "Tailwind", "layout", "page", "table", "filter", "sidebar", "badge", "component", "styling".
 ---
 

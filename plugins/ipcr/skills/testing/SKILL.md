@@ -1,5 +1,5 @@
 ---
-name: ipcr-testing
+name: testing
 description: How work is verified in this project - write the failing test first, mutate the code to prove the test has teeth, run the whole suite and build before claiming anything is done. Read before writing a test, fixing a bug, or reporting that a piece of work is finished. Triggers on "test", "PHPUnit", "factory", "verify", "done", "fixed", "regression", "assert", "coverage".
 ---
 

@@ -5,12 +5,21 @@
 @endphp
 
 <x-app-layout>
+    {{-- The greeting says who is here; the slip says what everyone is working
+         against. The same slip is on the login page, so the deadline is the
+         first thing seen on the way in and it is still there on landing. --}}
     <x-slot name="header">
-        <div>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                {{ $greeting }}, {{ $firstName }}
-            </h2>
-            <p class="mt-0.5 text-sm text-gray-500">{{ now()->format('l, j F Y') }}</p>
+        <div class="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+            <div class="min-w-0">
+                <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                    {{ $greeting }}, {{ $firstName }}
+                </h2>
+                <p class="mt-0.5 font-data text-xs uppercase tracking-wider text-gray-400">
+                    {{ now()->format('l, j F Y') }}
+                </p>
+            </div>
+
+            <x-period-slip class="w-full border-t border-gray-200 pt-3 sm:w-64 sm:border-0 sm:pt-0" />
         </div>
     </x-slot>
 

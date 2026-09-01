@@ -49,13 +49,23 @@ exists after a build. Check the built CSS if a class is doing nothing.
 
 ## Skills in this repository
 
-Read the one that covers what you are about to do. They are in
-`.claude/skills/`:
+They ship as a plugin in this repository, so they are namespaced. Install it
+once per machine, from the project root:
 
-- **ipcr-domain** — the CSC form, the rubric, the approval chain, the catalog.
-  Read it before touching anything that scores or routes an IPCR.
-- **ipcr-testing** — how work is verified here: red first, mutate to prove the
-  test has teeth, then the full suite.
-- **blade-alpine-pitfalls** — four bug classes this project has hit more than
-  once. Read it before writing a form, a table, or an Alpine filter.
-- **ui-conventions** — the palette, the shell, and how a screen is laid out.
+```
+/plugin marketplace add .
+/plugin install ipcr@ipcr-system
+```
+
+Read the one that covers what you are about to do:
+
+- **`/ipcr:domain`** — the CSC form, the rubric, the approval chain, the
+  catalog. Read it before touching anything that scores or routes an IPCR.
+- **`/ipcr:testing`** — how work is verified here: red first, mutate to prove
+  the test has teeth, then the full suite.
+- **`/ipcr:pitfalls`** — four bug classes this project has hit more than once.
+  Read it before writing a form, a table, or an Alpine filter.
+- **`/ipcr:ui`** — the palette, the shell, and how a screen is laid out.
+
+The source is `plugins/ipcr/skills/`. Edit it there; the change is live for the
+next session.

@@ -1,19 +1,12 @@
 @props(['admin'])
 
 @php
-    use App\Enums\IpcrStatus;
-
-    $period = $admin['period'] ?? null;
     $totals = $admin['totals'];
     $recent = $admin['recent'];
 
     // Sent for assessment, whatever happened to it after: a draft is the only
     // status that has never left the employee's hands.
     $sent = $totals['total'] - $totals['draft'];
-
-    $daysLeft = $period?->submission_deadline
-        ? (int) now()->startOfDay()->diffInDays($period->submission_deadline, false)
-        : null;
 
     /*
      * The screens an administrator lives in.
@@ -63,44 +56,23 @@
 @endphp
 
 <aside data-dashboard-rail {{ $attributes->merge(['class' => 'space-y-4']) }}>
-    {{-- Where the period stands. Everything else on the page is a count of
-         something; this is the one that has a date attached to it. --}}
+    {{-- How much of the scope is in. The period and its deadline are in the
+         masthead: this is the part of that story only an administrator wants,
+         and repeating the date under it would be the same thing twice. --}}
     <div class="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-950/5">
-        <h3 class="text-sm font-semibold text-gray-900">This period</h3>
+        <div class="flex items-baseline justify-between gap-3">
+            <h3 class="text-sm font-semibold text-gray-900">Sent for assessment</h3>
+            <span class="font-data text-xs text-gray-900">{{ $sent }} / {{ $totals['total'] }}</span>
+        </div>
 
-        @if ($period)
-            <p class="mt-1 text-sm text-gray-600">{{ $period->name }}</p>
+        <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-gray-100">
+            <div class="h-full rounded-full bg-nav-900"
+                style="width: {{ $totals['total'] > 0 ? round($sent / $totals['total'] * 100) : 0 }}%"></div>
+        </div>
 
-            @if ($daysLeft !== null)
-                <p
-                    class="mt-2 text-xs {{ $daysLeft < 0 ? 'text-red-700' : ($daysLeft <= 7 ? 'text-amber-800' : 'text-gray-500') }}">
-                    Deadline {{ $period->submission_deadline->format('d M Y') }} —
-                    @if ($daysLeft < 0)
-                        <strong>{{ abs($daysLeft) }} day{{ abs($daysLeft) === 1 ? '' : 's' }} overdue</strong>
-                    @elseif ($daysLeft === 0)
-                        <strong>today</strong>
-                    @else
-                        {{ $daysLeft }} day{{ $daysLeft === 1 ? '' : 's' }} left
-                    @endif
-                </p>
-            @endif
-
-            <div class="mt-4">
-                <div class="flex items-baseline justify-between text-xs text-gray-500">
-                    <span>Sent for assessment</span>
-                    <span class="font-data text-gray-900">{{ $sent }} / {{ $totals['total'] }}</span>
-                </div>
-
-                <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-gray-100">
-                    <div class="h-full rounded-full bg-nav-900"
-                        style="width: {{ $totals['total'] > 0 ? round($sent / $totals['total'] * 100) : 0 }}%"></div>
-                </div>
-            </div>
-        @else
-            <p class="mt-2 text-xs text-gray-500">
-                No rating period is open. Nobody can start an IPCR until one is.
-            </p>
-        @endif
+        <p class="mt-2 text-xs text-gray-500">
+            {{ $totals['draft'] }} still in draft, and a draft has never left the employee's hands.
+        </p>
     </div>
 
     {{-- The sheets that most recently left an employee's hands.

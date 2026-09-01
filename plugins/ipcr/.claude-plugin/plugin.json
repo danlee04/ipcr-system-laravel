@@ -1,0 +1,8 @@
+{
+  "name": "ipcr",
+  "description": "Everything a session needs to work on the DTRC IPCR system: the CSC form and how it is scored and routed, how work is verified here, the Blade and Alpine bug classes this project has repeated, and the UI conventions.",
+  "author": {
+    "name": "Dan Madelo",
+    "email": "dmadelo11@gmail.com"
+  }
+}

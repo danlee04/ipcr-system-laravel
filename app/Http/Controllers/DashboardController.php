@@ -97,9 +97,8 @@ class DashboardController extends Controller
             // Keyed by id for the client-side swap when a division row is clicked.
             'divisionMap' => collect($divisionStats)->keyBy('id'),
 
-            // For the rail: the open period it is all measured against, and
-            // what is waiting unread on this account.
-            'period' => $period,
+            // For the rail. The period itself is not here: the masthead looks
+            // it up, on this page and on the login page both.
             'unread' => $request->user()->unreadNotifications()->count(),
         ];
     }

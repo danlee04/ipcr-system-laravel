@@ -1,5 +1,5 @@
 ---
-name: blade-alpine-pitfalls
+name: pitfalls
 description: Four bug classes this project has shipped more than once - hidden form controls that still submit, modals inside table bodies, x-model bound to nothing, and canvases sized by their column. Read before writing a form, a filtered select, a table with row actions, or a chart. Triggers on "form", "checkbox", "select", "filter", "modal", "table", "x-model", "x-show", "Alpine", "chart", "canvas".
 ---
 
