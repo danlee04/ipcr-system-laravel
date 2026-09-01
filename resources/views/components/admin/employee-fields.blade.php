@@ -217,6 +217,21 @@
          support function could reach anybody at all.
     --------------------------------------------------------------- --}}
     @if ($designations !== null)
+        @php
+            /*
+             * Only what is free, plus their own.
+             *
+             * A designation is one person's job at a time. Offering a held one
+             * to somebody else let the same OIC post go to two people, and then
+             * whichever posting was newest quietly decided the approval chain -
+             * so a held one is dropped from every form but the holder's.
+             */
+            $offered = $designations->filter(
+                fn($designation): bool => $designation->employees->isEmpty()
+                    || ($employee !== null && $designation->employees->contains($employee)),
+            );
+        @endphp
+
         <fieldset class="rounded-lg bg-white p-4 ring-1 ring-inset ring-gray-200">
             <legend class="px-1 text-sm font-semibold text-gray-900">Designations</legend>
 
@@ -224,13 +239,24 @@
                 <p class="text-sm text-gray-600">
                     None have been set up yet. Add them on the Positions screen, under Designations.
                 </p>
+            @elseif ($offered->isEmpty())
+                <p class="text-sm text-gray-600">
+                    Every designation is already held. Free one up on whoever holds it first.
+                </p>
             @else
                 <p class="mb-3 text-xs text-gray-600">
                     Tick every one they currently hold. Each brings its own functions to their IPCR.
+                    Anything held by somebody else is not listed.
                 </p>
 
+                {{-- A browser sends nothing at all for a set of checkboxes with
+                     none ticked, so "none of them" and "the picker was not on
+                     this form" arrive identical. This is what tells them apart,
+                     and without it the last designation could not be untied. --}}
+                <input type="hidden" name="designations_offered" value="1">
+
                 <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    @foreach ($designations as $designation)
+                    @foreach ($offered as $designation)
                         <label class="flex items-start gap-2 rounded-md p-2 text-sm ring-1 ring-inset ring-gray-200 hover:bg-gray-50">
                             <input type="checkbox" name="designations[]" value="{{ $designation->id }}"
                                 @checked(in_array($designation->id, old('designations', $employee?->activeDesignations->pluck('id')->all() ?? []))) class="mt-0.5 rounded border-gray-300 text-nav-900 focus:ring-nav-700">

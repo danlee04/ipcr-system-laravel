@@ -61,9 +61,17 @@ class EmployeeController extends Controller
 
         return $this->liveList($request, 'admin.employees.index', 'admin.employees.rows',
             compact('employees', 'divisions', 'sections', 'positions') + [
-                // A designation can sit anywhere in the hospital, so the whole
-                // list is offered rather than one narrowed by the placement.
-                'designations' => Designation::query()->active()->orderBy('title')->get(),
+                // A designation can sit anywhere in the hospital, so the list
+                // is not narrowed by the placement above. Who holds each one
+                // comes with it: a post is one person's at a time, and the form
+                // offers only what is free - plus, when editing, their own.
+                'designations' => Designation::query()
+                    ->active()
+                    ->with(['employees' => fn ($holders) => $holders
+                        ->wherePivot('is_active', true)
+                        ->where('employees.is_active', true)])
+                    ->orderBy('title')
+                    ->get(),
             ]);
     }
 
@@ -250,8 +258,11 @@ class EmployeeController extends Controller
      */
     private function applyDesignations(Employee $employee, array $data): void
     {
-        if (! array_key_exists('designations', $data)) {
-            return;   // The form did not ask; leave what they hold alone.
+        // The form did not ask; leave what they hold alone. The marker is what
+        // separates "none of them" from "the picker was not on this form":
+        // both arrive without a designations key.
+        if (empty($data['designations_offered']) && ! array_key_exists('designations', $data)) {
+            return;
         }
 
         $employee->designations()->syncWithPivotValues(

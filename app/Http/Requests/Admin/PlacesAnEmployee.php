@@ -54,6 +54,12 @@ trait PlacesAnEmployee
             // reach anybody.
             'designations'   => ['nullable', 'array'],
             'designations.*' => ['integer', 'exists:designations,id'],
+
+            // Set by the picker itself. A browser sends nothing at all for
+            // a set of checkboxes with none ticked, so without this a form
+            // saying "none of them" arrives looking exactly like one that
+            // never carried the field.
+            'designations_offered' => ['nullable', 'boolean'],
         ];
     }
 
