@@ -55,7 +55,37 @@ class DashboardController extends Controller
             // to. Empty for admin and HR with no post of their own - the
             // hospital-wide figures are their version of this.
             'team'     => $employee ? $this->stats->teamOf($employee, $period) : collect(),
+
+            // The unit they run, which is what the page is about for a head.
+            // Null for everyone else, and then the page greets them instead.
+            'unit'     => $employee ? $this->unitLedBy($employee) : null,
         ]);
+    }
+
+    /**
+     * The unit this employee runs, if they run one.
+     *
+     * Named rather than looked up twice: the masthead and the strip of figures
+     * both say which unit the page is about, and they must not be able to
+     * disagree.
+     *
+     * @return array{name: string, kind: string}|null
+     */
+    private function unitLedBy(Employee $employee): ?array
+    {
+        if ($section = $employee->headedSection) {
+            return ['name' => $section->name, 'kind' => 'Section'];
+        }
+
+        if ($division = $employee->headedDivision) {
+            return ['name' => $division->name, 'kind' => 'Division'];
+        }
+
+        if ($employee->isChiefOfHospital()) {
+            return ['name' => config('agency.short_name'), 'kind' => 'Hospital'];
+        }
+
+        return null;
     }
 
     /** The employee's IPCR for the open period, if they have started one. */

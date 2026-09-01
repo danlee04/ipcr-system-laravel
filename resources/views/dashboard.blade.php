@@ -10,11 +10,18 @@
          first thing seen on the way in and it is still there on landing. --}}
     <x-slot name="header">
         <div class="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+            {{-- For a head the page is about the unit rather than about them,
+                 so the unit is what the masthead says. Everyone else is
+                 greeted: there is no unit to name, and their own sheet is the
+                 whole of what follows. --}}
             <div class="min-w-0">
                 <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                    {{ $greeting }}, {{ $firstName }}
+                    {{ $unit ? $unit['name'] : "{$greeting}, {$firstName}" }}
                 </h2>
                 <p class="mt-0.5 font-data text-xs uppercase tracking-wider text-gray-400">
+                    @if ($unit)
+                        {{ $unit['kind'] }} IPCR overview &middot;
+                    @endif
                     {{ now()->format('l, j F Y') }}
                 </p>
             </div>
@@ -129,10 +136,11 @@
             </div>
         @endif
 
-        {{-- Who this head looks after. Above the hospital-wide figures
+        {{-- The unit this head runs: how far it has got, what has been sent in,
+             and who is still to send anything. Above the hospital-wide figures
              because it is the part they can actually do something about. --}}
         @if ($team->isNotEmpty())
-            <x-dashboard.team-roster :team="$team" :period="$period" />
+            <x-dashboard.head-overview :team="$team" :period="$period" :head="$employee" :unit="$unit" />
         @endif
 
         {{-- The hospital-wide picture and the rail beside it, for HR and

@@ -185,7 +185,7 @@ class HeadDashboardTest extends TestCase
 
         $html = $this->actingAs($this->userFor($head))->get('/dashboard')->assertOk()->getContent();
 
-        $start = strpos($html, 'data-team-roster');
+        $start = strpos($html, 'data-head-overview');
         $this->assertNotFalse($start, 'No roster rendered.');
 
         $roster = substr($html, $start);
@@ -282,7 +282,7 @@ class HeadDashboardTest extends TestCase
         $this->staff($section, 'Silent');
 
         $html = $this->actingAs($this->userFor($head))->get('/dashboard')->assertOk()->getContent();
-        $roster = substr($html, (int) strpos($html, 'data-team-roster'));
+        $roster = substr($html, (int) strpos($html, 'data-head-overview'));
 
         $this->assertStringContainsString('Sender', $roster);
         $this->assertStringContainsString('Silent', $roster);

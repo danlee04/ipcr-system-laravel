@@ -1,4 +1,4 @@
-@props(['label', 'value', 'sub', 'percent' => 0, 'accent' => 'blue', 'icon' => null])
+@props(['label', 'value', 'sub', 'percent' => 0, 'accent' => 'blue', 'icon' => null, 'denominator' => null])
 
 @php
     // Each accent is spelled out rather than interpolated: Tailwind scans this
@@ -14,7 +14,7 @@
 @endphp
 
 <div
-    class="relative overflow-hidden rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 transition-shadow hover:shadow-md">
+    {{ $attributes->class('relative overflow-hidden rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-950/5 transition-shadow hover:shadow-md') }}>
     <span aria-hidden="true" class="absolute inset-y-0 start-0 w-[3px] {{ $a['rail'] }}"></span>
 
     <div class="flex items-center justify-between">
@@ -27,7 +27,17 @@
     </div>
 
     <p class="mt-2.5 text-[0.6875rem] font-medium uppercase tracking-wide text-gray-500">{{ $label }}</p>
-    <p class="mt-0.5 font-data text-3xl font-semibold leading-none text-gray-900">{{ $value }}</p>
+
+    {{-- The denominator, where there is one, is what the figure means: eleven
+         sheets assessed says nothing until you know how many people the unit
+         has. It is set smaller so the two are not read as one number. --}}
+    <p class="mt-0.5 flex items-baseline gap-1 font-data leading-none">
+        <span data-kpi-value class="text-3xl font-semibold text-gray-900">{{ $value }}</span>
+        @if ($denominator !== null)
+            <span class="text-sm font-medium text-gray-400">/ {{ $denominator }}</span>
+        @endif
+    </p>
+
     <p class="mt-1 text-[0.6875rem] text-gray-400">{{ $sub }}</p>
 
     <div class="absolute inset-x-0 bottom-0 h-0.5 bg-gray-950/5">

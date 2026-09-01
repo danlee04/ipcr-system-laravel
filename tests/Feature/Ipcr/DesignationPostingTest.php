@@ -155,7 +155,7 @@ class DesignationPostingTest extends TestCase
         $head->update(['user_id' => $user->id]);
 
         $html = $this->actingAs($user->fresh())->get('/dashboard')->assertOk()->getContent();
-        $start = strpos($html, 'data-team-roster');
+        $start = strpos($html, 'data-head-overview');
 
         return $start === false ? '' : substr($html, $start);
     }
